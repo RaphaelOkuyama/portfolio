@@ -2,7 +2,7 @@
 
 Bem-vindo ao repositório oficial do meu **Portfólio Profissional**. Este projeto foi desenvolvido para apresentar minha jornada como **Desenvolvedor Full-Stack**, exibindo meus projetos, certificações e experiências profissionais através de uma interface moderna, interativa e totalmente responsiva.
 
-🔗 **Acesse online:** [portfolio-raphael.vercel.app](https://portfolio-raphael-okuyama.vercel.app)
+🔗 **Acesse online:** [portfolio-raphael-okuyama.vercel.app](https://portfolio-raphael-okuyama.vercel.app)
 
 ## 📝 Descrição
 
@@ -76,7 +76,7 @@ portfolio/
 1.  **Clonar o repositório**
 
     ```bash
-    git clone [https://github.com/RaphaelOkuyama/portfolio.git](https://github.com/RaphaelOkuyama/portfolio.git)
+    git clone https://github.com/RaphaelOkuyama/portfolio.git
     cd portfolio
     ```
 
