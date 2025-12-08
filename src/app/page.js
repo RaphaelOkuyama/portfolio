@@ -39,17 +39,14 @@ export default function Home() {
   return (
     <div className="container">
       
-      {/* HERO SECTION */}
-      {/* AJUSTE: Removido paddingBottom e centralizado naturalmente com Flexbox */}
-      <section style={{ height: 'calc(100vh - 80px)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', position: 'relative' }}>
+      {/* HERO SECTION COM CLASSE CSS (Responsiva) */}
+      <section className="hero-section">
         
         {/* WRAPPER DE CONTEÚDO */}
-        {/* AJUSTE: Removido translateY para ficar no centro exato */}
         <div>
-          
           {/* NOME */}
           <motion.h1 
-            className="hero-title" // Classe CSS responsiva
+            className="hero-title"
             initial="hidden" animate="visible"
             variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
           >
@@ -66,7 +63,8 @@ export default function Home() {
               <motion.div
                 key={index}
                 initial="blur"
-                whileHover="focus"
+                whileHover="focus" // Mantém hover para Desktop
+                whileTap="focus"   // ADICIONADO: Ativa ao clicar/segurar (Mobile)
                 style={{ position: 'relative', padding: '8px 16px', cursor: 'default' }}
               >
                 <motion.p 
@@ -90,13 +88,12 @@ export default function Home() {
               </motion.div>
             ))}
           </div>
-
         </div>
 
-        {/* SCROLL INDICATOR */}
-        {/* AJUSTE: Baixado para 40px (perto do rodapé da tela) */}
+        {/* SCROLL INDICATOR - Controlado pelo CSS agora */}
         <motion.div 
-          style={{ position: 'absolute', bottom: '40px', left: '50%', x: '-50%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', color: 'var(--text-secondary)' }}
+          className="hero-scroll"
+          style={{ x: '-50%' }}
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }}
         >
           <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '2px' }}>
@@ -113,7 +110,7 @@ export default function Home() {
         <ScrollReveal>
           <div className="responsive-grid" style={{ alignItems: 'center' }}>
             
-            {/* ESQUERDA: Texto + Botão */}
+            {/* ESQUERDA */}
             <div>
               <h2 style={{ fontSize: '2.5rem', marginBottom: '30px', borderLeft: '5px solid var(--accent)', paddingLeft: '20px' }}>{about.title}</h2>
               <p style={{ fontSize: '1.1rem', lineHeight: 1.7, color: 'var(--text-secondary)', marginBottom: '30px' }}>{about.desc}</p>
@@ -136,7 +133,7 @@ export default function Home() {
               </motion.a>
             </div>
 
-            {/* DIREITA: FOTO */}
+            {/* DIREITA */}
             <div style={{ display: 'flex', justifyContent: 'center' }}>
               <motion.div 
                 whileHover={{ scale: 1.05, rotate: 2 }}

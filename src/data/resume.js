@@ -285,10 +285,26 @@ export const resumeData = {
     },
     experienceTitle: "Professional Experience",
     experience: [
-      { id: 1, year: 'Apr 2022 - Feb 2025', role: 'IT Specialist', company: 'Mairinque Supermarket', desc: 'Broad role covering Customer Support, Data Analysis (collection and reporting), and IT Management (systems and networks).' },
-      { id: 2, year: 'Feb 2025 - Present', role: 'IT Intern', company: 'Mairinque City Hall', desc: 'Systems management, network/computer maintenance, technical support, and tech solutions development.' },
-      { id: 3, year: 'Currently', role: 'Full-Stack Programmer', company: 'Open to Opportunities',
-        desc: 'Professional open to new opportunities in the software development market. With a solid academic foundation and a practical portfolio, I am ready to join agile teams and contribute with clean code, efficient solutions, and technical innovation in challenging projects.'
+      { 
+        id: 1, 
+        year: 'Apr 2022 - Feb 2025', 
+        role: 'IT Specialist', 
+        company: 'Mairinque Supermarket', 
+        desc: 'Broad role covering Customer Support, Data Analysis (collection and reporting), and IT Management (systems and networks).' 
+      },
+      { 
+        id: 2, 
+        year: 'Feb 2025 - Present', 
+        role: 'IT Intern', 
+        company: 'Mairinque City Hall', 
+        desc: 'Systems management, network and computer maintenance, technical support, and development of technological solutions.' 
+      },
+      { 
+        id: 3, 
+        year: 'Currently', 
+        role: 'Full-Stack Programmer', 
+        company: 'Open to Opportunities',
+        desc: 'Professional open to new opportunities in the software development market. With a solid academic foundation and a practical portfolio, I am prepared to join agile teams and contribute with clean code, efficient solutions, and technical innovation in challenging projects.'
       }
     ],
     certificatesPage: { 
@@ -298,14 +314,14 @@ export const resumeData = {
     },
     certificates: [
       { id: 1, name: "NextJS Course", institution: "OneBitCode", status: "Completed", link: "https://drive.google.com/file/d/1I7Jr9McP_IQKRmEDMO2j2A3WGVGGT77e/view?usp=sharing" },
-      { id: 2, name: "SQL in NodeJS & Prisma ORM", institution: "OneBitCode", status: "Completed", link: "https://drive.google.com/file/d/1X9EpEiLNA7LZc08FDdAZXLUlyt4jxBl7/view?usp=sharing" },
-      { id: 3, name: "NodeJS in Web Apps", institution: "OneBitCode", status: "Completed", link: "https://drive.google.com/file/d/1YBDj_Hz9bAF7C5Z9ZYs8T3DeVdFNsWi2/view?usp=sharing" },
+      { id: 2, name: "SQL in NodeJS and Prisma ORM", institution: "OneBitCode", status: "Completed", link: "https://drive.google.com/file/d/1X9EpEiLNA7LZc08FDdAZXLUlyt4jxBl7/view?usp=sharing" },
+      { id: 3, name: "NodeJS in Web Applications", institution: "OneBitCode", status: "Completed", link: "https://drive.google.com/file/d/1YBDj_Hz9bAF7C5Z9ZYs8T3DeVdFNsWi2/view?usp=sharing" },
       { id: 4, name: "NodeJS Course", institution: "OneBitCode", status: "Completed", link: "https://drive.google.com/file/d/1jMbrhElEAFEOHY5ph5wtRQOCDQSz74mE/view?usp=sharing" },
       { id: 5, name: "SQL Database Course", institution: "OneBitCode", status: "Completed", link: "https://drive.google.com/file/d/1Wob8BdSy3bIvIGk_is74AgBpmS9hNsew/view?usp=sharing" },
       { id: 6, name: "React Course", institution: "OneBitCode", status: "Completed", link: "https://drive.google.com/file/d/143jdZvzdgUTiT0R6_V_ZCymxu0Is5Vpt/view?usp=sharing" },
       { id: 7, name: "Modern CSS", institution: "OneBitCode", status: "Completed", link: "https://drive.google.com/file/d/1Q6N1BaPZFOH0ECOJie2FTGjGQDOLCUNA/view?usp=sharing" },
-      { id: 8, name: "Bootstrap & SASS", institution: "OneBitCode", status: "Completed", link: "https://drive.google.com/file/d/1_PgBGaWfj5Eqh9I80gETuPDQUgF1C5Ri/view?usp=sharing" },
-      { id: 9, name: "Git & GitHub", institution: "OneBitCode", status: "Completed", link: "https://drive.google.com/file/d/16SjZpNj47YW_ceOeEWhM81rBJyYWd5Vt/view?usp=sharing" },
+      { id: 8, name: "Bootstrap and SASS", institution: "OneBitCode", status: "Completed", link: "https://drive.google.com/file/d/1_PgBGaWfj5Eqh9I80gETuPDQUgF1C5Ri/view?usp=sharing" },
+      { id: 9, name: "Git and GitHub", institution: "OneBitCode", status: "Completed", link: "https://drive.google.com/file/d/16SjZpNj47YW_ceOeEWhM81rBJyYWd5Vt/view?usp=sharing" },
       { id: 10, name: "TypeScript Course", institution: "OneBitCode", status: "Completed", link: "https://drive.google.com/file/d/149wMZ6nlMpb_ZZSry_ghUJFeCUi7Gblf/view?usp=sharing" },
       { id: 11, name: "JavaScript VI", institution: "OneBitCode", status: "Completed", link: "https://drive.google.com/file/d/1V0vWxi38c02czMZz9MdrYeQfmySThWgq/view?usp=sharing" },
       { id: 12, name: "JavaScript V", institution: "OneBitCode", status: "Completed", link: "https://drive.google.com/file/d/1fgRLJXx3DUgjQTHKmV4X17mtBmr90RhV/view?usp=sharing" },
@@ -321,7 +337,7 @@ export const resumeData = {
       subtitle: "Highlight of some developed projects. To explore more repositories, visit my GitHub profile.",
       btnDetails: "View Details",
       btnCode: "View on GitHub",
-      btnDeploy: "Live Demo",
+      btnDeploy: "Access Project",
       techs: "Technologies Used",
       features: "Key Features",
       aboutProject: "About the Project",
@@ -329,15 +345,14 @@ export const resumeData = {
       loadingText: "Loading project...",
       btnBack: "Back"
     },
-    // --- TOP 12 PROJECTS (EN - Storytelling Traduzido) ---
     projects: [
       { 
         id: 1, 
         slug: 'devflix-frontend',
         title: 'DevFlix Frontend', 
         stack: ['Next.js', 'React', 'TypeScript', 'Sass', 'Bootstrap', 'Axios', 'SWR'], 
-        shortDesc: 'Immersive Netflix-style e-learning platform.',
-        longDesc: 'The goal was to create a learning experience as engaging as watching a movie. Built with Next.js and TypeScript, the frontend uses SWR to keep data (like course progress and favorites) always synchronized without page reloads. The responsive interface, built with Reactstrap and SASS, features interactive carousels and a robust video player.',
+        shortDesc: 'E-learning platform inspired by Netflix.',
+        longDesc: 'The goal of this project was to create a distance learning (EAD) platform with an immersive visual experience, inspired by Netflix. Developed with Next.js and TypeScript, the focus was to deliver smooth and responsive navigation, allowing students to access their favorite courses and watch classes in a modern and intuitive environment.',
         features: ['Responsive Interface (Mobile First)', 'Server-Side Rendering for Performance', 'REST API Consumption with Axios', 'Modular Styling with SASS'],
         repoLink: 'https://github.com/RaphaelOkuyama/devflix-frontend',
         deployLink: null, image: null
@@ -346,10 +361,10 @@ export const resumeData = {
         id: 2, 
         slug: 'devflix-backend',
         title: 'DevFlix API', 
-        stack: ['Node.js', 'Express', 'Sequelize', 'PostgreSQL', 'AdminJS', 'JWT', 'Bcrypt'], 
-        shortDesc: 'Robust backend with admin dashboard.',
-        longDesc: 'The heart of DevFlix. More than just serving data, this backend manages the entire platform ecosystem. I implemented a secure authentication system using JWT and Bcrypt, episode streaming control, and user progress tracking. A key feature is the AdminJS integration, which automatically generates a complete admin dashboard for managing courses, categories, and users.',
-        features: ['Automatic Admin Panel (AdminJS)', 'Secure Auth (JWT/Bcrypt)', 'Route Pagination', 'Progress & Favorites Tracking'],
+        stack: ['Node.js', 'Express', 'Sequelize', 'PostgreSQL', 'AdminJS', 'JWT'], 
+        shortDesc: 'Complete API for streaming management.',
+        longDesc: 'This is the engine of the DevFlix platform. The challenge was to build a robust API that would manage not only the catalog of courses and episodes, but also secure authentication and students progress. I used Sequelize to model complex relationships in the PostgreSQL database, ensuring integrity and efficiency in queries.',
+        features: ['Secure Authentication (JWT)', 'Management of Categories and Favorites', 'View Control', 'Relational Data Modeling'],
         repoLink: 'https://github.com/RaphaelOkuyama/devflix-backend',
         deployLink: null, image: null
       },
@@ -358,9 +373,9 @@ export const resumeData = {
         slug: 'player-electron',
         title: 'Music Player Desktop', 
         stack: ['Electron', 'React', 'Next.js', 'TailwindCSS', 'Node.js', 'JavaScript'], 
-        shortDesc: 'Native desktop application for music.',
-        longDesc: 'I wanted to push beyond the browser and create a native Desktop application. This Music Player, built with Electron, allows the user to interact directly with the computer\'s file system to import songs, create custom playlists, and control playback, all within a modern web interface.',
-        features: ['Local File Import', 'Play, Pause, and Skip Controls', 'Playlist Creation', 'OS Integration'],
+        shortDesc: 'Native desktop app for music.',
+        longDesc: 'I wanted to go beyond the browser and create a native Desktop application. This Music Player, built with Electron, allows the user to interact directly with the computer file system to import their songs, create custom playlists, and control playback, all with a modern web interface.',
+        features: ['Import of Local Files', 'Play, Pause and Next Controls', 'Playlist Creation', 'Operating System Integration'],
         repoLink: 'https://github.com/RaphaelOkuyama/player-electron',
         deployLink: null, image: null
       },
@@ -369,9 +384,9 @@ export const resumeData = {
         slug: 'react-kanban',
         title: 'React Kanban', 
         stack: ['React', 'TypeScript', 'Vite', 'Radix UI', 'Zod', 'json-server'], 
-        shortDesc: 'Interactive board with Drag-and-Drop.',
-        longDesc: 'Visual productivity was the focus of this project. I developed a complete Kanban board where the main functionality is interactivity: the user can drag and drop tasks between columns (To-Do, In Progress, Done). I used Zod to ensure task data is always valid and Radix UI for accessibility.',
-        features: ['Fluid Drag-and-Drop', 'CRUD via JSON-Server', 'Data Validation with Zod', 'Accessible Components'],
+        shortDesc: 'Interactive board with drag-and-drop.',
+        longDesc: 'Visual productivity was the focus of this project. I developed a complete Kanban board where the main feature is interactivity: the user can drag and drop tasks between columns (To-Do, In Progress, Done). I used Zod to ensure that task data is always valid and Radix UI for accessibility.',
+        features: ['Smooth Drag-and-Drop', 'CRUD via JSON-Server', 'Data Validation with Zod', 'Accessible Components'],
         repoLink: 'https://github.com/RaphaelOkuyama/react-kanban',
         deployLink: null, image: null
       },
@@ -381,7 +396,7 @@ export const resumeData = {
         title: 'E-commerce API', 
         stack: ['Node.js', 'Express', 'PostgreSQL', 'JavaScript', 'pg'], 
         shortDesc: 'Backend for sales management.',
-        longDesc: 'In a sales system, data accuracy is vital. I created this backend to manage the entire flow of an e-commerce store: from product and customer registration to order placement. The focus was on implementing secure CRUD operations and ensuring inventory is correctly updated with every sale.',
+        longDesc: 'In a sales system, data accuracy is vital. I created this backend to manage the entire flow of an e-commerce: from product and customer registration to the completion of orders. The focus was to implement secure CRUD operations and ensure that inventory is updated correctly with each sale.',
         features: ['Real-Time Inventory Control', 'Customer and Order Management', 'Database Transactions', 'Referential Integrity'],
         repoLink: 'https://github.com/RaphaelOkuyama/api-ecommerce',
         deployLink: null, image: null
@@ -391,9 +406,9 @@ export const resumeData = {
         slug: 'react-stock',
         title: 'React Stock Manager', 
         stack: ['React', 'Vite', 'JavaScript'], 
-        shortDesc: 'SPA Dashboard for inventory.',
-        longDesc: 'A Single Page Application (SPA) designed to streamline inventory management. The differentiator here is the user experience: a visual dashboard displays vital metrics like "low stock items" and "total inventory", allowing the manager to make quick decisions without reloading the page.',
-        features: ['Dashboard with Visual Metrics', 'Automatic Low Stock Calculation', 'LocalStorage Persistence', 'Fast SPA Navigation'],
+        shortDesc: 'SPA dashboard for inventory.',
+        longDesc: 'A Single Page Application (SPA) designed to make inventory management easier. The differentiator here is the user experience: a visual dashboard displays vital metrics such as "items running out" and "total in stock", allowing the manager to make quick decisions without reloading the page.',
+        features: ['Dashboard with Visual Metrics', 'Automatic Low Stock Calculation', 'Persistence in LocalStorage', 'Fast SPA Navigation'],
         repoLink: 'https://github.com/RaphaelOkuyama/react-stock',
         deployLink: null, image: null
       },
@@ -402,9 +417,9 @@ export const resumeData = {
         slug: 'api-leadmagnet',
         title: 'Lead Magnet API', 
         stack: ['Node.js', 'Express', 'TypeScript', 'Prisma', 'PostgreSQL', 'Zod'], 
-        shortDesc: 'Marketing campaign automation.',
-        longDesc: 'Developed for the marketing sector, this RESTful API manages a company\'s most valuable asset: leads. The system organizes campaigns and groups, allowing optimized CRUD operations. The choice of Prisma ORM accelerated development and ensured type-safe communication with the database.',
-        features: ['Lead Capture and Management', 'Campaign Group Organization', 'Input Data Validation', 'High Performance with Prisma'],
+        shortDesc: 'Automation of marketing campaigns.',
+        longDesc: 'Developed for the marketing sector, this RESTful API manages the most valuable asset of a company: leads. The system organizes campaigns and groups, allowing optimized CRUD operations. The choice of Prisma ORM accelerated development and ensured type-safe communication with the database.',
+        features: ['Lead Capture and Management', 'Organization by Campaign Groups', 'Input Data Validation', 'High Performance with Prisma'],
         repoLink: 'https://github.com/RaphaelOkuyama/api-leadmagnet',
         deployLink: null, image: null
       },
@@ -413,9 +428,9 @@ export const resumeData = {
         slug: 'api-task-typescript',
         title: 'Task Manager API', 
         stack: ['Node.js', 'Express', 'TypeScript', 'Zod'], 
-        shortDesc: 'RESTful API with validation and error handling.',
-        longDesc: 'Reliability and standardization were the pillars of this project. I built a task management API focused on software engineering best practices: strict static typing with TypeScript, input data validation with Zod, and a centralized error handling system, resulting in clean and predictable code.',
-        features: ['Strict Validation with Zod', 'Full Static Typing', 'Centralized Error Handling', 'Clean Architecture'],
+        shortDesc: 'Task management with strong typing.',
+        longDesc: 'Reliability was the pillar of this project. When building this task management API, I used TypeScript and Zod to create a safety barrier against incorrect data. Each request is validated and handled, ensuring that the system is predictable and easy to maintain.',
+        features: ['Strict Validation with Zod', 'Full Static Typing', 'Centralized Error Handling', 'Clean and Organized Architecture'],
         repoLink: 'https://github.com/RaphaelOkuyama/api-task-typescript-express',
         deployLink: null, image: null
       },
@@ -424,9 +439,9 @@ export const resumeData = {
         slug: 'todo-list-mongodb',
         title: 'Fullstack ToDo Mongo', 
         stack: ['Node.js', 'Express', 'MongoDB', 'Mongoose', 'EJS', 'Bulma'], 
-        shortDesc: 'Fullstack App with NoSQL database.',
+        shortDesc: 'Fullstack app with NoSQL database.',
         longDesc: 'To explore the NoSQL world, I developed this Fullstack application using MongoDB. Unlike relational databases, here I worked with flexible documents. The frontend is rendered on the server (SSR) using EJS and styled with Bulma, resulting in a lightweight and functional application.',
-        features: ['NoSQL Database (MongoDB)', 'Server-Side Rendering (EJS)', 'Modern Interface (Bulma CSS)', 'Dynamic Checklists'],
+        features: ['NoSQL Database (MongoDB)', 'Server-Side Rendering (EJS)', 'Modern Interface (Bulma CSS)', 'CRUD of Nested Checklists'],
         repoLink: 'https://github.com/RaphaelOkuyama/todo-list-mongodb',
         deployLink: null, image: null
       },
@@ -436,7 +451,7 @@ export const resumeData = {
         title: 'Library Auth API', 
         stack: ['Node.js', 'Express', 'JavaScript', 'JWT', 'Bcrypt', 'UUID'], 
         shortDesc: 'Library system focused on security.',
-        longDesc: 'This project simulates a library backend, but the true focus is Information Security. I implemented a robust authentication system where passwords are never saved in plain text (Bcrypt) and route access is protected by session tokens (JWT), ensuring only authorized users manage loans.',
+        longDesc: 'This project simulates the backend of a library, but the real focus is Information Security. I implemented a robust authentication system where passwords are never saved in plain text (hash with Bcrypt) and access to sensitive routes (such as loans) is protected by session tokens (JWT), ensuring full access control.',
         features: ['Password Encryption (Bcrypt)', 'Authentication via JWT Token', 'Loan Management', 'Unique Identifiers (UUID)'],
         repoLink: 'https://github.com/RaphaelOkuyama/api-library',
         deployLink: null, image: null
@@ -446,9 +461,9 @@ export const resumeData = {
         slug: 'devhub',
         title: 'DevHub Social', 
         stack: ['HTML', 'Sass', 'Bootstrap', 'JavaScript', 'Vite'], 
-        shortDesc: 'Social network interface for devs.',
-        longDesc: 'Focused purely on Frontend, DevHub is a responsive social network interface. The challenge was to use SASS and Bootstrap to create a complex layout, with post modals and image carousels, ensuring a perfect experience on both desktop and mobile.',
-        features: ['Fully Responsive Design', 'Advanced Styling with SASS', 'Interactive Modals and Carousels', 'Optimized Build with Vite'],
+        shortDesc: 'Responsive social network interface.',
+        longDesc: 'The focus of this project was to master building responsive and visually rich interfaces. I created a social network simulation using Bootstrap and SASS to ensure a layout adaptable to any device. I implemented interactive features such as theme switching (Light/Dark) and modals for creating posts, demonstrating control over modern UI components.',
+        features: ['Responsive Design (Bootstrap Grid)', 'Advanced Styling with SASS', 'Interactive Modals and Carousels', 'Dynamic Light/Dark Theme'],
         repoLink: 'https://github.com/RaphaelOkuyama/devhub',
         deployLink: null, image: null
       },
@@ -457,8 +472,8 @@ export const resumeData = {
         slug: 'star-wars-catalog',
         title: 'Star Wars Catalog', 
         stack: ['Next.js', 'React', 'TypeScript', 'CSS3'], 
-        shortDesc: 'Spaceship catalog consuming API.',
-        longDesc: 'An immersion into the Star Wars universe through data. This application consumes the SWAPI (public API) to display a detailed spaceship catalog. The focus was on handling asynchronous data, implementing pagination, and displaying information dynamically utilizing the power of Next.js.',
+        shortDesc: 'Spaceship catalog consuming an API.',
+        longDesc: 'An immersion in the Next.js ecosystem. This catalog explores the power of dynamic rendering and routing of the framework. By consuming the public Star Wars API (SWAPI), the application handles asynchronous data and automatically generates individual pages for each spaceship. The project focuses on performance and on organizing complex data in a clean interface.',
         features: ['External API Consumption', 'Asynchronous Data Handling', 'Category Navigation', 'Dynamic Item Details'],
         repoLink: 'https://github.com/RaphaelOkuyama/star-wars-spaceships-catalog',
         deployLink: null, image: null
@@ -466,7 +481,7 @@ export const resumeData = {
     ],
     contactPage: {
       title: "Get in Touch",
-      subtitle: "Let's build something amazing together. Fill out the form or reach out on social media.",
+      subtitle: "Let's build something amazing together. Fill out the form or contact me on social media.",
       channels: "Contact Channels",
       form: { 
         nameLabel: "Name", 
