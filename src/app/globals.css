@@ -195,7 +195,7 @@ a { text-decoration: none; color: inherit; }
 
   .hero-scroll {
     /* AJUSTE: Desci de 150px para 100px. Isso deve equilibrar melhor */
-    bottom: 100px !important;
+    bottom: 50px !important;
   }
 }
 
