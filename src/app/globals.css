@@ -188,19 +188,18 @@ a { text-decoration: none; color: inherit; }
 /* --- AJUSTES APENAS PARA MOBILE (Celulares) --- */
 @media (max-width: 768px) {
   .hero-section {
-    /* AJUSTE: Usa svh (Small Viewport Height) para garantir que cabe mesmo com a barra do navegador aberta */
+    /* Usa svh para descontar a barra do navegador */
     height: calc(100svh - 80px);
-    /* Ajuste de padding para equilibrar o centro visual no mobile */
     padding-bottom: 15vh;
   }
 
   .hero-scroll {
-    /* AJUSTE: Sobe mais o indicador para fugir completamente da zona de toque da barra inferior */
-    bottom: 150px !important;
+    /* AJUSTE: Desci de 150px para 100px. Isso deve equilibrar melhor */
+    bottom: 100px !important;
   }
 }
 
-/* --- FOOTER RESPONSIVO (NOVO) --- */
+/* --- FOOTER RESPONSIVO --- */
 .footer {
   padding: 40px 0;
   border-top: 1px solid var(--border);
@@ -211,10 +210,9 @@ a { text-decoration: none; color: inherit; }
 }
 
 .footer-break {
-  display: inline; /* Padrão: mesma linha */
+  display: inline;
 }
 
-/* Abaixo de 425px, quebra linha */
 @media (max-width: 425px) {
   .footer-break {
     display: block; 
