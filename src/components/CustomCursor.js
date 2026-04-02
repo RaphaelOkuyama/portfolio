@@ -12,19 +12,21 @@ export default function CustomCursor() {
   const cursorYSpring = useSpring(cursorY, springConfig);
 
   const [isHovering, setIsHovering] = useState(false);
-  const [isVisible, setIsVisible] = useState(false); // Começa invisível
+  const [isDesktop, setIsDesktop] = useState(false);
 
+  // Checar se é desktop em useEffect separado (sem dependência de isDesktop)
   useEffect(() => {
-    // Função para checar se é desktop (tem mouse preciso)
-    const checkDevice = () => {
-      // Verifica se o dispositivo tem pointer fino (mouse) E se a tela é larga
-      const isDesktop = window.matchMedia('(pointer: fine) and (min-width: 768px)').matches;
-      setIsVisible(isDesktop);
-    };
+    const mq = window.matchMedia('(pointer: fine) and (min-width: 768px)');
+    setIsDesktop(mq.matches);
 
-    // Checa ao carregar e ao redimensionar
-    checkDevice();
-    window.addEventListener('resize', checkDevice);
+    const handleMqChange = (e) => setIsDesktop(e.matches);
+    mq.addEventListener('change', handleMqChange);
+    return () => mq.removeEventListener('change', handleMqChange);
+  }, []);
+
+  // Eventos de mouse — só rodam quando isDesktop muda
+  useEffect(() => {
+    if (!isDesktop) return;
 
     const moveCursor = (e) => {
       cursorX.set(e.clientX);
@@ -45,21 +47,17 @@ export default function CustomCursor() {
       setIsHovering(!!isClickable);
     };
 
-    // Só adiciona os eventos se for desktop
-    if (isVisible) {
-      window.addEventListener('mousemove', moveCursor);
-      window.addEventListener('mouseover', checkHover);
-    }
+    window.addEventListener('mousemove', moveCursor);
+    window.addEventListener('mouseover', checkHover);
 
+    // Cleanup correto: remove exatamente os mesmos listeners que foram adicionados
     return () => {
-      window.removeEventListener('resize', checkDevice);
       window.removeEventListener('mousemove', moveCursor);
       window.removeEventListener('mouseover', checkHover);
     };
-  }, [cursorX, cursorY, isVisible]);
+  }, [isDesktop, cursorX, cursorY]);
 
-  // Se não for desktop, não renderiza nada (o cursor nativo do sistema ou toque será usado)
-  if (!isVisible) return null;
+  if (!isDesktop) return null;
 
   return (
     <>

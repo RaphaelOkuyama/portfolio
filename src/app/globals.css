@@ -162,40 +162,70 @@ a { text-decoration: none; color: inherit; }
   .social-sidebar { display: flex !important; flex-direction: column; gap: 15px; }
 }
 
-/* --- HERO SECTION RESPONSIVA --- */
+/* ============================================================
+   HERO SECTION — FIX IPHONE/ANDROID COM BARRAS DO BROWSER
+   
+   Problema: iOS Safari/Chrome têm barras de UI dinâmicas que
+   consomem ~15% da viewport. 100svh não desconta essas barras.
+   
+   Solução:
+   1. Usar 100dvh (dynamic viewport height) — desconta as barras
+   2. Fallback para 100svh em browsers mais antigos
+   3. Fallback final para 100vh
+   4. Retirar padding-bottom do hero e usar posicionamento
+      relativo no scroll indicator
+   ============================================================ */
 .hero-section {
+  /* Fallback para browsers sem suporte a dvh */
   height: calc(100vh - 80px);
+  height: calc(100svh - 80px);
+  /* dvh = dynamic viewport height: desconta barras do browser */
+  height: calc(100dvh - 80px);
+  
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   text-align: center;
   position: relative;
-  padding-bottom: 0;
+  /* Sem padding-bottom aqui — controlado no mobile abaixo */
 }
 
 .hero-scroll {
   position: absolute;
   left: 50%;
+  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 5px;
   color: var(--text-secondary);
-  bottom: 40px;
+  /* Valor base desktop */
+  bottom: 32px;
 }
 
-/* --- AJUSTES APENAS PARA MOBILE (Celulares) --- */
+/* Mobile: iPhone com barra de navegação inferior */
 @media (max-width: 768px) {
   .hero-section {
-    /* Usa svh para descontar a barra do navegador */
-    height: calc(100svh - 80px);
-    padding-bottom: 15vh;
+    /* env(safe-area-inset-bottom) — desconta o home indicator do iPhone */
+    padding-bottom: calc(env(safe-area-inset-bottom) + 60px);
+    justify-content: center;
   }
 
   .hero-scroll {
-    /* AJUSTE: Desci de 150px para 100px. Isso deve equilibrar melhor */
-    bottom: 20px !important;
+    /* Posiciona acima do home indicator do iPhone */
+    bottom: calc(env(safe-area-inset-bottom) + 16px);
+  }
+}
+
+/* Telas muito pequenas (iPhone SE, etc.) */
+@media (max-width: 390px) {
+  .hero-section {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 70px);
+  }
+
+  .hero-scroll {
+    bottom: calc(env(safe-area-inset-bottom) + 18px);
   }
 }
 
