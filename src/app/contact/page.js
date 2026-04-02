@@ -3,13 +3,14 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Linkedin, Github, Send } from 'lucide-react';
 import { useSettings } from '../../context/SettingsContext';
+import { toast } from 'sonner';
 
 export default function Contact() {
   const { currentData } = useSettings();
   const { contactPage } = currentData;
 
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState(''); 
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -18,20 +19,27 @@ export default function Contact() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus('loading');
+    
+    const loadingToast = toast.loading('Enviando mensagem...');
+
     try {
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
+      
       if (res.ok) {
-        setStatus('success');
+        setStatus('idle');
         setFormData({ name: '', email: '', message: '' });
+        toast.success('Mensagem enviada com sucesso!', { id: loadingToast });
       } else {
-        setStatus('error');
+        setStatus('idle');
+        toast.error('Erro ao enviar mensagem. Tente novamente.', { id: loadingToast });
       }
     } catch (error) {
-      setStatus('error');
+      setStatus('idle');
+      toast.error('Erro de conexão. Verifique sua rede.', { id: loadingToast });
     }
   };
 
@@ -50,11 +58,10 @@ export default function Contact() {
     <div className="container" style={{ padding: '80px 24px', maxWidth: '1200px' }}>
       <motion.div 
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        className="responsive-grid" // Classe CSS de Grid
+        className="responsive-grid"
         style={{ alignItems: 'start' }}
       >
         
-        {/* ESQUERDA */}
         <div>
           <h1 style={{ fontSize: 'clamp(2.5rem, 5vw, 3rem)', marginBottom: '20px', lineHeight: 1.1 }}>{contactPage.title}</h1>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '40px', fontSize: '1.1rem', lineHeight: 1.6 }}>{contactPage.subtitle}</p>
@@ -80,7 +87,6 @@ export default function Contact() {
           </div>
         </div>
 
-        {/* DIREITA */}
         <div style={{ background: 'var(--card-bg)', padding: 'clamp(20px, 5vw, 40px)', borderRadius: '20px', border: '1px solid var(--border)', width: '100%' }}>
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: '10px' }}>
@@ -101,17 +107,14 @@ export default function Contact() {
             <motion.button 
               type="submit" disabled={status === 'loading'} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
               style={{ 
-                width: '100%', padding: '15px', background: status === 'success' ? 'green' : 'var(--accent)', color: '#fff', 
+                width: '100%', padding: '15px', background: 'var(--accent)', color: '#fff', 
                 border: 'none', borderRadius: '8px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', 
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginTop: '10px', opacity: status === 'loading' ? 0.7 : 1
               }}
             >
-              {status === 'loading' ? '...' : status === 'success' ? 'Enviado!' : contactPage.form.btn} 
+              {status === 'loading' ? 'Enviando...' : contactPage.form.btn} 
               {status !== 'loading' && <Send size={18} />}
             </motion.button>
-
-            {status === 'error' && <p style={{ color: 'red', marginTop: '10px', textAlign: 'center' }}>Erro ao enviar.</p>}
-            {status === 'success' && <p style={{ color: 'green', marginTop: '10px', textAlign: 'center' }}>Sucesso!</p>}
           </form>
         </div>
 

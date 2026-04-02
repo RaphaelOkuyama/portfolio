@@ -2,11 +2,26 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useSettings } from '../../context/SettingsContext';
-import { ArrowRight, Folder } from 'lucide-react';
+import { 
+  ArrowRight, Folder, Smartphone, Server, MonitorSmartphone, 
+  PlaySquare, Music, LayoutDashboard, Rocket, Target 
+} from 'lucide-react';
 
 export default function Projects() {
   const { currentData } = useSettings();
   const { projectsPage, projects } = currentData;
+
+  const getProjectIcon = (slug) => {
+    if (slug.includes('fit-ai-frontend')) return <Smartphone size={32} />;
+    if (slug.includes('fit-ai-api') || slug.includes('backend') || slug.includes('api')) return <Server size={32} />;
+    if (slug.includes('totem')) return <MonitorSmartphone size={32} />;
+    if (slug.includes('devflix-frontend')) return <PlaySquare size={32} />;
+    if (slug.includes('player')) return <Music size={32} />;
+    if (slug.includes('kanban')) return <LayoutDashboard size={32} />;
+    if (slug.includes('star-wars')) return <Rocket size={32} />;
+    if (slug.includes('leadmagnet')) return <Target size={32} />;
+    return <Folder size={32} />; 
+  };
 
   return (
     <div className="container" style={{ padding: '80px 24px' }}>
@@ -25,15 +40,15 @@ export default function Projects() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.05 }}
               whileHover={{ x: 5, borderColor: 'var(--accent)' }}
-              className="project-card" // Classe Responsiva
+              className="project-card"
             >
-              <div className="project-info"> {/* Classe Responsiva */}
+              <div className="project-info">
                 <div style={{ 
                   background: 'rgba(59, 130, 246, 0.1)', padding: '15px', 
                   borderRadius: '12px', color: 'var(--accent)',
-                  flexShrink: 0
+                  flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center'
                 }}>
-                  <Folder size={32} />
+                  {getProjectIcon(project.slug)}
                 </div>
                 <div>
                   <h2 style={{ fontSize: '1.5rem', margin: '0 0 5px 0', color: 'var(--text-primary)' }}>
@@ -43,7 +58,6 @@ export default function Projects() {
                     {project.shortDesc}
                   </p>
                   
-                  {/* Tags */}
                   <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
                     {project.stack.slice(0, 3).map((tech, i) => (
                       <span key={i} style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', background: 'var(--bg-color)', padding: '2px 8px', borderRadius: '4px', border: '1px solid var(--border)' }}>

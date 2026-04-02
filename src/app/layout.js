@@ -6,18 +6,17 @@ import CustomCursor from '../components/CustomCursor';
 import BackgroundParticles from '../components/BackgroundParticles';
 import { SettingsProvider } from '../context/SettingsContext';
 import { Analytics } from "@vercel/analytics/react";
+import { Toaster } from 'sonner';
 
 export const metadata = {
   title: 'Raphael Okuyama | Portfolio',
   description: 'Desenvolvedor Full-Stack',
 };
 
-// ADICIONADO: viewport separado do metadata (padrão Next.js 14+)
-// viewport-fit=cover é ESSENCIAL para env(safe-area-inset-*) funcionar no iPhone
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
-  viewportFit: 'cover', // <-- permite que o conteúdo vá atrás das barras do iPhone
+  viewportFit: 'cover', 
 };
 
 export default function RootLayout({ children }) {
@@ -37,6 +36,8 @@ export default function RootLayout({ children }) {
             {children}
             <Analytics />
           </main>
+
+          <Toaster position="bottom-right" richColors />
           
           <Footer />
         </SettingsProvider>

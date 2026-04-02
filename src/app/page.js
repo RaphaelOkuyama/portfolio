@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useSettings } from '../context/SettingsContext';
 import { 
-  Layout, Server, Code, Database, Terminal, Github, ChevronDown, 
-  Wrench, GitBranch, Download 
+  Layout, Server, Code, Database, ChevronDown, 
+  Wrench, GitBranch, ShieldCheck, PenTool, Download 
 } from 'lucide-react';
 import LoadingScreen from '../components/LoadingScreen';
 import ScrollReveal from '../components/ScrollReveal';
@@ -21,10 +21,15 @@ export default function Home() {
   const techData = currentData?.techSection || { categories: [] };
   const nameText = "Raphael Nobuyuki Haga Okuyama";
 
+  // ÍCONES DAS 7 CATEGORIAS DE TECNOLOGIAS
   const categoryIcons = [
-    <Code size={24} key="code" />, <Layout size={24} key="layout" />, 
-    <Server size={24} key="server" />, <Database size={24} key="db" />, 
-    <GitBranch size={24} key="git" />, <Wrench size={24} key="tools" />
+    <Code size={24} key="code" />,          
+    <Layout size={24} key="layout" />,      
+    <Server size={24} key="server" />,      
+    <Database size={24} key="db" />,        
+    <GitBranch size={24} key="git" />,      
+    <ShieldCheck size={24} key="arch" />,   
+    <PenTool size={24} key="tools" />       
   ];
 
   useEffect(() => {
@@ -39,12 +44,8 @@ export default function Home() {
   return (
     <div className="container">
       
-      {/* HERO SECTION COM CLASSE CSS (Responsiva) */}
       <section className="hero-section">
-        
-        {/* WRAPPER DE CONTEÚDO */}
         <div>
-          {/* NOME */}
           <motion.h1 
             className="hero-title"
             initial="hidden" animate="visible"
@@ -57,14 +58,13 @@ export default function Home() {
             ))}
           </motion.h1>
 
-          {/* CARGOS */}
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '15px', marginTop: '20px' }}>
             {hero.roles && hero.roles.map((role, index) => (
               <motion.div
                 key={index}
                 initial="blur"
-                whileHover="focus" // Mantém hover para Desktop
-                whileTap="focus"   // ADICIONADO: Ativa ao clicar/segurar (Mobile)
+                whileHover="focus" 
+                whileTap="focus"   
                 style={{ position: 'relative', padding: '8px 16px', cursor: 'default' }}
               >
                 <motion.p 
@@ -78,7 +78,6 @@ export default function Home() {
                   {role}
                 </motion.p>
 
-                {/* Cantoneiras */}
                 <motion.div variants={{ blur: { opacity: 0 }, focus: { opacity: 1 } }} transition={{ duration: 0.2 }}>
                   <span style={{ position: 'absolute', top: 0, left: 0, width: '8px', height: '8px', borderTop: '2px solid var(--accent)', borderLeft: '2px solid var(--accent)' }} />
                   <span style={{ position: 'absolute', top: 0, right: 0, width: '8px', height: '8px', borderTop: '2px solid var(--accent)', borderRight: '2px solid var(--accent)' }} />
@@ -90,7 +89,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* SCROLL INDICATOR - Controlado pelo CSS agora */}
         <motion.div 
           className="hero-scroll"
           style={{ x: '-50%' }}
@@ -105,12 +103,10 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* SOBRE MIM */}
       <section style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', padding: '0 0 80px 0' }}>
         <ScrollReveal>
           <div className="responsive-grid" style={{ alignItems: 'center' }}>
             
-            {/* ESQUERDA */}
             <div>
               <h2 style={{ fontSize: '2.5rem', marginBottom: '30px', borderLeft: '5px solid var(--accent)', paddingLeft: '20px' }}>{about.title}</h2>
               <p style={{ fontSize: '1.1rem', lineHeight: 1.7, color: 'var(--text-secondary)', marginBottom: '30px' }}>{about.desc}</p>
@@ -133,7 +129,6 @@ export default function Home() {
               </motion.a>
             </div>
 
-            {/* DIREITA */}
             <div style={{ display: 'flex', justifyContent: 'center' }}>
               <motion.div 
                 whileHover={{ scale: 1.05, rotate: 2 }}
@@ -147,7 +142,6 @@ export default function Home() {
         </ScrollReveal>
       </section>
 
-      {/* TECNOLOGIAS */}
       <section style={{ padding: '80px 0' }}>
         <ScrollReveal>
           <h2 style={{ fontSize: '2.5rem', marginBottom: '50px', borderLeft: '5px solid var(--accent)', paddingLeft: '20px' }}>{techData.title}</h2>
@@ -175,7 +169,6 @@ export default function Home() {
         </ScrollReveal>
       </section>
 
-      {/* EXPERIÊNCIA */}
       <ExperienceSection experience={experience} title={currentData.experienceTitle} />
 
     </div>

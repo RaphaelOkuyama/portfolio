@@ -13,6 +13,9 @@ export default function Certificates() {
     const n = name.toLowerCase();
     const iconSize = 48; 
 
+    // MAPEAMENTO ATUALIZADO
+    if (n.includes('bootcamp') || n.includes('fullstack')) return <Award size={iconSize} color="var(--accent)" />;
+    if (n.includes('ead') || n.includes('netflix')) return <FaReact size={iconSize} color="#61DAFB" />;
     if (n.includes('prisma')) return <SiPrisma size={iconSize} color="#2D3748" />;
     if (n.includes('banco de dados') || (n.includes('sql') && !n.includes('node'))) return <SiPostgresql size={iconSize} color="#336791" />;
     if (n.includes('javascript')) return <SiJavascript size={iconSize} color="#F7DF1E" />;
@@ -39,7 +42,6 @@ export default function Certificates() {
           {certificatesPage.subtitle}
         </p>
 
-        {/* Classe CSS Responsiva */}
         <div className="certificates-grid">
           {certificates.map((cert, index) => (
             <motion.div 
