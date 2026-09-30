@@ -32,7 +32,8 @@ body {
   color: var(--text-primary);
   font-family: 'Inter', sans-serif;
   overflow-x: hidden;
-  transition: background-color 0.3s, color 0.3s;
+  /* 0.8s acompanha o crossfade da cena na troca 昼/夜 */
+  transition: background-color 0.8s ease, color 0.8s ease;
 }
 
 a { text-decoration: none; color: inherit; }

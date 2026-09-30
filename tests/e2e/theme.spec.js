@@ -17,3 +17,11 @@ test('valor antigo "light" no localStorage vira dia', async ({ page }) => {
   await page.goto('/certificates');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'day');
 });
+
+test('o script inline aplica o tema salvo mesmo sem o React', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('theme', 'day'));
+  // Bloqueia os bundles: só o HTML do servidor e o script inline rodam
+  await page.route('**/_next/static/chunks/**', (route) => route.abort());
+  await page.goto('/certificates');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'day');
+});

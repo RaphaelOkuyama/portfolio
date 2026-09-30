@@ -7,6 +7,7 @@ import JourneySync from '../components/journey/JourneySync';
 import SmoothScroll from '../components/journey/SmoothScroll';
 import SceneCanvas from '../components/scene/SceneCanvas';
 import { SettingsProvider } from '../context/SettingsContext';
+import { THEME_BOOT_SCRIPT } from '../lib/themeBoot';
 import { Analytics } from "@vercel/analytics/react";
 import { Toaster } from 'sonner';
 
@@ -23,7 +24,10 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+      </head>
       <body>
         <SettingsProvider>
           <JourneySync />
