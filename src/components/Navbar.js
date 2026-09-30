@@ -21,6 +21,7 @@ export default function Navbar() {
   // Menu mobile: continua montado durante a animação de saída
   const [isMenuMounted, setIsMenuMounted] = useState(false);
   const menuRef = useRef(null);
+  const navRef = useRef(null);
 
   const toggleMenu = () => {
     if (!isMobileMenuOpen) setIsMenuMounted(true);
@@ -38,8 +39,17 @@ export default function Navbar() {
 
   const themeLabel = language === 'pt' ? 'Alternar dia/noite' : 'Toggle day/night';
 
+  // Ícone do toggle 昼/夜 gira e entra ao trocar de tema
+  useGSAP(() => {
+    gsap.fromTo(
+      '.theme-icon',
+      { rotate: -90, scale: 0.6, opacity: 0 },
+      { rotate: 0, scale: 1, opacity: 1, duration: 0.5, ease: 'back.out(2)' },
+    );
+  }, { scope: navRef, dependencies: [theme], revertOnUpdate: true });
+
   return (
-    <>
+    <div ref={navRef} style={{ display: 'contents' }}>
       <nav style={{ position: 'fixed', top: 0, width: '100%', zIndex: 50, padding: '20px 0', backdropFilter: 'blur(10px)', borderBottom: '1px solid var(--border)' }}>
         <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           
@@ -61,7 +71,7 @@ export default function Navbar() {
             </div>
             <div style={{ display: 'flex', gap: '15px', paddingLeft: '20px', borderLeft: '1px solid var(--border)' }}>
               <button onClick={toggleLanguage} style={btnStyle}><Globe size={20} /><span style={{fontSize: '0.8rem', fontWeight: 'bold'}}>{language.toUpperCase()}</span></button>
-              <button onClick={toggleTheme} style={btnStyle} aria-label={themeLabel}>{theme === 'night' ? <Sun size={20} /> : <Moon size={20} />}</button>
+              <button onClick={toggleTheme} style={btnStyle} aria-label={themeLabel}><span className="theme-icon" style={{ display: 'inline-flex' }}>{theme === 'night' ? <Sun size={20} /> : <Moon size={20} />}</span></button>
             </div>
           </div>
 
@@ -108,11 +118,11 @@ export default function Navbar() {
 
             <div style={{ display: 'flex', gap: '20px', marginTop: '10px' }}>
               <button onClick={toggleLanguage} style={{...btnStyle, transform: 'scale(1.2)'}}><Globe size={24} /> {language.toUpperCase()}</button>
-              <button onClick={toggleTheme} style={{...btnStyle, transform: 'scale(1.2)'}} aria-label={themeLabel}>{theme === 'night' ? <Sun size={24} /> : <Moon size={24} />}</button>
+              <button onClick={toggleTheme} style={{...btnStyle, transform: 'scale(1.2)'}} aria-label={themeLabel}><span className="theme-icon" style={{ display: 'inline-flex' }}>{theme === 'night' ? <Sun size={24} /> : <Moon size={24} />}</span></button>
             </div>
           </div>
       )}
-    </>
+    </div>
   );
 }
 

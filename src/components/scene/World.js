@@ -6,6 +6,8 @@ import Atmosphere from './Atmosphere';
 import JourneyCamera from './JourneyCamera';
 import MountainLayers from './MountainLayers';
 import Petals from './Petals';
+import Torii from './Torii';
+import Celestial from './Celestial';
 
 // Monta a cena; no frameloop "demand" qualquer mudança da store pede um frame
 export default function World() {
@@ -29,7 +31,9 @@ export default function World() {
     <>
       <Atmosphere />
       <JourneyCamera />
+      <Celestial />
       <MountainLayers />
+      <Torii />
       <Petals />
     </>
   );

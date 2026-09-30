@@ -27,3 +27,17 @@ export const MOUNTAIN_LAYERS = Array.from({ length: 9 }, (_, i) => ({
   valleyWidth: 18,
   bottom: -30,
 }));
+
+// Torii em primeiro plano: a câmera passa por baixo do nuki no começo da jornada
+// (em z = 14 a câmera está em y ≈ 6; o nuki fica em y = -1 + 8 = 7)
+export const TORII = {
+  position: [0, -1, 14],
+  pillarHeight: 10,
+  pillarRadius: 0.35,
+  span: 7,
+  kasagiY: 9.6,
+  nukiY: 8.0,
+};
+
+// Sol (昼) / lua (夜) no céu, visível do começo do caminho
+export const CELESTIAL = { position: [-14, 22, -90], radius: 4 };
