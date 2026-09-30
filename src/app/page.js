@@ -10,6 +10,7 @@ import {
 import { profile } from '../data/resume';
 import AboutSection from '../components/about/AboutSection';
 import ZenStack from '../components/stack/ZenStack';
+import EmakiProjects from '../components/projects/EmakiProjects';
 import Section from '../components/journey/Section';
 import { useJourney } from '../store/journey';
 import { buildNameSequence, SCRAMBLE_CHARS, NAME_HOLD_SECONDS, NAME_SCRAMBLE_SECONDS } from '../lib/hero/name';
@@ -114,6 +115,8 @@ export default function Home() {
       <AboutSection about={about} />
 
       <ZenStack techData={techData} icons={categoryIcons} />
+
+      <EmakiProjects projects={currentData.projects} labels={currentData.projectsPage} />
 
       <ExperienceSection experience={experience} title={currentData.experienceTitle} />
 

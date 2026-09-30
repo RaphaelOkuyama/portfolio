@@ -523,3 +523,145 @@ a { text-decoration: none; color: inherit; }
 @media (max-width: 560px) {
   .about-copy { padding: 22px 18px; }
 }
+
+/* --- FASE 4: Projetos em emakimono (絵巻物) --- */
+.emaki-section {
+  padding: 60px 0 40px;
+}
+.emaki-pin {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+}
+/* O rolo ocupa a largura toda da tela, fora do container */
+.emaki-viewport {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  overflow: hidden;
+  padding: 10px 0 20px;
+}
+.emaki-track {
+  list-style: none;
+  margin: 0;
+  padding: 0 6vw;
+  display: flex;
+  align-items: stretch;
+  width: max-content;
+  will-change: transform;
+}
+.emaki-item {
+  display: flex;
+}
+/* Papel washi contínuo com divisórias de tinta entre as cenas */
+.emaki-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: min(400px, 78vw);
+  min-height: min(56vh, 460px);
+  padding: 34px 32px 30px;
+  background:
+    repeating-linear-gradient(95deg, transparent 0 22px, color-mix(in srgb, var(--ink) 3%, transparent) 22px 23px),
+    var(--paper);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  border-right: 1px dashed color-mix(in srgb, var(--ink) 25%, transparent);
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: background-color 0.3s;
+}
+.emaki-panel:hover .emaki-cta,
+.emaki-panel:focus-visible .emaki-cta {
+  gap: 14px;
+  color: var(--accent);
+}
+.emaki-panel:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -6px;
+}
+.emaki-number {
+  font-size: 2.2rem;
+  line-height: 1;
+  color: var(--hanko);
+}
+.emaki-title {
+  margin: 0;
+  font-size: 1.45rem;
+  line-height: 1.2;
+}
+.emaki-desc {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.emaki-stack {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.emaki-stack li {
+  font-size: 0.8rem;
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-secondary);
+}
+.emaki-cta {
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  transition: gap 0.3s, color 0.3s;
+}
+/* Rolos de madeira nas pontas */
+.emaki-rod {
+  width: 22px;
+  margin: -14px 0;
+  border-radius: 11px;
+  background: var(--wood);
+  flex-shrink: 0;
+}
+.emaki-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+.emaki-all {
+  color: var(--accent);
+  font-weight: 700;
+}
+/* Painel que se expande até cobrir a tela antes de abrir o projeto */
+.emaki-expand {
+  position: fixed;
+  z-index: 9000;
+  background: var(--paper);
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+/* Celular: rolo arrastável, sem pin */
+@media (max-width: 767px) {
+  .emaki-pin { min-height: 0; }
+  .emaki-track { padding: 0 20px; touch-action: pan-y; }
+  .emaki-panel { min-height: 380px; padding: 28px 22px; }
+}
+
+/* Movimento reduzido: vira grade, sem rolo */
+@media (prefers-reduced-motion: reduce) {
+  .emaki-viewport { width: auto; margin-left: 0; overflow: visible; }
+  .emaki-track {
+    width: auto;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+  }
+  .emaki-rod { display: none; }
+  .emaki-panel { width: auto; min-height: 0; border: 1px solid var(--border); border-radius: 14px; }
+}

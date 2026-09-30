@@ -14,3 +14,8 @@ export function bandOpacity(x, from, to, fade) {
 export function summerWeight(seasonMix) {
   return Math.max(0, 1 - Math.abs(seasonMix - 1) / 0.7);
 }
+
+// Momiji: auge no outono (mix 2), somem até 0,8 de distância
+export function autumnWeight(seasonMix) {
+  return Math.max(0, 1 - Math.abs(seasonMix - 2) / 0.8);
+}

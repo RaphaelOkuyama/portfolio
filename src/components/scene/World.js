@@ -10,6 +10,7 @@ import Torii from './Torii';
 import Celestial from './Celestial';
 import SenbonTorii from './SenbonTorii';
 import ZenGarden from './ZenGarden';
+import Momiji from './Momiji';
 
 // Monta a cena; no frameloop "demand" qualquer mudança da store pede um frame
 export default function World() {
@@ -40,6 +41,7 @@ export default function World() {
       <Torii />
       <SenbonTorii />
       <ZenGarden />
+      <Momiji />
       <Petals />
     </>
   );

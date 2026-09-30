@@ -77,3 +77,12 @@ export const GARDEN = {
   ],
   fireflyVolume: { x: [-11, 11], y: [0.3, 3], z: [-4.5, 4.5] },
 };
+
+// Momiji (紅葉) caindo em volta da câmera durante os Projetos (outono)
+export const MOMIJI = {
+  // Metade da caixa em volta do ponto da curva no meio da seção
+  halfSize: [16, 7, 14],
+  fallbackRange: [0.45, 0.72],
+  size: [0.3, 0.3],
+  countScale: 0.6,
+};
