@@ -106,7 +106,7 @@ export default function Contact() {
             <button
               type="submit" disabled={status === 'loading'} className="btn-press"
               style={{
-                width: '100%', padding: '15px', background: 'var(--accent)', color: '#fff',
+                width: '100%', padding: '15px', background: 'var(--accent)', color: 'var(--on-accent)',
                 border: 'none', borderRadius: '8px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginTop: '10px', opacity: status === 'loading' ? 0.7 : 1
               }}

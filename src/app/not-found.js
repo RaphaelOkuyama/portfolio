@@ -104,7 +104,7 @@ export default function NotFound() {
             style={{
               display: 'flex', alignItems: 'center', gap: '10px',
               padding: '14px 30px', borderRadius: '50px',
-              border: '1px solid var(--accent)', background: 'rgba(59, 130, 246, 0.1)',
+              border: '1px solid var(--accent)', background: 'color-mix(in srgb, var(--accent) 12%, transparent)',
               color: 'var(--accent)', cursor: 'pointer',
               fontWeight: 'bold', fontSize: '1rem'
             }}

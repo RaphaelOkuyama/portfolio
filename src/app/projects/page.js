@@ -41,7 +41,7 @@ export default function Projects() {
             >
               <div className="project-info">
                 <div style={{
-                  background: 'rgba(59, 130, 246, 0.1)', padding: '15px',
+                  background: 'color-mix(in srgb, var(--accent) 12%, transparent)', padding: '15px',
                   borderRadius: '12px', color: 'var(--accent)',
                   flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center'
                 }}>

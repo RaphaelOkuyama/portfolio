@@ -36,6 +36,8 @@ export default function Navbar() {
     }
   }, { dependencies: [isMobileMenuOpen, isMenuMounted] });
 
+  const themeLabel = language === 'pt' ? 'Alternar dia/noite' : 'Toggle day/night';
+
   return (
     <>
       <nav style={{ position: 'fixed', top: 0, width: '100%', zIndex: 50, padding: '20px 0', backdropFilter: 'blur(10px)', borderBottom: '1px solid var(--border)' }}>
@@ -59,7 +61,7 @@ export default function Navbar() {
             </div>
             <div style={{ display: 'flex', gap: '15px', paddingLeft: '20px', borderLeft: '1px solid var(--border)' }}>
               <button onClick={toggleLanguage} style={btnStyle}><Globe size={20} /><span style={{fontSize: '0.8rem', fontWeight: 'bold'}}>{language.toUpperCase()}</span></button>
-              <button onClick={toggleTheme} style={btnStyle}>{theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}</button>
+              <button onClick={toggleTheme} style={btnStyle} aria-label={themeLabel}>{theme === 'night' ? <Sun size={20} /> : <Moon size={20} />}</button>
             </div>
           </div>
 
@@ -106,7 +108,7 @@ export default function Navbar() {
 
             <div style={{ display: 'flex', gap: '20px', marginTop: '10px' }}>
               <button onClick={toggleLanguage} style={{...btnStyle, transform: 'scale(1.2)'}}><Globe size={24} /> {language.toUpperCase()}</button>
-              <button onClick={toggleTheme} style={{...btnStyle, transform: 'scale(1.2)'}}>{theme === 'dark' ? <Sun size={24} /> : <Moon size={24} />}</button>
+              <button onClick={toggleTheme} style={{...btnStyle, transform: 'scale(1.2)'}} aria-label={themeLabel}>{theme === 'night' ? <Sun size={24} /> : <Moon size={24} />}</button>
             </div>
           </div>
       )}

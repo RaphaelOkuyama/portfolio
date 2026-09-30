@@ -1,19 +1,25 @@
-:root {
-  --bg-color: #09090b;
-  --text-primary: #f4f4f5;
-  --text-secondary: #a1a1aa;
-  --accent: #3b82f6;
-  --border: #27272a;
-  --card-bg: #18181b;
+:root, [data-theme='night'] {
+  --bg-color: #0f1626;
+  --text-primary: #e8e4da;
+  --text-secondary: #a7adbd;
+  --accent: #d9a441;
+  --on-accent: #1b1405;
+  --border: #2a3450;
+  --card-bg: #161f33;
+  --ink: #e8e4da;
+  --paper: #1b2438;
 }
 
-[data-theme='light'] {
-  --bg-color: #ffffff;
-  --text-primary: #18181b;
-  --text-secondary: #52525b;
-  --accent: #2563eb;
-  --border: #e4e4e7;
-  --card-bg: #f4f4f5;
+[data-theme='day'] {
+  --bg-color: #f3eee3;
+  --text-primary: #1f1d1a;
+  --text-secondary: #5b564d;
+  --accent: #c23b30;
+  --on-accent: #ffffff;
+  --border: #ddd5c4;
+  --card-bg: #ebe4d5;
+  --ink: #1f1d1a;
+  --paper: #fbf8f1;
 }
 
 * {
@@ -261,14 +267,14 @@ a { text-decoration: none; color: inherit; }
 .cert-card:hover { translate: 0 -5px; border-color: var(--accent) !important; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.2); }
 .hover-nudge:hover { translate: 5px 0; border-color: var(--accent) !important; }
 .hover-back:hover { translate: -5px 0; color: var(--accent) !important; }
-.btn-fill:hover { scale: 1.05; background-color: var(--accent) !important; color: #fff !important; border-color: var(--accent) !important; }
+.btn-fill:hover { scale: 1.05; background-color: var(--accent) !important; color: var(--on-accent) !important; border-color: var(--accent) !important; }
 .btn-fill.subtle:hover { scale: 1.02; }
 .btn-outline:hover { scale: 1.05; border-color: var(--accent) !important; color: var(--accent) !important; }
 .btn-press:hover { scale: 1.02; }
 .btn-fill:active, .btn-outline:active, .glow-btn:active { scale: 0.95; }
 .btn-press:active, .btn-fill.subtle:active { scale: 0.98; }
 .icon-pop:hover { scale: 1.1; translate: 0 -3px; color: var(--accent) !important; border-color: var(--accent) !important; }
-.glow-btn:hover { scale: 1.05; box-shadow: 0 0 20px rgba(59, 130, 246, 0.4); }
+.glow-btn:hover { scale: 1.05; box-shadow: 0 0 20px color-mix(in srgb, var(--accent) 40%, transparent); }
 .photo-tilt:hover { scale: 1.05; rotate: 2deg; }
 .photo-tilt .photo-overlay { opacity: 0; transition: opacity 0.3s; }
 .photo-tilt:hover .photo-overlay { opacity: 0.2; }

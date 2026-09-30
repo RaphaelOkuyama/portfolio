@@ -62,7 +62,7 @@ export default function ProjectDetails() {
         <div style={{ display: 'flex', gap: '10px', marginBottom: '40px', flexWrap: 'wrap' }}>
           {project.stack.map((tech, i) => (
             <span key={i} style={{
-              padding: '6px 14px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid var(--accent)',
+              padding: '6px 14px', background: 'color-mix(in srgb, var(--accent) 12%, transparent)', border: '1px solid var(--accent)',
               borderRadius: '20px', color: 'var(--accent)', fontWeight: 'bold', fontSize: '0.85rem'
             }}>
               {tech}

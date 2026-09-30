@@ -1,19 +1,28 @@
 'use client';
 import { createContext, useContext, useState, useEffect } from 'react';
 import { resumeData } from '../data/resume';
+import { normalizeTheme } from '../lib/palette';
 
 const SettingsContext = createContext();
 
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  try {
+    localStorage.setItem('theme', theme);
+  } catch {
+    // Storage bloqueado (aba privada etc.): o tema só não persiste
+  }
+}
+
 export function SettingsProvider({ children }) {
   const [language, setLanguage] = useState('pt');
-  const [theme, setTheme] = useState('dark');
+  const [theme, setTheme] = useState('night');
 
-  // Alternar Tema
+  // Alternar 昼/夜
   const toggleTheme = () => {
-    const newTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(newTheme);
-    document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
+    const next = theme === 'night' ? 'day' : 'night';
+    setTheme(next);
+    applyTheme(next);
   };
 
   // Alternar Idioma
@@ -21,11 +30,17 @@ export function SettingsProvider({ children }) {
     setLanguage((prev) => (prev === 'pt' ? 'en' : 'pt'));
   };
 
-  // Carregar preferência salva
+  // Carregar preferência salva (aceita valores antigos 'dark'/'light')
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    setTheme(savedTheme);
-    document.documentElement.setAttribute('data-theme', savedTheme);
+    let saved = null;
+    try {
+      saved = localStorage.getItem('theme');
+    } catch {
+      saved = null;
+    }
+    const initial = normalizeTheme(saved);
+    setTheme(initial);
+    applyTheme(initial);
   }, []);
 
   // Dados atuais baseados no idioma
