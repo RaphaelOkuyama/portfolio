@@ -11,6 +11,7 @@ import { profile } from '../data/resume';
 import LoadingScreen from '../components/LoadingScreen';
 import ScrollReveal from '../components/ScrollReveal';
 import Reveal from '../components/Reveal';
+import Section from '../components/journey/Section';
 import ExperienceSection from '../components/ExperienceSection';
 
 export default function Home() {
@@ -58,7 +59,7 @@ export default function Home() {
   return (
     <div className="container">
       
-      <section className="hero-section" ref={heroRef}>
+      <Section id="hero" className="hero-section" ref={heroRef}>
         <div>
           <h1 className="hero-title">
             {nameText.split("").map((char, index) => (
@@ -98,9 +99,9 @@ export default function Home() {
             <ChevronDown size={24} />
           </div>
         </div>
-      </section>
+      </Section>
 
-      <section style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', padding: '0 0 80px 0' }}>
+      <Section id="about" style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', padding: '0 0 80px 0' }}>
         <ScrollReveal>
           <div className="responsive-grid" style={{ alignItems: 'center' }}>
             
@@ -136,9 +137,9 @@ export default function Home() {
             </div>
           </div>
         </ScrollReveal>
-      </section>
+      </Section>
 
-      <section style={{ padding: '80px 0' }}>
+      <Section id="stack" style={{ padding: '80px 0' }}>
         <ScrollReveal>
           <h2 style={{ fontSize: '2.5rem', marginBottom: '50px', borderLeft: '5px solid var(--accent)', paddingLeft: '20px' }}>{techData.title}</h2>
           <Reveal className="cards-grid" trigger="scroll" stagger={0.1} duration={0.5}>
@@ -163,7 +164,7 @@ export default function Home() {
             ))}
           </Reveal>
         </ScrollReveal>
-      </section>
+      </Section>
 
       <ExperienceSection experience={experience} title={currentData.experienceTitle} />
 

@@ -3,6 +3,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { gsap, useGSAP } from '../lib/gsap';
 import ScrollReveal from './ScrollReveal';
+import Section from './journey/Section';
 
 export default function ExperienceSection({ experience, title }) {
   const refExperience = useRef(null);
@@ -34,7 +35,7 @@ export default function ExperienceSection({ experience, title }) {
   }, { scope: refExperience, dependencies: [isDesktop, experience], revertOnUpdate: true });
 
   return (
-    <section style={{ padding: '100px 0', paddingBottom: '150px' }} ref={refExperience}>
+    <Section id="experience" style={{ padding: '100px 0', paddingBottom: '150px' }} ref={refExperience}>
       <ScrollReveal>
         <h2 style={{ fontSize: '2.5rem', marginBottom: '80px', textAlign: 'center' }}>{title}</h2>
         
@@ -104,6 +105,6 @@ export default function ExperienceSection({ experience, title }) {
           </div>
         </div>
       </ScrollReveal>
-    </section>
+    </Section>
   );
 }
