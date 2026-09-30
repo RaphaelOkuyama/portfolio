@@ -59,6 +59,9 @@ a { text-decoration: none; color: inherit; }
 /* Nome do hero: latim na Inter, kana/kanji nas fontes japonesas do sistema */
 .hero-name {
   display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  vertical-align: bottom;
   font-family: 'Inter', 'Hiragino Mincho ProN', 'Yu Mincho', 'YuMincho', 'Noto Serif JP', serif;
 }
 

@@ -41,6 +41,7 @@ export default function Navbar() {
 
   // Ícone do toggle 昼/夜 gira e entra ao trocar de tema
   useGSAP(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     gsap.fromTo(
       '.theme-icon',
       { rotate: -90, scale: 0.6, opacity: 0 },

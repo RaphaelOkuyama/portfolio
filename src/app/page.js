@@ -43,11 +43,14 @@ export default function Home() {
 
   // Entrada do hero quando o ensō termina; depois o nome cicla latino → katakana → kanji
   useGSAP(() => {
-    if (!loaderDone) return;
+    if (!loaderDone) {
+      gsap.set(['.hero-name', '.hero-scroll'], { autoAlpha: 0 });
+      return;
+    }
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    gsap.from('.hero-name', { opacity: 0, y: 12, duration: reduced ? 0 : 0.8, ease: 'power2.out' });
-    gsap.from('.hero-scroll', { opacity: 0, delay: reduced ? 0 : 1, duration: reduced ? 0 : 0.5 });
+    gsap.fromTo('.hero-name', { y: 12 }, { autoAlpha: 1, y: 0, duration: reduced ? 0 : 0.8, ease: 'power2.out' });
+    gsap.to('.hero-scroll', { autoAlpha: 1, delay: reduced ? 0 : 1, duration: reduced ? 0 : 0.5 });
     if (reduced) return;
 
     gsap.to('.hero-scroll-arrow', { keyframes: { y: [0, 10, 0], easeEach: 'sine.inOut' }, duration: 2, repeat: -1 });

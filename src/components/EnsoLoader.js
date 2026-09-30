@@ -23,7 +23,7 @@ export default function EnsoLoader() {
     let shown = 0;
     let finished = false;
 
-    gsap.set(path, { drawSVG: '0%' });
+    gsap.set(path, { drawSVG: '0%', visibility: 'visible' });
 
     const tick = () => {
       if (finished) return;
@@ -71,7 +71,7 @@ export default function EnsoLoader() {
         <style>{'[data-loader="enso"]{display:none}'}</style>
       </noscript>
       <svg viewBox="0 0 220 220" width="180" height="180">
-        <path ref={pathRef} d={ENSO_PATH} fill="none" stroke="var(--ink)" strokeWidth="12" strokeLinecap="round" />
+        <path ref={pathRef} d={ENSO_PATH} style={{ visibility: 'hidden' }} fill="none" stroke="var(--ink)" strokeWidth="12" strokeLinecap="round" />
         <text x="110" y="122" textAnchor="middle" fontSize="34" fill="var(--ink)" className="font-jp">
           奥山
         </text>

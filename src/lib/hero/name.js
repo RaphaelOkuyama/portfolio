@@ -1,7 +1,7 @@
 // Ciclo do nome no hero (ScrambleText): latino → katakana → kanji → latino...
 
-// Caracteres que "embaralham" durante a troca
-export const SCRAMBLE_CHARS = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン';
+// Caracteres (katakana de meia largura, para o texto não estourar a largura) que "embaralham" durante a troca
+export const SCRAMBLE_CHARS = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ';
 
 export const NAME_HOLD_SECONDS = 3.5;
 export const NAME_SCRAMBLE_SECONDS = 1.4;

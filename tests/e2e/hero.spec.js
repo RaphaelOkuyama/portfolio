@@ -12,6 +12,8 @@ test('o nome visível cicla por katakana e kanji', async ({ page }) => {
   await page.goto('/');
   const name = page.locator('.hero-name');
   await expect(name).toHaveText('ラファエル ノブユキ ハガ オクヤマ', { timeout: 15_000 });
+  const box = await name.boundingBox();
+  expect(box.width).toBeLessThanOrEqual(page.viewportSize().width);
   await expect(name).toHaveText('ラファエル 信幸 芳賀 奥山', { timeout: 15_000 });
 });
 

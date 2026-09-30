@@ -2,12 +2,17 @@
 import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Color } from 'three';
-import { journeyStore } from '../../store/journey';
+import { journeyStore, effectiveProgress } from '../../store/journey';
 import { SCENE_ACCENTS } from '../../lib/palette';
 import { CELESTIAL } from './config';
 
 // Opacidade do disco e do halo por tema: a lua brilha mais que o sol pálido
 const OPACITY = { night: { disc: 1, halo: 0.18 }, day: { disc: 0.55, halo: 0.1 } };
+
+function smoothstep(edge0, edge1, x) {
+  const t = Math.min(1, Math.max(0, (x - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
+}
 
 // Sol (昼) / lua (夜): disco com halo, fora da névoa
 export default function Celestial() {
@@ -20,17 +25,22 @@ export default function Celestial() {
     const disc = discRef.current;
     const halo = haloRef.current;
     if (!disc || !halo) return;
-    const { theme } = journeyStore.getState();
+    const store = journeyStore.getState();
+    const { theme } = store;
+    // Some do hero em diante (e nas rotas congeladas, onde o progresso efetivo é 0.7)
+    const visible = 1 - smoothstep(0.08, 0.18, effectiveProgress(store));
+    const discTarget = OPACITY[theme].disc * visible;
+    const haloTarget = OPACITY[theme].halo * visible;
     target.set(SCENE_ACCENTS[theme].celestial);
     const k = initialized.current ? 1 - Math.exp(-delta * 4) : 1;
     initialized.current = true;
 
     disc.color.lerp(target, k);
     halo.color.copy(disc.color);
-    disc.opacity += (OPACITY[theme].disc - disc.opacity) * k;
-    halo.opacity += (OPACITY[theme].halo - halo.opacity) * k;
+    disc.opacity += (discTarget - disc.opacity) * k;
+    halo.opacity += (haloTarget - halo.opacity) * k;
 
-    if (Math.abs(disc.opacity - OPACITY[theme].disc) > 0.002) state.invalidate();
+    if (Math.abs(disc.opacity - discTarget) > 0.002) state.invalidate();
   });
 
   return (

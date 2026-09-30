@@ -121,7 +121,7 @@ export default function InkCursor() {
           ref={canvasRef}
           data-cursor-trail=""
           aria-hidden="true"
-          style={{ position: 'fixed', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 9998 }}
+          style={{ position: 'fixed', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 10001 }}
         />
       ) : null}
       <div
@@ -131,7 +131,7 @@ export default function InkCursor() {
         aria-hidden="true"
         style={{
           position: 'fixed', top: 0, left: 0, width: DOT_SIZE, height: DOT_SIZE,
-          borderRadius: '50%', background: 'var(--ink)', pointerEvents: 'none', zIndex: 9999,
+          borderRadius: '50%', background: 'var(--ink)', pointerEvents: 'none', zIndex: 10002,
         }}
       />
     </>

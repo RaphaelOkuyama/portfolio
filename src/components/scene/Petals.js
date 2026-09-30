@@ -116,7 +116,7 @@ export default function Petals() {
     uniforms.uOpacity.value = opacity;
     uniforms.uColor.value.set(SCENE_ACCENTS[theme].petal);
     uniforms.uPointer.value.set(pointer.x, pointer.y);
-    uniforms.uPointerActive.value = pointer.active ? 1 : 0;
+    uniforms.uPointerActive.value = pointer.active && !reducedMotion ? 1 : 0;
     if (!reducedMotion) uniforms.uTime.value += delta;
   });
 

@@ -18,8 +18,8 @@ describe('constantes', () => {
     expect(NAME_SCRAMBLE_SECONDS).toBe(1.4);
   });
 
-  it('caracteres do scramble são só katakana', () => {
+  it('caracteres do scramble são só katakana de meia largura', () => {
     expect(SCRAMBLE_CHARS.length).toBeGreaterThan(20);
-    expect(SCRAMBLE_CHARS).toMatch(/^[゠-ヿ]+$/);
+    expect(SCRAMBLE_CHARS).toMatch(/^[ｦ-ﾝ]+$/);
   });
 });
