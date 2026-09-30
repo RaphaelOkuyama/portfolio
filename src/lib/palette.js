@@ -16,6 +16,7 @@ export const THEMES = {
     paper: '#1b2438',
     hanko: '#b8392e',
     wood: '#5a3b24',
+    inkWash: '#05070d',
   },
   day: {
     bgColor: '#f3eee3',
@@ -29,6 +30,7 @@ export const THEMES = {
     paper: '#fbf8f1',
     hanko: '#c23b30',
     wood: '#7a5230',
+    inkWash: '#1f1d1a',
   },
 };
 

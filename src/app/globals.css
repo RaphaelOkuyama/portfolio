@@ -10,6 +10,7 @@
   --paper: #1b2438;
   --hanko: #b8392e;
   --wood: #5a3b24;
+  --ink-wash: #05070d;
 }
 
 [data-theme='day'] {
@@ -24,6 +25,7 @@
   --paper: #fbf8f1;
   --hanko: #c23b30;
   --wood: #7a5230;
+  --ink-wash: #1f1d1a;
 }
 
 * {
@@ -366,6 +368,13 @@ p, li { text-wrap: pretty; }
 
 /* Chips de cargo do hero: desfocados até hover/toque */
 .role-chip p { transition: scale 0.3s, letter-spacing 0.3s; letter-spacing: 0.02em; }
+/* Pílula translúcida: os cargos continuam legíveis sobre o torii e as pétalas */
+.role-chip {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-color) 72%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
 .role-chip .role-corners { opacity: 0; transition: opacity 0.2s; }
 .role-chip:hover p, .role-chip:active p { scale: 1.04; letter-spacing: 0.04em; }
 .role-chip:hover .role-corners, .role-chip:active .role-corners { opacity: 1; }
@@ -973,4 +982,45 @@ p, li { text-wrap: pretty; }
 html.is-loading,
 html.is-loading body {
   overflow: hidden;
+}
+
+/* --- Transição entre páginas: tinta sumi cobrindo a tela --- */
+.ink-transition {
+  position: fixed;
+  inset: 0;
+  /* Acima da navbar e da barra social (9990); abaixo do loader (10000) e do cursor */
+  z-index: 9995;
+  pointer-events: none;
+  visibility: hidden;
+}
+.ink-transition[data-state='cover'],
+.ink-transition[data-state='reveal'] {
+  visibility: visible;
+  pointer-events: auto;
+}
+.ink-layer {
+  position: absolute;
+  inset: 0;
+  background: var(--ink-wash);
+  clip-path: circle(0% at 50% 50%);
+}
+.ink-layer:nth-child(1) { opacity: 0.45; }
+.ink-layer:nth-child(2) { opacity: 0.75; }
+.ink-transition-hanko {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 64px;
+  height: 64px;
+  margin: -32px 0 0 -32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid var(--hanko);
+  border-radius: 8px;
+  color: var(--hanko);
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1;
+  opacity: 0;
 }

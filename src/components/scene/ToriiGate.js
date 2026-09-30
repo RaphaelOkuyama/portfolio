@@ -4,12 +4,13 @@ import { useFrame } from '@react-three/fiber';
 import { Color, MeshBasicMaterial } from 'three';
 import { journeyStore } from '../../store/journey';
 import { SCENE_ACCENTS } from '../../lib/palette';
+import { toriiGeometry } from './toriiGeometry';
 
 // Materiais do torii (corpo vermelho + topo escuro) com crossfade 昼/夜.
 // Compartilhados por todos os portões de um mesmo componente.
 export function useToriiMaterials() {
-  const body = useMemo(() => new MeshBasicMaterial(), []);
-  const top = useMemo(() => new MeshBasicMaterial(), []);
+  const body = useMemo(() => new MeshBasicMaterial({ vertexColors: true }), []);
+  const top = useMemo(() => new MeshBasicMaterial({ vertexColors: true }), []);
   const target = useMemo(() => ({ body: new Color(), top: new Color() }), []);
   const initialized = useRef(false);
 
@@ -39,31 +40,15 @@ export function useToriiMaterials() {
   return { body, top };
 }
 
-// Um portão: dois pilares, nuki (viga de baixo), gakuzuka, shimaki + kasagi (topo escuro).
-// A base fica na origem do grupo.
+// Um portão low-poly (pilares afunilados, nuki, gakuzuka, shimaki e kasagi com pontas curvadas).
+// A base fica na origem do grupo. `body` pinta as partes vermelhas, `top` as escuras.
+// dispose={null}: as geometrias ficam em cache e são compartilhadas entre portões
 export default function ToriiGate({ spec, body, top, ...groupProps }) {
-  const { pillarHeight, pillarRadius, span, kasagiY, nukiY } = spec;
-  const half = span / 2;
-
+  const geometry = toriiGeometry(spec);
   return (
     <group {...groupProps}>
-      {[-half, half].map((x) => (
-        <mesh key={x} position={[x, pillarHeight / 2, 0]} material={body}>
-          <cylinderGeometry args={[pillarRadius * 0.9, pillarRadius, pillarHeight, 12]} />
-        </mesh>
-      ))}
-      <mesh position={[0, nukiY, 0]} material={body}>
-        <boxGeometry args={[span + 0.8, 0.35, 0.4]} />
-      </mesh>
-      <mesh position={[0, (kasagiY + nukiY) / 2, 0]} material={body}>
-        <boxGeometry args={[0.35, kasagiY - nukiY - 0.5, 0.3]} />
-      </mesh>
-      <mesh position={[0, kasagiY - 0.45, 0]} material={body}>
-        <boxGeometry args={[span + 1.6, 0.35, 0.6]} />
-      </mesh>
-      <mesh position={[0, kasagiY, 0]} material={top}>
-        <boxGeometry args={[span + 2.4, 0.5, 0.7]} />
-      </mesh>
+      <mesh geometry={geometry.body} material={body} dispose={null} />
+      <mesh geometry={geometry.dark} material={top} dispose={null} />
     </group>
   );
 }

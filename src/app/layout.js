@@ -8,6 +8,7 @@ import JourneySync from '../components/journey/JourneySync';
 import SmoothScroll from '../components/journey/SmoothScroll';
 import SceneCanvas from '../components/scene/SceneCanvas';
 import EnsoLoader from '../components/EnsoLoader';
+import InkTransition from '../components/InkTransition';
 import { SettingsProvider } from '../context/SettingsContext';
 import { THEME_BOOT_SCRIPT } from '../lib/themeBoot';
 import { Analytics } from "@vercel/analytics/react";
@@ -60,6 +61,7 @@ export default function RootLayout({ children }) {
           <SmoothScroll />
           <SceneCanvas />
           <EnsoLoader />
+          <InkTransition />
           <InkCursor />
           <Navbar />
           

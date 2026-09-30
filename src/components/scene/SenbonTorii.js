@@ -47,8 +47,8 @@ export default function SenbonTorii() {
   const materials = useMemo(
     () =>
       Array.from({ length: count }, () => ({
-        body: new MeshBasicMaterial({ transparent: true }),
-        top: new MeshBasicMaterial({ transparent: true }),
+        body: new MeshBasicMaterial({ transparent: true, vertexColors: true }),
+        top: new MeshBasicMaterial({ transparent: true, vertexColors: true }),
       })),
     [count],
   );

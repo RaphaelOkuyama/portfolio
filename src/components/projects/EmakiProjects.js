@@ -157,6 +157,7 @@ export default function EmakiProjects({ projects, labels }) {
                     href={href}
                     className="emaki-panel"
                     data-project={project.slug}
+                    data-no-transition=""
                     onClick={(e) => onPanelClick(e, href)}
                     onFocus={(e) => revealPanel(e.currentTarget)}
                   >
