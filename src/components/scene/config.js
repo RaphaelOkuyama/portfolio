@@ -15,8 +15,9 @@ export const CAMERA_PATH = [
 // Névoa: começa perto, fecha antes das camadas mais distantes
 export const FOG_RANGE = [10, 70];
 
-// Camadas de montanha espalhadas ao longo do caminho, com vale central para a câmera passar
-export const MOUNTAIN_LAYERS = Array.from({ length: 9 }, (_, i) => ({
+// Camadas de montanha espalhadas ao longo do caminho, com vale central para a câmera passar.
+// Param antes do fim do caminho (o rio fica livre); atrás dele, uma cordilheira distante
+const PATH_LAYERS = Array.from({ length: 7 }, (_, i) => ({
   seed: 101 + i * 37,
   x: 0,
   z: 4 - i * 11,
@@ -29,6 +30,13 @@ export const MOUNTAIN_LAYERS = Array.from({ length: 9 }, (_, i) => ({
   valleyWidth: 18,
   bottom: -30,
 }));
+
+const FAR_RANGE = [
+  { seed: 911, z: -120, amplitude: 15, baseHeight: -3 },
+  { seed: 947, z: -142, amplitude: 22, baseHeight: -4 },
+].map((l) => ({ ...l, x: 0, width: 280, segments: 200, valleyCenter: 0, valleyDepth: 0.35, valleyWidth: 30, bottom: -40 }));
+
+export const MOUNTAIN_LAYERS = [...PATH_LAYERS, ...FAR_RANGE];
 
 // Torii do hero: fica no ponto do caminho em que o "Sobre" começa, então a câmera
 // passa por baixo dele exatamente quando a seção entra. A base fica `baseDrop` abaixo
@@ -94,23 +102,32 @@ export const SNOW = {
 
 // Rio escuro no fim do caminho, com lanternas (灯籠流し) descendo a correnteza
 export const RIVER = {
-  // Distância abaixo do fim da curva e tamanho (largura x comprimento)
+  // Distância abaixo do fim da curva e tamanho (largura x comprimento): some na névoa ao fundo
   drop: 1.6,
-  size: [12, 40],
-  // A faixa começa um pouco depois do fim da câmera
-  offsetZ: -16,
+  size: [44, 110],
+  // A margem de perto fica logo à frente do fim da câmera
+  offsetZ: -56,
   fallbackStart: 0.88,
+  // Reflexo do céu cresce com a distância (ângulo rasante)
+  skyReflection: { night: 0.55, day: 0.6 },
 };
 
 export const LANTERNS = {
-  count: { high: 10, low: 5 },
+  count: { high: 36, low: 20 },
   maxReleased: 8,
   // Faixa em z local do rio (a câmera fica do lado +z): as lanternas andam para -z, se afastando
-  laneZ: [-12, 8],
-  laneX: [-3.5, 3.5],
+  laneZ: [-22, 50],
+  laneX: [-15, 15],
+  // z local da câmera no fim do caminho (= -RIVER.offsetZ) e abertura lateral por unidade de distância
+  viewZ: 56,
+  spread: 0.55,
   speed: 0.35,
   // Intensidade da luz: > 1 dispara o bloom (só em qualidade alta)
-  glow: { night: 3.4, day: 1.15 },
+  glow: { night: 2.6, day: 1.1 },
+  // Halo em volta (funciona mesmo sem bloom, no celular) e rastro de luz na água
+  halo: { size: 1.8, night: 0.85, day: 0.35 },
+  reflection: { night: 1, day: 0.45 },
+  wood: { night: '#1a120c', day: '#4a3222' },
 };
 
 // 404 (迷子): névoa densa que engole o caminho

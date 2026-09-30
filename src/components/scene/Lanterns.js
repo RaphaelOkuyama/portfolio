@@ -1,111 +1,209 @@
 'use client';
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Color, CylinderGeometry, MeshBasicMaterial, Object3D } from 'three';
+import {
+  AdditiveBlending, BoxGeometry, Color, InstancedBufferAttribute, MeshBasicMaterial, Object3D, PlaneGeometry, ShaderMaterial,
+} from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { journeyStore, useJourney } from '../../store/journey';
 import { SCENE_ACCENTS } from '../../lib/palette';
 import { mulberry32 } from '../../lib/journey/ridge';
+import { currentSpeed, flicker, laneLayout } from '../../lib/journey/lanterns';
 import { LANTERNS } from './config';
 
 const lerp = (a, b, t) => a + (b - a) * t;
 
-// Estado inicial de uma lanterna na faixa do rio (coordenadas locais do rio: x lateral, z ao longo)
-function spawn(rand, z) {
-  return {
-    x: lerp(LANTERNS.laneX[0], LANTERNS.laneX[1], rand()),
-    z,
-    phase: rand() * Math.PI * 2,
-    speed: LANTERNS.speed * (0.7 + rand() * 0.6),
-  };
+// Tōrō nagashi: base de madeira, papel quadrado aceso, quatro hastes e aro no topo
+const PAPER = { w: 0.34, h: 0.4, y: 0.07 };
+
+function paperGeometry() {
+  const g = new BoxGeometry(PAPER.w, PAPER.h, PAPER.w);
+  g.translate(0, PAPER.y + PAPER.h / 2, 0);
+  return g;
 }
 
-// 灯籠流し: lanternas de papel descendo o rio; cada mensagem enviada solta mais uma perto da câmera
-export default function Lanterns() {
+function frameGeometry() {
+  const parts = [new BoxGeometry(0.48, 0.07, 0.48).translate(0, 0.035, 0)];
+  const half = PAPER.w / 2;
+  for (const x of [-half, half]) {
+    for (const z of [-half, half]) {
+      parts.push(new BoxGeometry(0.035, PAPER.h + 0.02, 0.035).translate(x, PAPER.y + PAPER.h / 2, z));
+    }
+  }
+  // Aro do topo: quatro réguas finas
+  const top = PAPER.y + PAPER.h;
+  parts.push(new BoxGeometry(PAPER.w + 0.04, 0.03, 0.03).translate(0, top, half));
+  parts.push(new BoxGeometry(PAPER.w + 0.04, 0.03, 0.03).translate(0, top, -half));
+  parts.push(new BoxGeometry(0.03, 0.03, PAPER.w + 0.04).translate(half, top, 0));
+  parts.push(new BoxGeometry(0.03, 0.03, PAPER.w + 0.04).translate(-half, top, 0));
+  const merged = mergeGeometries(parts.map((p) => p.toNonIndexed()));
+  parts.forEach((p) => p.dispose());
+  return merged;
+}
+
+// Halo: quad virado para a câmera, brilho radial somado (funciona sem bloom)
+const haloVertex = /* glsl */ `
+  attribute float aGlow;
+  uniform float uSize;
+  varying vec2 vUv;
+  varying float vGlow;
+  void main() {
+    vUv = uv;
+    vGlow = aGlow;
+    vec4 mv = modelViewMatrix * instanceMatrix * vec4(0.0, ${(PAPER.y + PAPER.h / 2).toFixed(2)}, 0.0, 1.0);
+    mv.xy += position.xy * uSize;
+    gl_Position = projectionMatrix * mv;
+  }
+`;
+
+const haloFragment = /* glsl */ `
+  uniform vec3 uColor;
+  uniform float uIntensity;
+  varying vec2 vUv;
+  varying float vGlow;
+  void main() {
+    float d = length(vUv - 0.5) * 2.0;
+    float glow = exp(-d * d * 5.0) * (1.0 - smoothstep(0.8, 1.0, d));
+    gl_FragColor = vec4(uColor * glow * uIntensity * vGlow, 1.0);
+    #include <colorspace_fragment>
+  }
+`;
+
+// 灯籠流し: lanternas de papel descendo o rio até sumirem na névoa;
+// cada mensagem enviada solta mais uma perto da câmera
+export default function Lanterns({ reflections }) {
   const quality = useJourney((s) => s.quality);
   const baseCount = LANTERNS.count[quality] ?? LANTERNS.count.low;
   const capacity = baseCount + LANTERNS.maxReleased;
-  const meshRef = useRef(null);
+  const paperRef = useRef(null);
+  const frameRef = useRef(null);
+  const haloRef = useRef(null);
 
-  // Lanterna de papel: cilindro levemente afunilado
-  const geometry = useMemo(() => new CylinderGeometry(0.17, 0.21, 0.42, 14), []);
-  // Sem névoa: a lanterna é fonte de luz e deve brilhar mesmo ao longe
-  const material = useMemo(() => new MeshBasicMaterial({ toneMapped: false, fog: false }), []);
-  useEffect(
-    () => () => {
-      geometry.dispose();
-      material.dispose();
-    },
-    [geometry, material],
+  const geometries = useMemo(() => {
+    const halo = new PlaneGeometry(1, 1);
+    const glow = new InstancedBufferAttribute(new Float32Array(capacity), 1);
+    halo.setAttribute('aGlow', glow);
+    return { paper: paperGeometry(), frame: frameGeometry(), halo, glow };
+  }, [capacity]);
+
+  const materials = useMemo(
+    () => ({
+      // Sem névoa: o papel é fonte de luz e deve brilhar mesmo ao longe
+      paper: new MeshBasicMaterial({ toneMapped: false, fog: false }),
+      frame: new MeshBasicMaterial(),
+      halo: new ShaderMaterial({
+        vertexShader: haloVertex,
+        fragmentShader: haloFragment,
+        transparent: true,
+        depthWrite: false,
+        blending: AdditiveBlending,
+        uniforms: { uColor: { value: new Color() }, uIntensity: { value: 0 }, uSize: { value: LANTERNS.halo.size } },
+      }),
+    }),
+    [],
   );
 
-  // Lanternas fixas espalhadas na faixa + as soltas pelo formulário
+  useEffect(
+    () => () => Object.values(geometries).forEach((g) => g.dispose?.()),
+    [geometries],
+  );
+  useEffect(() => () => Object.values(materials).forEach((m) => m.dispose()), [materials]);
+
+  // Lanternas fixas em trilha pelo rio + as soltas pelo formulário
   const lanterns = useRef(null);
   const rand = useMemo(() => mulberry32(71), []);
+  const spawn = (x, z) => ({ x, z, phase: rand() * Math.PI * 2, speed: LANTERNS.speed * (0.7 + rand() * 0.6) });
   if (lanterns.current === null || lanterns.current.base !== baseCount) {
-    const [z0, z1] = LANTERNS.laneZ;
     lanterns.current = {
       base: baseCount,
-      items: Array.from({ length: baseCount }, (_, i) => spawn(rand, lerp(z1, z0, i / baseCount))),
+      items: laneLayout(baseCount, LANTERNS, rand).map(({ x, z }) => spawn(x, z)),
     };
   }
   const releasesSeen = useRef(journeyStore.getState().lanternReleases);
 
   const dummy = useMemo(() => new Object3D(), []);
-  const colors = useMemo(() => ({ base: new Color(), target: new Color() }), []);
+  const colors = useMemo(() => ({ base: new Color(), instance: new Color(), wood: new Color() }), []);
   const glow = useRef(null);
   const time = useRef(0);
 
   useFrame((state, delta) => {
-    const mesh = meshRef.current;
+    const paper = paperRef.current;
+    const frame = frameRef.current;
+    const halo = haloRef.current;
     // Rio escondido (antes do contato ou em rotas congeladas): não anima nem pede frames
-    if (!mesh || !mesh.parent?.visible) return;
+    if (!paper || !frame || !halo || !paper.parent?.parent?.visible) return;
     const journey = journeyStore.getState();
+    const { theme } = journey;
     const { items } = lanterns.current;
 
     // Mensagem enviada: nova lanterna entra perto da margem da câmera
     while (releasesSeen.current < journey.lanternReleases) {
       releasesSeen.current += 1;
-      if (items.length < capacity) items.push({ ...spawn(rand, LANTERNS.laneZ[1] + 1.5), released: true });
+      if (items.length < capacity) {
+        items.push({ ...spawn(lerp(-1.5, 1.5, rand()), LANTERNS.laneZ[1] + 1.5), released: true });
+      }
     }
 
     const moving = !journey.reducedMotion;
     if (moving) time.current += delta;
+    const t = time.current;
     const [z0, z1] = LANTERNS.laneZ;
 
     // Correnteza: todas se afastam da câmera; as fixas voltam ao começo, as soltas somem no fim
     for (let i = items.length - 1; i >= 0; i--) {
       const l = items[i];
-      if (moving) l.z -= l.speed * delta;
+      if (moving) l.z -= currentSpeed(l.speed, l.z, LANTERNS.viewZ) * delta;
       if (l.z < z0) {
         if (l.released) items.splice(i, 1);
         else l.z = z1;
       }
     }
 
-    items.forEach((l, i) => {
-      dummy.position.set(l.x + Math.sin(time.current * 0.5 + l.phase) * 0.15, 0.22 + Math.sin(time.current * 1.6 + l.phase) * 0.04, l.z);
-      dummy.rotation.set(0, l.phase + time.current * 0.1, Math.sin(time.current + l.phase) * 0.05);
-      dummy.updateMatrix();
-      mesh.setMatrixAt(i, dummy.matrix);
-    });
-    mesh.count = items.length;
-    mesh.instanceMatrix.needsUpdate = true;
-
     // Brilho: forte à noite (dispara o bloom), suave de dia
-    const intensity = LANTERNS.glow[journey.theme];
-    glow.current = glow.current === null ? intensity : lerp(glow.current, intensity, 1 - Math.exp(-delta * 4));
-    colors.base.set(SCENE_ACCENTS[journey.theme].lantern);
-    material.color.copy(colors.base).multiplyScalar(glow.current);
+    const intensity = LANTERNS.glow[theme];
+    const k = glow.current === null ? 1 : 1 - Math.exp(-delta * 4);
+    glow.current = glow.current === null ? intensity : lerp(glow.current, intensity, k);
+    colors.base.set(SCENE_ACCENTS[theme].lantern);
+    materials.paper.color.setScalar(glow.current);
+    colors.wood.set(LANTERNS.wood[theme]);
+    materials.frame.color.lerp(colors.wood, k);
+    const h = materials.halo.uniforms;
+    h.uColor.value.copy(colors.base);
+    h.uIntensity.value = lerp(h.uIntensity.value, LANTERNS.halo[theme], k);
+
+    const positions = reflections?.lanterns.value;
+    items.forEach((l, i) => {
+      // Entra/sai suave nas pontas da faixa (nasce na margem, some ao longe)
+      const edge = Math.min(1, (l.z - z0) / 4, (z1 + 2 - l.z) / 2);
+      const f = flicker(t, l.phase) * Math.max(0, edge);
+      dummy.position.set(l.x + Math.sin(t * 0.5 + l.phase) * 0.15, Math.sin(t * 1.6 + l.phase) * 0.03, l.z);
+      dummy.rotation.set(Math.sin(t * 1.1 + l.phase) * 0.04, l.phase + t * 0.08, Math.sin(t + l.phase) * 0.05);
+      dummy.scale.setScalar(Math.max(0.001, edge));
+      dummy.updateMatrix();
+      paper.setMatrixAt(i, dummy.matrix);
+      frame.setMatrixAt(i, dummy.matrix);
+      halo.setMatrixAt(i, dummy.matrix);
+      paper.setColorAt(i, colors.instance.copy(colors.base).multiplyScalar(f));
+      geometries.glow.array[i] = f;
+      // No plano do rio, y local = -z do grupo
+      if (positions) positions[i].set(dummy.position.x, -l.z, f);
+    });
+    for (const mesh of [paper, frame, halo]) {
+      mesh.count = items.length;
+      mesh.instanceMatrix.needsUpdate = true;
+    }
+    if (paper.instanceColor) paper.instanceColor.needsUpdate = true;
+    geometries.glow.needsUpdate = true;
+    if (reflections) reflections.count.value = items.length;
 
     if (moving || items.some((l) => l.released)) state.invalidate();
   });
 
   return (
-    <instancedMesh
-      key={capacity}
-      ref={meshRef}
-      args={[geometry, material, capacity]}
-      frustumCulled={false}
-    />
+    <group key={capacity}>
+      <instancedMesh ref={paperRef} args={[geometries.paper, materials.paper, capacity]} frustumCulled={false} />
+      <instancedMesh ref={frameRef} args={[geometries.frame, materials.frame, capacity]} frustumCulled={false} />
+      <instancedMesh ref={haloRef} args={[geometries.halo, materials.halo, capacity]} frustumCulled={false} renderOrder={2} />
+    </group>
   );
 }
