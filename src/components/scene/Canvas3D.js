@@ -26,12 +26,16 @@ export default function Canvas3D() {
 
   return (
     <Canvas
+      flat
       dpr={settings.dpr}
       frameloop={frameloop}
       camera={{ fov: 50, near: 0.1, far: 300, position: CAMERA_PATH[0] }}
       gl={{ antialias: quality === 'high', powerPreference: 'high-performance' }}
     >
-      <PerformanceMonitor bounds={FPS_BOUNDS} onDecline={() => journeyStore.getState().downgradeQuality()} />
+      {/* Fora do frameloop "always" os frames chegam em rajadas e o FPS medido não vale */}
+      {frameloop === 'always' ? (
+        <PerformanceMonitor bounds={FPS_BOUNDS} onDecline={() => journeyStore.getState().downgradeQuality()} />
+      ) : null}
       <World />
     </Canvas>
   );
