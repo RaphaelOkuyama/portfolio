@@ -43,6 +43,25 @@ a { text-decoration: none; color: inherit; }
   font-family: 'Hiragino Mincho ProN', 'Yu Mincho', 'YuMincho', 'Noto Serif JP', serif;
 }
 
+/* Visível só para leitores de tela */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Nome do hero: latim na Inter, kana/kanji nas fontes japonesas do sistema */
+.hero-name {
+  display: inline-block;
+  font-family: 'Inter', 'Hiragino Mincho ProN', 'Yu Mincho', 'YuMincho', 'Noto Serif JP', serif;
+}
+
 /* CURSOR (Apenas Desktop) */
 @media (min-width: 768px) {
   body, a, button, input, textarea { cursor: none !important; }

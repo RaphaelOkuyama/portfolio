@@ -12,6 +12,7 @@ import ScrollReveal from '../components/ScrollReveal';
 import Reveal from '../components/Reveal';
 import Section from '../components/journey/Section';
 import { useJourney } from '../store/journey';
+import { buildNameSequence, SCRAMBLE_CHARS, NAME_HOLD_SECONDS, NAME_SCRAMBLE_SECONDS } from '../lib/hero/name';
 import ExperienceSection from '../components/ExperienceSection';
 
 export default function Home() {
@@ -40,12 +41,26 @@ export default function Home() {
 
   const loaderDone = useJourney((s) => s.loaderDone);
 
-  // Entrada do hero quando o ensō termina
+  // Entrada do hero quando o ensō termina; depois o nome cicla latino → katakana → kanji
   useGSAP(() => {
     if (!loaderDone) return;
-    gsap.from('.hero-title span', { opacity: 0, duration: 0.3, stagger: 0.08 });
-    gsap.from('.hero-scroll', { opacity: 0, delay: 1, duration: 0.5 });
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    gsap.from('.hero-name', { opacity: 0, y: 12, duration: reduced ? 0 : 0.8, ease: 'power2.out' });
+    gsap.from('.hero-scroll', { opacity: 0, delay: reduced ? 0 : 1, duration: reduced ? 0 : 0.5 });
+    if (reduced) return;
+
     gsap.to('.hero-scroll-arrow', { keyframes: { y: [0, 10, 0], easeEach: 'sine.inOut' }, duration: 2, repeat: -1 });
+
+    const cycle = gsap.timeline({ repeat: -1, delay: NAME_HOLD_SECONDS });
+    buildNameSequence(profile).forEach((text) => {
+      cycle
+        .to('.hero-name', {
+          duration: NAME_SCRAMBLE_SECONDS,
+          scrambleText: { text, chars: SCRAMBLE_CHARS, speed: 0.5, revealDelay: 0.3 },
+        })
+        .to({}, { duration: NAME_HOLD_SECONDS });
+    });
   }, { scope: heroRef, dependencies: [loaderDone] });
 
   return (
@@ -54,9 +69,9 @@ export default function Home() {
       <Section id="hero" className="hero-section" ref={heroRef}>
         <div>
           <h1 className="hero-title">
-            {nameText.split("").map((char, index) => (
-              <span key={index}>{char}</span>
-            ))}
+            {/* Leitores de tela e SEO sempre recebem o nome latino */}
+            <span className="sr-only">{nameText}</span>
+            <span className="hero-name" aria-hidden="true">{nameText}</span>
           </h1>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '15px', marginTop: '20px' }}>
