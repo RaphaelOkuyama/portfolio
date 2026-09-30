@@ -1,10 +1,10 @@
 'use client';
-import { motion } from 'framer-motion';
+import Reveal from '../../components/Reveal';
 import Link from 'next/link';
 import { useSettings } from '../../context/SettingsContext';
-import { 
-  ArrowRight, Folder, Smartphone, Server, MonitorSmartphone, 
-  PlaySquare, Music, LayoutDashboard, Rocket, Target 
+import {
+  ArrowRight, Folder, Smartphone, Server, MonitorSmartphone,
+  PlaySquare, Music, LayoutDashboard, Rocket, Target, HeartPulse
 } from 'lucide-react';
 
 export default function Projects() {
@@ -12,6 +12,7 @@ export default function Projects() {
   const { projectsPage, projects } = currentData;
 
   const getProjectIcon = (slug) => {
+    if (slug.includes('imacardios')) return <HeartPulse size={32} />;
     if (slug.includes('fit-ai-frontend')) return <Smartphone size={32} />;
     if (slug.includes('fit-ai-api') || slug.includes('backend') || slug.includes('api')) return <Server size={32} />;
     if (slug.includes('totem')) return <MonitorSmartphone size={32} />;
@@ -20,31 +21,27 @@ export default function Projects() {
     if (slug.includes('kanban')) return <LayoutDashboard size={32} />;
     if (slug.includes('star-wars')) return <Rocket size={32} />;
     if (slug.includes('leadmagnet')) return <Target size={32} />;
-    return <Folder size={32} />; 
+    return <Folder size={32} />;
   };
 
   return (
     <div className="container" style={{ padding: '80px 24px' }}>
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        
+      <Reveal>
+
         <h1 className="responsive-title">{projectsPage.title}</h1>
         <p style={{ color: 'var(--text-secondary)', marginBottom: '50px', fontSize: '1.2rem' }}>
           {projectsPage.subtitle}
         </p>
 
-        <div className="projects-grid">
-          {projects.map((project, index) => (
-            <motion.div
+        <Reveal className="projects-grid" from={{ opacity: 0, x: -20 }} stagger={0.05}>
+          {projects.map((project) => (
+            <div
               key={project.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.05 }}
-              whileHover={{ x: 5, borderColor: 'var(--accent)' }}
-              className="project-card"
+              className="project-card hover-nudge"
             >
               <div className="project-info">
-                <div style={{ 
-                  background: 'rgba(59, 130, 246, 0.1)', padding: '15px', 
+                <div style={{
+                  background: 'rgba(59, 130, 246, 0.1)', padding: '15px',
                   borderRadius: '12px', color: 'var(--accent)',
                   flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center'
                 }}>
@@ -57,7 +54,7 @@ export default function Projects() {
                   <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '1rem' }}>
                     {project.shortDesc}
                   </p>
-                  
+
                   <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
                     {project.stack.slice(0, 3).map((tech, i) => (
                       <span key={i} style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', background: 'var(--bg-color)', padding: '2px 8px', borderRadius: '4px', border: '1px solid var(--border)' }}>
@@ -69,9 +66,8 @@ export default function Projects() {
               </div>
 
               <Link href={`/projects/${project.slug}`} style={{ textDecoration: 'none', width: 'fit-content' }}>
-                <motion.button
-                  whileHover={{ scale: 1.05, backgroundColor: 'var(--accent)', color: '#fff' }}
-                  whileTap={{ scale: 0.95 }}
+                <button
+                  className="btn-fill"
                   style={{
                     padding: '12px 24px',
                     background: 'transparent',
@@ -84,19 +80,18 @@ export default function Projects() {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '10px',
-                    transition: '0.3s',
                     whiteSpace: 'nowrap'
                   }}
                 >
                   {projectsPage.btnDetails} <ArrowRight size={18} />
-                </motion.button>
+                </button>
               </Link>
 
-            </motion.div>
+            </div>
           ))}
-        </div>
+        </Reveal>
 
-      </motion.div>
+      </Reveal>
     </div>
   );
 }

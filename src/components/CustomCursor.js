@@ -1,15 +1,10 @@
 'use client';
-import { useEffect, useState } from 'react';
-import { motion, useMotionValue, useSpring } from 'framer-motion';
+import { useEffect, useRef, useState } from 'react';
+import { gsap } from '../lib/gsap';
 
 export default function CustomCursor() {
-  const cursorX = useMotionValue(-100);
-  const cursorY = useMotionValue(-100);
-  
-  const springConfig = { damping: 25, stiffness: 300, mass: 0.5 }; 
-  
-  const cursorXSpring = useSpring(cursorX, springConfig);
-  const cursorYSpring = useSpring(cursorY, springConfig);
+  const dotRef = useRef(null);
+  const ringRef = useRef(null);
 
   const [isHovering, setIsHovering] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
@@ -28,22 +23,32 @@ export default function CustomCursor() {
   useEffect(() => {
     if (!isDesktop) return;
 
+    gsap.set([dotRef.current, ringRef.current], { xPercent: -50, yPercent: -50, x: -100, y: -100 });
+
+    // Ponto segue direto; anel segue com atraso (efeito mola)
+    const dotX = gsap.quickSetter(dotRef.current, 'x', 'px');
+    const dotY = gsap.quickSetter(dotRef.current, 'y', 'px');
+    const ringX = gsap.quickTo(ringRef.current, 'x', { duration: 0.35, ease: 'power3.out' });
+    const ringY = gsap.quickTo(ringRef.current, 'y', { duration: 0.35, ease: 'power3.out' });
+
     const moveCursor = (e) => {
-      cursorX.set(e.clientX);
-      cursorY.set(e.clientY);
+      dotX(e.clientX);
+      dotY(e.clientY);
+      ringX(e.clientX);
+      ringY(e.clientY);
     };
 
     const checkHover = (e) => {
       const target = e.target;
-      const isClickable = 
-        target.tagName === 'A' || 
-        target.tagName === 'BUTTON' || 
-        target.closest('a') || 
+      const isClickable =
+        target.tagName === 'A' ||
+        target.tagName === 'BUTTON' ||
+        target.closest('a') ||
         target.closest('button') ||
         target.type === 'submit' ||
         target.type === 'email' ||
         target.type === 'text';
-      
+
       setIsHovering(!!isClickable);
     };
 
@@ -55,40 +60,41 @@ export default function CustomCursor() {
       window.removeEventListener('mousemove', moveCursor);
       window.removeEventListener('mouseover', checkHover);
     };
-  }, [isDesktop, cursorX, cursorY]);
+  }, [isDesktop]);
+
+  useEffect(() => {
+    if (!isDesktop) return;
+    gsap.to(ringRef.current, {
+      scale: isHovering ? 1.8 : 1,
+      duration: 0.3,
+      ease: 'power2.out',
+    });
+  }, [isHovering, isDesktop]);
 
   if (!isDesktop) return null;
 
   return (
     <>
-      <motion.div
+      <div
+        ref={dotRef}
         style={{
-          x: cursorX,
-          y: cursorY,
           position: 'fixed', top: 0, left: 0,
           width: '8px', height: '8px',
           backgroundColor: 'var(--accent)',
           borderRadius: '50%',
           pointerEvents: 'none', zIndex: 9999,
-          translateX: '-50%', translateY: '-50%',
         }}
       />
-      
-      <motion.div
+
+      <div
+        ref={ringRef}
         style={{
-          x: cursorXSpring,
-          y: cursorYSpring,
           position: 'fixed', top: 0, left: 0,
           width: '30px', height: '30px',
-          border: '1px solid var(--text-secondary)',
+          border: `${isHovering ? 2 : 1}px solid ${isHovering ? 'var(--accent)' : 'var(--text-secondary)'}`,
           borderRadius: '50%',
           pointerEvents: 'none', zIndex: 9998,
-          translateX: '-50%', translateY: '-50%',
-        }}
-        animate={{
-          scale: isHovering ? 1.8 : 1, 
-          borderColor: isHovering ? 'var(--accent)' : 'var(--text-secondary)',
-          borderWidth: isHovering ? '2px' : '1px'
+          transition: 'border-color 0.3s, border-width 0.3s',
         }}
       />
     </>

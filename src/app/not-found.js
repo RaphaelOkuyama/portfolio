@@ -1,24 +1,31 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useRef } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { gsap, useGSAP } from '../lib/gsap';
 import { ArrowLeft, TerminalSquare } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
 
 export default function NotFound() {
   const { language } = useSettings();
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const rootRef = useRef(null);
 
-  useEffect(() => {
+  useGSAP(() => {
+    // Entrada
+    gsap.from('.nf-icon', { scale: 0, duration: 0.8, ease: 'back.out(2.5)' });
+    gsap.to('.nf-caret', { opacity: 0, duration: 0.4, ease: 'steps(1)', repeat: -1, yoyo: true });
+    gsap.from('.nf-fade', { opacity: 0, y: 20, duration: 0.5, stagger: 0.1, delay: 0.2, clearProps: 'transform,opacity' });
+
+    // "404" de fundo segue o mouse em sentido oposto
+    const moveX = gsap.quickTo('.nf-bg', 'x', { duration: 1.2, ease: 'power3.out' });
+    const moveY = gsap.quickTo('.nf-bg', 'y', { duration: 1.2, ease: 'power3.out' });
     const handleMouseMove = (e) => {
-      const x = (e.clientX / window.innerWidth) * 2 - 1;
-      const y = (e.clientY / window.innerHeight) * 2 - 1;
-      setMousePosition({ x, y });
+      moveX(((e.clientX / window.innerWidth) * 2 - 1) * -30);
+      moveY(((e.clientY / window.innerHeight) * 2 - 1) * -30);
     };
 
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
+  }, { scope: rootRef });
 
   const text = {
     pt: {
@@ -36,24 +43,20 @@ export default function NotFound() {
   const t = text[language] || text.pt;
 
   return (
-    <div style={{ 
-      minHeight: '85vh', 
-      display: 'flex', 
-      flexDirection: 'column', 
-      alignItems: 'center', 
+    <div ref={rootRef} style={{
+      minHeight: '85vh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
       justifyContent: 'center',
       textAlign: 'center',
       padding: '0 20px',
       position: 'relative',
       overflow: 'hidden'
     }}>
-      
-      <motion.div 
-        animate={{ 
-          x: mousePosition.x * -30, 
-          y: mousePosition.y * -30 
-        }}
-        transition={{ type: "spring", stiffness: 50, damping: 20 }}
+
+      <div
+        className="nf-bg"
         style={{
           position: 'absolute',
           fontSize: 'clamp(12rem, 35vw, 30rem)',
@@ -67,58 +70,49 @@ export default function NotFound() {
         }}
       >
         404
-      </motion.div>
+      </div>
 
-      <motion.div
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ type: "spring", bounce: 0.5, duration: 0.8 }}
+      <div
+        className="nf-icon"
         style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '20px' }}
       >
         <TerminalSquare size={56} color="var(--accent)" />
-        <motion.div 
-          animate={{ opacity: [1, 0, 1] }} 
-          transition={{ repeat: Infinity, duration: 0.8, ease: "linear" }}
+        <div
+          className="nf-caret"
           style={{ width: '25px', height: '6px', background: 'var(--accent)', marginTop: '20px' }}
         />
-      </motion.div>
+      </div>
 
-      <motion.h1 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
+      <h1
+        className="nf-fade"
         style={{ fontSize: 'clamp(2rem, 5vw, 3rem)', marginBottom: '15px', color: 'var(--text-primary)' }}
       >
         {t.subtitle}
-      </motion.h1>
+      </h1>
 
-      <motion.p 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
+      <p
+        className="nf-fade"
         style={{ color: 'var(--text-secondary)', maxWidth: '500px', fontSize: '1.1rem', lineHeight: 1.6, marginBottom: '40px' }}
       >
         {t.desc}
-      </motion.p>
+      </p>
 
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
+      <div className="nf-fade">
         <Link href="/" style={{ textDecoration: 'none' }}>
-          <motion.button
-            whileHover={{ scale: 1.05, boxShadow: "0px 0px 20px rgba(59, 130, 246, 0.4)" }}
-            whileTap={{ scale: 0.95 }}
+          <button
+            className="glow-btn"
             style={{
               display: 'flex', alignItems: 'center', gap: '10px',
               padding: '14px 30px', borderRadius: '50px',
               border: '1px solid var(--accent)', background: 'rgba(59, 130, 246, 0.1)',
               color: 'var(--accent)', cursor: 'pointer',
-              fontWeight: 'bold', fontSize: '1rem',
-              transition: '0.3s'
+              fontWeight: 'bold', fontSize: '1rem'
             }}
           >
             <ArrowLeft size={20} /> {t.btn}
-          </motion.button>
+          </button>
         </Link>
-      </motion.div>
+      </div>
     </div>
   );
 }

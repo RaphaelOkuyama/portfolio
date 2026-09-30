@@ -1,6 +1,6 @@
 'use client';
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useRef } from 'react';
+import { gsap, useGSAP } from '../lib/gsap';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 /**
@@ -23,20 +23,30 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
  */
 export default function ProjectImageCarousel({ images = [], isMobile = false }) {
   const [current, setCurrent] = useState(0);
-  const [direction, setDirection] = useState(1);
+  const imgRef = useRef(null);
+  const busy = useRef(false);
+
+  // Sai para um lado, troca a imagem, entra pelo outro
+  const { contextSafe } = useGSAP();
+  const goTo = contextSafe((next, dir) => {
+    if (busy.current || next === current || !imgRef.current) return;
+    busy.current = true;
+    const duration = isMobile ? 0.25 : 0.3;
+    gsap.to(imgRef.current, {
+      x: dir > 0 ? -80 : 80, opacity: 0, duration: duration / 2, ease: 'power1.in',
+      onComplete: () => {
+        setCurrent(next);
+        gsap.fromTo(imgRef.current, { x: dir > 0 ? 80 : -80, opacity: 0 }, {
+          x: 0, opacity: 1, duration: duration / 2, ease: 'power1.out',
+          onComplete: () => { busy.current = false; },
+        });
+      },
+    });
+  });
 
   if (!images || images.length === 0) return null;
 
-  const go = (dir) => {
-    setDirection(dir);
-    setCurrent((prev) => (prev + dir + images.length) % images.length);
-  };
-
-  const variants = {
-    enter: (dir) => ({ x: dir > 0 ? 80 : -80, opacity: 0 }),
-    center: { x: 0, opacity: 1 },
-    exit: (dir) => ({ x: dir > 0 ? -80 : 80, opacity: 0 }),
-  };
+  const go = (dir) => goTo((current + dir + images.length) % images.length, dir);
 
   // Layout mobile (portrait screenshots) — exibe como mockup de celular
   if (isMobile) {
@@ -70,17 +80,10 @@ export default function ProjectImageCarousel({ images = [], isMobile = false }) 
               background: '#000',
               position: 'relative',
             }}>
-              <AnimatePresence custom={direction} mode="wait">
-                <motion.img
-                  key={current}
+                <img
+                  ref={imgRef}
                   src={images[current].src}
                   alt={images[current].alt || `Tela ${current + 1}`}
-                  custom={direction}
-                  variants={variants}
-                  initial="enter"
-                  animate="center"
-                  exit="exit"
-                  transition={{ duration: 0.25, ease: 'easeInOut' }}
                   style={{
                     width: '100%',
                     height: '100%',
@@ -89,7 +92,6 @@ export default function ProjectImageCarousel({ images = [], isMobile = false }) 
                     display: 'block',
                   }}
                 />
-              </AnimatePresence>
             </div>
           </div>
 
@@ -143,7 +145,7 @@ export default function ProjectImageCarousel({ images = [], isMobile = false }) 
             {images.map((_, i) => (
               <button
                 key={i}
-                onClick={() => { setDirection(i > current ? 1 : -1); setCurrent(i); }}
+                onClick={() => goTo(i, i > current ? 1 : -1)}
                 style={{
                   width: i === current ? '20px' : '8px',
                   height: '8px',
@@ -165,20 +167,12 @@ export default function ProjectImageCarousel({ images = [], isMobile = false }) 
   // Layout desktop (landscape screenshots) — carrossel normal 16/9
   return (
     <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', borderRadius: '20px', overflow: 'hidden', border: '1px solid var(--border)', marginBottom: '50px', background: 'var(--card-bg)' }}>
-      <AnimatePresence custom={direction} mode="wait">
-        <motion.img
-          key={current}
-          src={images[current].src}
-          alt={images[current].alt || `Screenshot ${current + 1}`}
-          custom={direction}
-          variants={variants}
-          initial="enter"
-          animate="center"
-          exit="exit"
-          transition={{ duration: 0.3, ease: 'easeInOut' }}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', top: 0, left: 0 }}
-        />
-      </AnimatePresence>
+      <img
+        ref={imgRef}
+        src={images[current].src}
+        alt={images[current].alt || `Screenshot ${current + 1}`}
+        style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', top: 0, left: 0 }}
+      />
 
       {images.length > 1 && (
         <>
@@ -190,7 +184,7 @@ export default function ProjectImageCarousel({ images = [], isMobile = false }) 
           </button>
           <div style={{ position: 'absolute', bottom: '12px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '6px' }}>
             {images.map((_, i) => (
-              <button key={i} onClick={() => { setDirection(i > current ? 1 : -1); setCurrent(i); }}
+              <button key={i} onClick={() => goTo(i, i > current ? 1 : -1)}
                 style={{ width: i === current ? '20px' : '8px', height: '8px', borderRadius: '4px', background: i === current ? 'var(--accent)' : 'rgba(255,255,255,0.5)', border: 'none', cursor: 'pointer', transition: 'all 0.3s', padding: 0 }}
               />
             ))}

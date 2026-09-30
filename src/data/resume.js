@@ -9,56 +9,65 @@ const TOTEM_IMGS = [
   { src: '/projects/totem/tela-03.png', alt: 'Detalhes do produto' },
 ];
 
+// Nome em latim e em japonês (kanji e katakana) — usado no hero
+export const profile = {
+  name: 'Raphael Nobuyuki Haga Okuyama',
+  nameKanji: 'ラファエル 信幸 芳賀 奥山',
+  nameKatakana: 'ラファエル ノブユキ ハガ オクヤマ',
+};
+
 export const resumeData = {
   pt: {
     nav: { home: "Home", projects: "Projetos", certificates: "Certificados", contact: "Contato" },
     footer: { rights: "Todos os direitos reservados." },
-    hero: { 
-      roles: ['Desenvolvedor Full-Stack', 'Análise de Dados', 'Automação'], 
-      location: 'Mairinque/SP', 
+    hero: {
+      roles: ['Desenvolvedor Full-Stack', 'APIs & Arquitetura Limpa', 'Integrações & IA'],
+      location: 'Itaquera/SP',
       scroll: 'Role para explorar',
-      summary: 'Transformando problemas complexos em soluções digitais elegantes e eficientes.'
+      summary: 'Produto comercial em produção, código limpo e seguro do banco à interface.'
     },
     about: {
       title: 'Sobre Mim',
-      desc: 'Sou Raphael Nobuyuki Haga Okuyama, estudante do 9º semestre de Engenharia de Computação na FACENS. Atuo como Desenvolvedor de Software Full-Stack, unindo minha base em engenharia com a paixão por construir soluções digitais escaláveis. Atualmente, estou me aprofundando no ecossistema Python, Análise de Dados e Automação, buscando expandir minhas capacidades para desenvolver aplicações mais inteligentes e orientadas a dados.',
+      desc: 'Sou Raphael Nobuyuki Haga Okuyama, Desenvolvedor Full-Stack júnior com produto comercial em produção e 3 anos de experiência em TI, cursando o 9º semestre de Engenharia de Computação na FACENS. Minha stack principal é React, Next.js, Node.js, NestJS e TypeScript, com REST APIs, bancos SQL, autenticação JWT/OAuth e arquitetura limpa (Clean Code, SOLID). Tenho experiência com integração de pagamentos (Stripe), IA generativa (Gemini) e boas práticas de segurança e LGPD.',
       skillsTitle: 'Habilidades & Ferramentas',
       btnResume: 'Baixar Currículo'
     },
     techSection: {
       title: "Tecnologias & Ferramentas",
       categories: [
-        { name: "Linguagens", items: ["TypeScript", "JavaScript", "Python", "HTML5", "CSS3"] },
-        { name: "Front-end", items: ["React", "Next.js", "Tailwind CSS", "Shadcn/ui", "Radix UI", "Framer Motion"] },
-        { name: "Back-end", items: ["Node.js", "Express", "Fastify", "RESTful APIs"] },
-        { name: "Bancos de Dados & ORM", items: ["PostgreSQL", "MySQL", "MongoDB", "Prisma ORM", "Drizzle ORM"] },
-        { name: "DevOps & Deploy", items: ["Docker", "Git/GitHub", "CI/CD (Actions)", "Vercel", "Render"] },
-        { name: "Arquitetura & Qualidade", items: ["MVC", "SOLID", "Clean Code", "Zod", "ESLint", "Prettier", "JWT/OAuth"] },
-        { name: "Ferramentas & Metodologias", items: ["Scrum", "Kanban", "Figma", "UI/UX Design", "Prototipagem", "Electron.js"] }
+        { name: "Linguagens", items: ["TypeScript", "JavaScript", "Python", "SQL"] },
+        { name: "Front-end", items: ["React", "Next.js", "Tailwind CSS", "Shadcn/ui", "Vite", "GSAP"] },
+        { name: "Back-end", items: ["Node.js", "NestJS", "Express", "Fastify", "REST APIs", "Swagger/OpenAPI"] },
+        { name: "Bancos de Dados & ORM", items: ["PostgreSQL", "MySQL", "MongoDB", "Prisma ORM"] },
+        { name: "Pagamentos & Integrações", items: ["Stripe (Checkout e Webhooks)", "API Gemini (IA generativa)"] },
+        { name: "DevOps & Deploy", items: ["Docker", "Git", "GitHub Actions (CI/CD)", "Vercel", "ESLint", "Prettier"] },
+        { name: "Arquitetura & Qualidade", items: ["SOLID", "Clean Architecture", "MVC", "Multi-tenancy", "Zod"] },
+        { name: "Segurança & Testes", items: ["Argon2", "Helmet", "Rate limiting", "2FA/OTP", "RBAC", "JWT", "OAuth", "Jest", "Playwright", "Supertest"] },
+        { name: "Dados & Metodologias", items: ["Power BI", "Pandas", "Scrum", "Kanban", "Figma"] }
       ]
     },
     experienceTitle: "Experiência Profissional",
     experience: [
-      { 
-        id: 1, 
-        year: 'Abr 2022 - Fev 2025', 
-        role: 'Técnico de TI', 
-        company: 'Supermercado Mairinque', 
-        desc: 'Garantia de alta disponibilidade prestando suporte para 40+ PDVs e self-checkouts em ambiente de alto volume. Criei relatórios de análise de dados no Power BI/Excel para correção de cadastros no ERP (VR Software). Atuação na administração de servidores e manutenção de infraestrutura.' 
+      {
+        id: 1,
+        year: 'Abr 2022 - Fev 2025',
+        role: 'Técnico de TI e Analista de Dados',
+        company: 'Supermercado Mairinque',
+        desc: 'Garanti a disponibilidade de mais de 40 pontos de venda, self-checkouts, scanners e balanças por 3 anos sem interrupções críticas. Produzi relatórios e dashboards em Power BI e Excel, identificando inconsistências de cadastro no ERP VR Software.'
       },
-      { 
-        id: 2, 
-        year: 'Fev 2025 - Atual', 
-        role: 'Estágio de TI', 
-        company: 'Prefeitura de Mairinque', 
-        desc: 'Reduzi o volume de chamados de 60+ para <10 otimizando fluxos de suporte. Desenvolvi automações em Python para onboarding e imagens customizadas do Windows, agilizando drasticamente o setup de máquinas. Responsável também pela administração de servidores e infraestrutura de rede.' 
+      {
+        id: 2,
+        year: 'Fev 2025 - Atual',
+        role: 'Estagiário de Desenvolvimento de Software e TI',
+        company: 'Prefeitura de Mairinque',
+        desc: 'Automatizei a geração de contratos administrativos com script em Python, reduzindo o tempo do processo em ~70%. Reduzi os chamados de suporte no GLPI de mais de 60 para menos de 10 por mês (queda de 83%) ao reestruturar o atendimento técnico. Administro servidores, infraestrutura de rede e imagem customizada do Windows.'
       },
-      { 
-        id: 3, 
-        year: 'Atualmente', 
-        role: 'Programador Full-Stack', 
-        company: 'Disponível para Oportunidades', 
-        desc: 'Profissional focado em impacto e resultados, pronto para integrar equipes ágeis. Com sólida base acadêmica e portfólio prático, busco aplicar minha experiência em automação (Python), dados e desenvolvimento web (React/Node) para criar soluções escaláveis.' 
+      {
+        id: 3,
+        year: 'Mai 2025 - Atual',
+        role: 'Desenvolvedor Full-Stack (Freelance)',
+        company: 'IMACARDIOS',
+        desc: 'Construí, em dupla, o full-stack de uma plataforma B2B de telecardiologia em produção, hoje com mais de 42 clínicas e mais de 2.000 laudos assinados por mês. Back-end em NestJS + Prisma/PostgreSQL, documentado com Swagger, coberto por testes e com 2FA obrigatório para médicos e administradores (LGPD).'
       }
     ],
     certificatesPage: { 
@@ -107,6 +116,15 @@ export const resumeData = {
       btnBack: "Voltar"
     },
     projects: [
+      {
+        id: 11, slug: 'imacardios', title: 'IMACARDIOS — Telemedicina e Telelaudos',
+        stack: ['Next.js', 'React', 'NestJS', 'TypeScript', 'Prisma', 'PostgreSQL', 'Swagger', 'Jest', 'Playwright', 'Supertest'],
+        shortDesc: 'Plataforma B2B de telecardiologia em produção: 42+ clínicas e 2.000+ laudos por mês.',
+        longDesc: 'Freelance remunerado, desenvolvido em dupla. A IMACARDIOS é uma plataforma B2B de telecardiologia em produção, atendendo redes de saúde no Brasil e na América Latina — hoje com mais de 42 clínicas e mais de 2.000 laudos assinados por mês.\n\nProjetei o isolamento de dados sensíveis (CPF e diagnóstico fora do banco principal) e o isolamento entre clínicas em duas camadas: na aplicação e nas regras do Postgres. O back-end em NestJS + Prisma/PostgreSQL é documentado com Swagger e coberto por testes.',
+        features: ['Plataforma multi-tenant com isolamento entre clínicas em duas camadas', 'Dados sensíveis (CPF e diagnóstico) fora do banco principal', '2FA obrigatório para médicos e administradores (LGPD)', 'Back-end em NestJS + Prisma/PostgreSQL', 'API documentada com Swagger/OpenAPI', 'Testes com Jest, Playwright e Supertest', 'Em produção no Brasil e na América Latina'],
+        repoLink: null, deployLink: 'https://app.imacardios.com',
+        images: [], imageMobile: false, image: null
+      },
       {
         id: 1, slug: 'fit-ai-frontend', title: 'FIT.AI — App de Treinos',
         stack: ['Next.js 16', 'React 19', 'TypeScript', 'Tailwind CSS v4', 'shadcn/ui', 'Google Gemini', 'Better Auth', 'Orval'],
@@ -205,52 +223,54 @@ export const resumeData = {
   en: {
     nav: { home: "Home", projects: "Projects", certificates: "Certificates", contact: "Contact" },
     footer: { rights: "All rights reserved." },
-    hero: { 
-      roles: ['Full-Stack Developer', 'Data Analysis', 'Automation'], 
-      location: 'Mairinque/SP', 
+    hero: {
+      roles: ['Full-Stack Developer', 'APIs & Clean Architecture', 'Integrations & AI'],
+      location: 'Itaquera/SP',
       scroll: 'Scroll to explore',
-      summary: 'Transforming complex problems into elegant and efficient digital solutions.'
+      summary: 'A commercial product in production, clean and secure code from database to interface.'
     },
     about: {
       title: 'About Me',
-      desc: 'I am Raphael Nobuyuki Haga Okuyama, a 9th-semester Computer Engineering student at FACENS. I work as a Full-Stack Software Developer, combining my engineering background with a passion for building scalable digital solutions. Currently, I am deepening my knowledge in the Python ecosystem, Data Analysis, and Automation, seeking to expand my capabilities to develop smarter, data-driven applications.',
+      desc: 'I am Raphael Nobuyuki Haga Okuyama, a junior Full-Stack Developer with a commercial product in production and 3 years of IT experience, currently in the 9th semester of Computer Engineering at FACENS. My main stack is React, Next.js, Node.js, NestJS and TypeScript, with REST APIs, SQL databases, JWT/OAuth authentication and clean architecture (Clean Code, SOLID). I have experience with payment integration (Stripe), generative AI (Gemini) and security and LGPD (Brazilian data protection law) best practices.',
       skillsTitle: 'Skills & Tools',
       btnResume: 'Download CV'
     },
     techSection: {
       title: "Technologies & Tools",
       categories: [
-        { name: "Languages", items: ["TypeScript", "JavaScript", "Python", "HTML5", "CSS3"] },
-        { name: "Front-end", items: ["React", "Next.js", "Tailwind CSS", "Shadcn/ui", "Radix UI", "Framer Motion"] },
-        { name: "Back-end", items: ["Node.js", "Express", "Fastify", "RESTful APIs"] },
-        { name: "Databases & ORM", items: ["PostgreSQL", "MySQL", "MongoDB", "Prisma ORM", "Drizzle ORM"] },
-        { name: "DevOps & Deploy", items: ["Docker", "Git/GitHub", "CI/CD (Actions)", "Vercel", "Render"] },
-        { name: "Architecture & Quality", items: ["MVC", "SOLID", "Clean Code", "Zod", "ESLint", "Prettier", "JWT/OAuth"] },
-        { name: "Tools & Methodologies", items: ["Scrum", "Kanban", "Figma", "UI/UX Design", "Prototyping", "Electron.js"] }
+        { name: "Languages", items: ["TypeScript", "JavaScript", "Python", "SQL"] },
+        { name: "Front-end", items: ["React", "Next.js", "Tailwind CSS", "Shadcn/ui", "Vite", "GSAP"] },
+        { name: "Back-end", items: ["Node.js", "NestJS", "Express", "Fastify", "REST APIs", "Swagger/OpenAPI"] },
+        { name: "Databases & ORM", items: ["PostgreSQL", "MySQL", "MongoDB", "Prisma ORM"] },
+        { name: "Payments & Integrations", items: ["Stripe (Checkout & Webhooks)", "Gemini API (generative AI)"] },
+        { name: "DevOps & Deploy", items: ["Docker", "Git", "GitHub Actions (CI/CD)", "Vercel", "ESLint", "Prettier"] },
+        { name: "Architecture & Quality", items: ["SOLID", "Clean Architecture", "MVC", "Multi-tenancy", "Zod"] },
+        { name: "Security & Testing", items: ["Argon2", "Helmet", "Rate limiting", "2FA/OTP", "RBAC", "JWT", "OAuth", "Jest", "Playwright", "Supertest"] },
+        { name: "Data & Methodologies", items: ["Power BI", "Pandas", "Scrum", "Kanban", "Figma"] }
       ]
     },
     experienceTitle: "Professional Experience",
     experience: [
-      { 
-        id: 1, 
-        year: 'Apr 2022 - Feb 2025', 
-        role: 'IT Technician', 
-        company: 'Mairinque Supermarket', 
-        desc: 'Ensured high availability by providing support for 40+ POS systems and self-checkouts in a high-volume environment. Created data analysis reports in Power BI/Excel to correct ERP (VR Software) records. Managed servers and maintained network infrastructure.' 
+      {
+        id: 1,
+        year: 'Apr 2022 - Feb 2025',
+        role: 'IT Technician & Data Analyst',
+        company: 'Mairinque Supermarket',
+        desc: 'Kept 40+ points of sale, self-checkouts, scanners and scales running for 3 years with no critical outages. Built Power BI and Excel reports and dashboards that surfaced product registration inconsistencies in the VR Software ERP.'
       },
-      { 
-        id: 2, 
-        year: 'Feb 2025 - Present', 
-        role: 'IT Intern', 
-        company: 'Mairinque City Hall', 
-        desc: 'Reduced IT support tickets from 60+ to <10 by optimizing workflows. Developed Python automation scripts for onboarding and custom Windows images, drastically speeding up machine setups. Also responsible for server and network infrastructure administration.' 
+      {
+        id: 2,
+        year: 'Feb 2025 - Present',
+        role: 'Software Development & IT Intern',
+        company: 'Mairinque City Hall',
+        desc: 'Automated administrative contract generation with a Python script, cutting process time by ~70%. Reduced GLPI support tickets from 60+ to under 10 per month (an 83% drop) by restructuring technical support. Manage servers, network infrastructure and a custom Windows image.'
       },
-      { 
-        id: 3, 
-        year: 'Currently', 
-        role: 'Full-Stack Programmer', 
-        company: 'Open to Opportunities', 
-        desc: 'Results-driven professional ready to join agile teams. With a solid academic foundation and a practical portfolio, I aim to apply my experience in automation (Python), data, and web development (React/Node) to build scalable solutions.' 
+      {
+        id: 3,
+        year: 'May 2025 - Present',
+        role: 'Full-Stack Developer (Freelance)',
+        company: 'IMACARDIOS',
+        desc: 'Co-built, in a team of two, the full stack of a B2B telecardiology platform in production, now serving 42+ clinics and 2,000+ signed reports per month. NestJS + Prisma/PostgreSQL back end, documented with Swagger, covered by tests and with mandatory 2FA for doctors and admins (LGPD).'
       }
     ],
     certificatesPage: { 
@@ -297,6 +317,15 @@ export const resumeData = {
       btnBack: "Back"
     },
     projects: [
+      {
+        id: 11, slug: 'imacardios', title: 'IMACARDIOS — Telemedicine & Remote Reports',
+        stack: ['Next.js', 'React', 'NestJS', 'TypeScript', 'Prisma', 'PostgreSQL', 'Swagger', 'Jest', 'Playwright', 'Supertest'],
+        shortDesc: 'B2B telecardiology platform in production: 42+ clinics and 2,000+ reports per month.',
+        longDesc: 'Paid freelance project, built in a team of two. IMACARDIOS is a B2B telecardiology platform in production, serving healthcare networks in Brazil and Latin America — now with 42+ clinics and 2,000+ signed reports per month.\n\nI designed the isolation of sensitive data (CPF and diagnosis kept outside the main database) and tenant isolation between clinics in two layers: in the application and in Postgres rules. The NestJS + Prisma/PostgreSQL back end is documented with Swagger and covered by tests.',
+        features: ['Multi-tenant platform with two-layer clinic isolation', 'Sensitive data (CPF and diagnosis) kept outside the main database', 'Mandatory 2FA for doctors and admins (LGPD)', 'NestJS + Prisma/PostgreSQL back end', 'API documented with Swagger/OpenAPI', 'Tests with Jest, Playwright and Supertest', 'In production across Brazil and Latin America'],
+        repoLink: null, deployLink: 'https://app.imacardios.com',
+        images: [], imageMobile: false, image: null
+      },
       {
         id: 1, slug: 'fit-ai-frontend', title: 'FIT.AI — Workout App',
         stack: ['Next.js 16', 'React 19', 'TypeScript', 'Tailwind CSS v4', 'shadcn/ui', 'Google Gemini', 'Better Auth', 'Orval'],

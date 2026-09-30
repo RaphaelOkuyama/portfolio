@@ -1,14 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useRef } from 'react';
+import { gsap, useGSAP } from '../lib/gsap';
 import { useSettings } from '../context/SettingsContext';
 import { 
   Layout, Server, Code, Database, ChevronDown, 
-  Wrench, GitBranch, ShieldCheck, PenTool, Download 
+  GitBranch, ShieldCheck, Download, CreditCard, Boxes, BarChart3
 } from 'lucide-react';
+import { profile } from '../data/resume';
 import LoadingScreen from '../components/LoadingScreen';
 import ScrollReveal from '../components/ScrollReveal';
+import Reveal from '../components/Reveal';
 import ExperienceSection from '../components/ExperienceSection';
 
 export default function Home() {
@@ -19,17 +21,19 @@ export default function Home() {
   const about = currentData?.about || {};
   const experience = currentData?.experience || [];
   const techData = currentData?.techSection || { categories: [] };
-  const nameText = "Raphael Nobuyuki Haga Okuyama";
+  const nameText = profile.name;
 
-  // ÍCONES DAS 7 CATEGORIAS DE TECNOLOGIAS
+  // ÍCONES DAS 9 CATEGORIAS DE TECNOLOGIAS (mesma ordem do resume.js)
   const categoryIcons = [
-    <Code size={24} key="code" />,          
-    <Layout size={24} key="layout" />,      
-    <Server size={24} key="server" />,      
-    <Database size={24} key="db" />,        
-    <GitBranch size={24} key="git" />,      
-    <ShieldCheck size={24} key="arch" />,   
-    <PenTool size={24} key="tools" />       
+    <Code size={24} key="code" />,
+    <Layout size={24} key="layout" />,
+    <Server size={24} key="server" />,
+    <Database size={24} key="db" />,
+    <CreditCard size={24} key="payments" />,
+    <GitBranch size={24} key="devops" />,
+    <Boxes size={24} key="arch" />,
+    <ShieldCheck size={24} key="security" />,
+    <BarChart3 size={24} key="data" />
   ];
 
   useEffect(() => {
@@ -39,68 +43,61 @@ export default function Home() {
     }
   }, [isLoading]);
 
+  const heroRef = useRef(null);
+
+  // Nome letra a letra + indicador de scroll
+  useGSAP(() => {
+    if (isLoading) return;
+    gsap.from('.hero-title span', { opacity: 0, duration: 0.3, stagger: 0.08 });
+    gsap.from('.hero-scroll', { opacity: 0, delay: 1, duration: 0.5 });
+    gsap.to('.hero-scroll-arrow', { keyframes: { y: [0, 10, 0], easeEach: 'sine.inOut' }, duration: 2, repeat: -1 });
+  }, { scope: heroRef, dependencies: [isLoading] });
+
   if (isLoading) return <LoadingScreen onComplete={() => setIsLoading(false)} />;
 
   return (
     <div className="container">
       
-      <section className="hero-section">
+      <section className="hero-section" ref={heroRef}>
         <div>
-          <motion.h1 
-            className="hero-title"
-            initial="hidden" animate="visible"
-            variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
-          >
+          <h1 className="hero-title">
             {nameText.split("").map((char, index) => (
-              <motion.span key={index} variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }}>
-                {char}
-              </motion.span>
+              <span key={index}>{char}</span>
             ))}
-          </motion.h1>
+          </h1>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '15px', marginTop: '20px' }}>
             {hero.roles && hero.roles.map((role, index) => (
-              <motion.div
+              <div
                 key={index}
-                initial="blur"
-                whileHover="focus" 
-                whileTap="focus"   
+                className="role-chip"
                 style={{ position: 'relative', padding: '8px 16px', cursor: 'default' }}
               >
-                <motion.p 
-                  variants={{
-                    blur: { filter: 'blur(5px)', opacity: 0.6, scale: 1 },
-                    focus: { filter: 'blur(0px)', opacity: 1, scale: 1.05 }
-                  }}
-                  transition={{ duration: 0.3 }}
+                <p
                   style={{ fontSize: 'clamp(1rem, 4vw, 1.5rem)', color: 'var(--accent)', fontWeight: 'bold', margin: 0 }}
                 >
                   {role}
-                </motion.p>
+                </p>
 
-                <motion.div variants={{ blur: { opacity: 0 }, focus: { opacity: 1 } }} transition={{ duration: 0.2 }}>
+                <div className="role-corners">
                   <span style={{ position: 'absolute', top: 0, left: 0, width: '8px', height: '8px', borderTop: '2px solid var(--accent)', borderLeft: '2px solid var(--accent)' }} />
                   <span style={{ position: 'absolute', top: 0, right: 0, width: '8px', height: '8px', borderTop: '2px solid var(--accent)', borderRight: '2px solid var(--accent)' }} />
                   <span style={{ position: 'absolute', bottom: 0, left: 0, width: '8px', height: '8px', borderBottom: '2px solid var(--accent)', borderLeft: '2px solid var(--accent)' }} />
                   <span style={{ position: 'absolute', bottom: 0, right: 0, width: '8px', height: '8px', borderBottom: '2px solid var(--accent)', borderRight: '2px solid var(--accent)' }} />
-                </motion.div>
-              </motion.div>
+                </div>
+              </div>
             ))}
           </div>
         </div>
 
-        <motion.div 
-          className="hero-scroll"
-          style={{ x: '-50%' }}
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }}
-        >
+        <div className="hero-scroll">
           <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '2px' }}>
             {hero.scroll}
           </span>
-          <motion.div animate={{ y: [0, 10, 0] }} transition={{ repeat: Infinity, duration: 2 }}>
+          <div className="hero-scroll-arrow">
             <ChevronDown size={24} />
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </section>
 
       <section style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', padding: '0 0 80px 0' }}>
@@ -111,32 +108,31 @@ export default function Home() {
               <h2 style={{ fontSize: '2.5rem', marginBottom: '30px', borderLeft: '5px solid var(--accent)', paddingLeft: '20px' }}>{about.title}</h2>
               <p style={{ fontSize: '1.1rem', lineHeight: 1.7, color: 'var(--text-secondary)', marginBottom: '30px' }}>{about.desc}</p>
               
-              <motion.a
+              <a
                 href="/curriculo.pdf" 
                 download="Raphael_Okuyama_CV.pdf"
-                whileHover={{ scale: 1.05, backgroundColor: 'var(--accent)', color: '#fff', borderColor: 'var(--accent)' }}
-                whileTap={{ scale: 0.95 }}
+                className="btn-fill"
                 style={{ 
                   display: 'inline-flex', alignItems: 'center', gap: '10px', 
                   padding: '12px 30px', borderRadius: '50px', 
                   border: '2px solid var(--text-secondary)', 
                   color: 'var(--text-primary)', textDecoration: 'none', 
-                  fontWeight: 'bold', cursor: 'pointer', transition: 'background-color 0.3s' 
+                  fontWeight: 'bold', cursor: 'pointer'
                 }}
               >
                 <Download size={20} />
                 {about.btnResume}
-              </motion.a>
+              </a>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <motion.div 
-                whileHover={{ scale: 1.05, rotate: 2 }}
+              <div
+                className="photo-tilt"
                 style={{ position: 'relative', width: '100%', maxWidth: '350px', height: 'auto', aspectRatio: '1/1', borderRadius: '20px', overflow: 'hidden', border: '2px solid var(--border)' }}
               >
                 <img src="/profile.jpg" alt="Raphael Okuyama" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                <motion.div style={{ position: 'absolute', inset: 0, background: 'var(--accent)', mixBlendMode: 'overlay', opacity: 0 }} whileHover={{ opacity: 0.2 }} />
-              </motion.div>
+                <div className="photo-overlay" style={{ position: 'absolute', inset: 0, background: 'var(--accent)', mixBlendMode: 'overlay' }} />
+              </div>
             </div>
           </div>
         </ScrollReveal>
@@ -145,12 +141,12 @@ export default function Home() {
       <section style={{ padding: '80px 0' }}>
         <ScrollReveal>
           <h2 style={{ fontSize: '2.5rem', marginBottom: '50px', borderLeft: '5px solid var(--accent)', paddingLeft: '20px' }}>{techData.title}</h2>
-          <div className="cards-grid">
+          <Reveal className="cards-grid" trigger="scroll" stagger={0.1} duration={0.5}>
             {techData.categories.map((cat, i) => (
-              <motion.div
-                key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
-                whileHover={{ y: -5, borderColor: 'var(--accent)' }}
-                style={{ background: 'var(--card-bg)', padding: '25px', borderRadius: '15px', border: '1px solid var(--border)', transition: '0.3s' }}
+              <div
+                key={i}
+                className="hover-lift"
+                style={{ background: 'var(--card-bg)', padding: '25px', borderRadius: '15px', border: '1px solid var(--border)' }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '20px', color: 'var(--accent)' }}>
                   {categoryIcons[i]}
@@ -163,9 +159,9 @@ export default function Home() {
                     </span>
                   ))}
                 </div>
-              </motion.div>
+              </div>
             ))}
-          </div>
+          </Reveal>
         </ScrollReveal>
       </section>
 

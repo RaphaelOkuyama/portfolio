@@ -1,8 +1,8 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useRef } from 'react';
+import { gsap, useGSAP } from '../lib/gsap';
 import { Sun, Moon, Globe, Menu, X, Github, Linkedin, Mail } from 'lucide-react'; // Importei os ícones sociais
 import { useSettings } from '../context/SettingsContext';
 
@@ -18,7 +18,23 @@ export default function Navbar() {
     { name: currentData.nav.contact, path: '/contact' },
   ];
 
-  const toggleMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
+  // Menu mobile: continua montado durante a animação de saída
+  const [isMenuMounted, setIsMenuMounted] = useState(false);
+  const menuRef = useRef(null);
+
+  const toggleMenu = () => {
+    if (!isMobileMenuOpen) setIsMenuMounted(true);
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  useGSAP(() => {
+    if (!isMenuMounted || !menuRef.current) return;
+    if (isMobileMenuOpen) {
+      gsap.fromTo(menuRef.current, { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' });
+    } else {
+      gsap.to(menuRef.current, { opacity: 0, y: -20, duration: 0.3, ease: 'power2.in', onComplete: () => setIsMenuMounted(false) });
+    }
+  }, { dependencies: [isMobileMenuOpen, isMenuMounted] });
 
   return (
     <>
@@ -36,7 +52,7 @@ export default function Navbar() {
                 <Link key={link.path} href={link.path} style={{ position: 'relative', color: pathname === link.path ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
                   {link.name}
                   {pathname === link.path && (
-                    <motion.div layoutId="underline" style={{ position: 'absolute', bottom: '-5px', left: 0, width: '100%', height: '2px', background: 'var(--accent)' }} />
+                    <div className="nav-underline" style={{ position: 'absolute', bottom: '-5px', left: 0, width: '100%', height: '2px', background: 'var(--accent)' }} />
                   )}
                 </Link>
               ))}
@@ -55,12 +71,9 @@ export default function Navbar() {
       </nav>
 
       {/* MOBILE MENU OVERLAY */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+      {isMenuMounted && (
+          <div
+            ref={menuRef}
             style={{
               position: 'fixed', top: 0, left: 0, width: '100%', height: '100vh',
               background: 'var(--bg-color)', zIndex: 49, paddingTop: '100px',
@@ -95,9 +108,8 @@ export default function Navbar() {
               <button onClick={toggleLanguage} style={{...btnStyle, transform: 'scale(1.2)'}}><Globe size={24} /> {language.toUpperCase()}</button>
               <button onClick={toggleTheme} style={{...btnStyle, transform: 'scale(1.2)'}}>{theme === 'dark' ? <Sun size={24} /> : <Moon size={24} />}</button>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+      )}
     </>
   );
 }

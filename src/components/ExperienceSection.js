@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useEffect, useState } from 'react';
-import { motion, useScroll, useSpring } from 'framer-motion';
+import { gsap, useGSAP } from '../lib/gsap';
 import ScrollReveal from './ScrollReveal';
 
 export default function ExperienceSection({ experience, title }) {
@@ -15,8 +15,23 @@ export default function ExperienceSection({ experience, title }) {
     return () => window.removeEventListener('resize', checkDevice);
   }, []);
   
-  const { scrollYProgress } = useScroll({ target: refExperience, offset: ["start center", "end center"] });
-  const scaleY = useSpring(scrollYProgress, { stiffness: 100, damping: 30, restDelta: 0.001 });
+  // Linha da timeline preenche conforme o scroll; itens entram pelos lados
+  useGSAP(() => {
+    gsap.fromTo('.timeline-progress', { scaleY: 0 }, {
+      scaleY: 1,
+      ease: 'none',
+      scrollTrigger: { trigger: refExperience.current, start: 'top center', end: 'bottom center', scrub: 0.5 },
+    });
+    gsap.utils.toArray('.exp-anim').forEach((el) => {
+      gsap.from(el, {
+        opacity: 0,
+        x: el.dataset.side === 'right' ? 20 : -20,
+        duration: 0.5,
+        clearProps: 'transform,opacity',
+        scrollTrigger: { trigger: el, start: 'top bottom', once: true },
+      });
+    });
+  }, { scope: refExperience, dependencies: [isDesktop, experience], revertOnUpdate: true });
 
   return (
     <section style={{ padding: '100px 0', paddingBottom: '150px' }} ref={refExperience}>
@@ -27,7 +42,7 @@ export default function ExperienceSection({ experience, title }) {
           
           {/* LINHA CENTRAL */}
           <div className="timeline-line" style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: '4px', background: 'var(--border)', transform: 'translateX(-50%)', borderRadius: '4px' }}>
-            <motion.div style={{ width: '100%', background: 'var(--accent)', transformOrigin: 'top', scaleY: scaleY, height: '100%' }} />
+            <div className="timeline-progress" style={{ width: '100%', background: 'var(--accent)', transformOrigin: 'top', height: '100%' }} />
           </div>
 
           <div className="experience-container">
@@ -39,7 +54,7 @@ export default function ExperienceSection({ experience, title }) {
                   
                   {/* ESQUERDA - Sempre alinhada à direita no desktop */}
                   <div className={`exp-col ${isDesktop ? 'exp-left' : ''}`} style={{ textAlign: isDesktop ? 'right' : 'left' }}>
-                    <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
+                    <div className="exp-anim" data-side="left">
                       {(!isDesktop || isEven) ? (
                         // PAR: INFO (Com padding extra para alinhar com o texto do card)
                         <div style={{ paddingRight: isDesktop ? '20px' : '0' }}> 
@@ -56,7 +71,7 @@ export default function ExperienceSection({ experience, title }) {
                           {exp.desc}
                         </p>
                       )}
-                    </motion.div>
+                    </div>
                   </div>
 
                   {/* PONTO CENTRAL */}
@@ -65,7 +80,7 @@ export default function ExperienceSection({ experience, title }) {
                   {/* DIREITA - Sempre alinhada à esquerda no desktop */}
                   {isDesktop && (
                     <div className="exp-col exp-right" style={{ textAlign: 'left' }}>
-                      <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
+                      <div className="exp-anim" data-side="right">
                         {isEven ? (
                           // PAR: CARD
                           <p style={{ fontSize: '1.1rem', lineHeight: 1.6, color: 'var(--text-secondary)', background: 'var(--card-bg)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)', textAlign: 'left' }}>
@@ -79,7 +94,7 @@ export default function ExperienceSection({ experience, title }) {
                             <span style={{ fontSize: '1rem', color: 'var(--text-secondary)', fontWeight: 'bold' }}>{exp.year}</span>
                           </div>
                         )}
-                      </motion.div>
+                      </div>
                     </div>
                   )}
 

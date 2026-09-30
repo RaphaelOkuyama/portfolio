@@ -1,6 +1,5 @@
 'use client';
 import { Github, Linkedin, Mail } from 'lucide-react';
-import { motion } from 'framer-motion';
 
 export default function SocialSidebar() {
   const iconStyle = {
@@ -13,7 +12,6 @@ export default function SocialSidebar() {
     background: 'var(--card-bg)',
     border: '1px solid var(--border)',
     color: 'var(--text-secondary)',
-    transition: '0.3s',
     cursor: 'pointer',
     textDecoration: 'none',
     boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
@@ -31,38 +29,38 @@ export default function SocialSidebar() {
       }}
     >
       {/* GitHub */}
-      <motion.a 
+      <a 
         href="https://github.com/RaphaelOkuyama" 
         target="_blank" 
         rel="noopener noreferrer"
-        whileHover={{ scale: 1.1, color: 'var(--accent)', borderColor: 'var(--accent)', y: -3 }}
+        className="icon-pop"
         style={iconStyle}
         title="GitHub"
       >
         <Github size={20} />
-      </motion.a>
+      </a>
 
       {/* LinkedIn */}
-      <motion.a 
+      <a 
         href="https://www.linkedin.com/in/raphael-okuyama/" 
         target="_blank"
         rel="noopener noreferrer"
-        whileHover={{ scale: 1.1, color: 'var(--accent)', borderColor: 'var(--accent)', y: -3 }}
+        className="icon-pop"
         style={iconStyle}
         title="LinkedIn"
       >
         <Linkedin size={20} />
-      </motion.a>
+      </a>
 
       {/* Email */}
-      <motion.a 
+      <a 
         href="mailto:raphaelokuyama123@gmail.com"
-        whileHover={{ scale: 1.1, color: 'var(--accent)', borderColor: 'var(--accent)', y: -3 }}
+        className="icon-pop"
         style={iconStyle}
         title="Email"
       >
         <Mail size={20} />
-      </motion.a>
+      </a>
       
       {/* Linha decorativa */}
       <div style={{ width: '1px', height: '60px', background: 'var(--border)', margin: '0 auto' }} />

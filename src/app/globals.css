@@ -249,3 +249,40 @@ a { text-decoration: none; color: inherit; }
     margin-top: 5px;
   }
 }
+/* --- MICROINTERAÇÕES (hover/tap) ---
+   Usam translate/scale/rotate individuais para não conflitar com transform inline.
+   !important nas cores porque os componentes definem estilos inline. */
+.hover-lift, .hover-nudge, .hover-back, .btn-fill, .btn-outline, .btn-press,
+.icon-pop, .glow-btn, .photo-tilt, .cert-card {
+  transition: translate 0.3s ease, scale 0.2s ease, rotate 0.3s ease,
+    color 0.3s, background-color 0.3s, border-color 0.3s, box-shadow 0.3s !important;
+}
+.hover-lift:hover { translate: 0 -5px; border-color: var(--accent) !important; }
+.cert-card:hover { translate: 0 -5px; border-color: var(--accent) !important; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.2); }
+.hover-nudge:hover { translate: 5px 0; border-color: var(--accent) !important; }
+.hover-back:hover { translate: -5px 0; color: var(--accent) !important; }
+.btn-fill:hover { scale: 1.05; background-color: var(--accent) !important; color: #fff !important; border-color: var(--accent) !important; }
+.btn-fill.subtle:hover { scale: 1.02; }
+.btn-outline:hover { scale: 1.05; border-color: var(--accent) !important; color: var(--accent) !important; }
+.btn-press:hover { scale: 1.02; }
+.btn-fill:active, .btn-outline:active, .glow-btn:active { scale: 0.95; }
+.btn-press:active, .btn-fill.subtle:active { scale: 0.98; }
+.icon-pop:hover { scale: 1.1; translate: 0 -3px; color: var(--accent) !important; border-color: var(--accent) !important; }
+.glow-btn:hover { scale: 1.05; box-shadow: 0 0 20px rgba(59, 130, 246, 0.4); }
+.photo-tilt:hover { scale: 1.05; rotate: 2deg; }
+.photo-tilt .photo-overlay { opacity: 0; transition: opacity 0.3s; }
+.photo-tilt:hover .photo-overlay { opacity: 0.2; }
+
+/* Chips de cargo do hero: desfocados até hover/toque */
+.role-chip p { filter: blur(5px); opacity: 0.6; transition: filter 0.3s, opacity 0.3s, scale 0.3s; }
+.role-chip .role-corners { opacity: 0; transition: opacity 0.2s; }
+.role-chip:hover p, .role-chip:active p { filter: blur(0); opacity: 1; scale: 1.05; }
+.role-chip:hover .role-corners, .role-chip:active .role-corners { opacity: 1; }
+
+/* Indicador ativo da navbar */
+.nav-underline { transform-origin: left; animation: nav-underline-in 0.3s ease-out; }
+@keyframes nav-underline-in { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
