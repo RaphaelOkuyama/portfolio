@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { THEMES, SEASONS, normalizeTheme } from '../../src/lib/palette';
+import { THEMES, SEASONS, SCENE_ACCENTS, normalizeTheme } from '../../src/lib/palette';
 
 const HEX = /^#[0-9a-f]{6}$/;
 const css = readFileSync(new URL('../../src/app/globals.css', import.meta.url), 'utf8');
@@ -85,5 +85,14 @@ describe('normalizeTheme', () => {
     ['qualquer', 'night'],
   ])('%s → %s', (input, expected) => {
     expect(normalizeTheme(input)).toBe(expected);
+  });
+});
+
+describe('SCENE_ACCENTS', () => {
+  it('os dois temas têm pétala, torii, topo do torii e astro em hex', () => {
+    for (const theme of ['night', 'day']) {
+      expect(Object.keys(SCENE_ACCENTS[theme]).sort()).toEqual(['celestial', 'petal', 'torii', 'toriiTop']);
+      Object.values(SCENE_ACCENTS[theme]).forEach((c) => expect(c).toMatch(HEX));
+    }
   });
 });

@@ -6,6 +6,7 @@ import { journeyStore, useJourney } from '../../store/journey';
 import { QUALITY_SETTINGS } from '../../lib/journey/quality';
 import { CAMERA_PATH } from './config';
 import World from './World';
+import { trackPointer } from '../../lib/pointer';
 
 // FPS abaixo de 45 durante a amostra (~2,5s) rebaixa a qualidade
 const FPS_BOUNDS = () => [45, 1000];
@@ -20,6 +21,8 @@ export default function Canvas3D() {
     document.addEventListener('visibilitychange', onVisibility);
     return () => document.removeEventListener('visibilitychange', onVisibility);
   }, []);
+
+  useEffect(() => trackPointer(), []);
 
   const settings = QUALITY_SETTINGS[quality];
   const frameloop = hidden ? 'never' : route === 'frozen' ? 'demand' : 'always';
