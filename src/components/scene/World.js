@@ -8,7 +8,6 @@ import MountainLayers from './MountainLayers';
 import Petals from './Petals';
 import Torii from './Torii';
 import Celestial from './Celestial';
-import SenbonTorii from './SenbonTorii';
 import ZenGarden from './ZenGarden';
 import Momiji from './Momiji';
 import Snow from './Snow';
@@ -43,7 +42,6 @@ export default function World() {
       <Celestial />
       <MountainLayers />
       <Torii />
-      <SenbonTorii />
       <ZenGarden />
       <Momiji />
       <Snow />

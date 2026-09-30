@@ -1,6 +1,8 @@
 // Caminho da câmera: desce e avança para dentro da montanha (z negativo).
 // Passa pelos vales das camadas (x ≈ 0).
 export const CAMERA_PATH = [
+  // Começa mais atrás: no hero o torii fica à distância, pequeno contra as montanhas
+  [0, 8.5, 38],
   [0, 7, 24],
   [0, 5.5, 8],
   [-1.5, 4.2, -8],
@@ -28,33 +30,27 @@ export const MOUNTAIN_LAYERS = Array.from({ length: 9 }, (_, i) => ({
   bottom: -30,
 }));
 
-// Torii em primeiro plano: a câmera passa por baixo do nuki no começo da jornada
-// (em z = 14 a câmera está em y ≈ 6; o nuki fica em y = -1 + 8 = 7)
+// Torii do hero: fica no ponto do caminho em que o "Sobre" começa, então a câmera
+// passa por baixo dele exatamente quando a seção entra. A base fica `baseDrop` abaixo
+// da câmera (o nuki passa ~1 acima dela)
 export const TORII = {
-  position: [0, -1, 14],
   pillarHeight: 10,
   pillarRadius: 0.35,
   span: 7,
   kasagiY: 9.6,
   nukiY: 8.0,
+  baseDrop: 7,
+  // Distância do portão ao início do caminho: no hero ele fica ao fundo, igual em qualquer tela
+  toriiDistance: 26,
+  // Momento da travessia dentro da faixa do "Sobre" (0 = começo, 1 = fim)
+  anchor: 0.35,
+  // Faixa padrão do "Sobre" até a seção medir a posição real
+  fallbackRange: [0.1, 0.26],
 };
 
 // Sol (昼) / lua (夜) no céu, visível do começo do caminho
 export const CELESTIAL = { position: [-14, 22, -90], radius: 4 };
 
-// Senbon torii (千本鳥居): portões menores enfileirados no caminho da câmera durante o "Sobre".
-// A base fica `baseDrop` abaixo da câmera: o nuki passa ~0,8 acima dela.
-export const SENBON = {
-  count: { high: 12, low: 6 },
-  pillarHeight: 5.2,
-  pillarRadius: 0.2,
-  span: 3.6,
-  kasagiY: 4.9,
-  nukiY: 4.1,
-  baseDrop: 3.3,
-  // Faixa padrão (fração do progresso) até a seção medir a posição real
-  fallbackRange: [0.13, 0.29],
-};
 
 // Jardim zen (枯山水) visto de cima durante o "Stack": areia rastelada + 9 pedras
 export const GARDEN = {

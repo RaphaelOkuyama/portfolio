@@ -70,23 +70,22 @@ export default function EmakiProjects({ projects, labels }) {
       });
       scrollTweenRef.current = scrollTween;
 
-      // Cada painel desenrola ao entrar pela direita
+      // O conteúdo de cada painel surge ao entrar pela direita (tinta assentando no papel).
+      // Sem clip-path: o painel nunca aparece cortado, e o último termina aberto no fim do rolo
       gsap.utils.toArray('.emaki-panel', track).forEach((panel) => {
-        gsap.fromTo(
-          panel,
-          { clipPath: 'inset(0 100% 0 0)' },
-          {
-            clipPath: 'inset(0 0% 0 0)',
-            ease: 'none',
-            scrollTrigger: {
-              trigger: panel,
-              containerAnimation: scrollTween,
-              start: 'left 95%',
-              end: 'left 60%',
-              scrub: true,
-            },
+        gsap.from(panel.children, {
+          opacity: 0,
+          x: 36,
+          stagger: 0.05,
+          ease: 'power2.out',
+          scrollTrigger: {
+            trigger: panel,
+            containerAnimation: scrollTween,
+            start: 'left 100%',
+            end: 'left 72%',
+            scrub: true,
           },
-        );
+        });
       });
 
       return () => {
@@ -143,7 +142,11 @@ export default function EmakiProjects({ projects, labels }) {
             <span className="section-kanji font-jp" aria-hidden="true">作</span>
             {labels.title}
           </h2>
-          <p className="zen-hint">{labels.hint}</p>
+          {/* No celular o rolo é arrastado, não rolado */}
+          <p className="zen-hint">
+            <span className="emaki-hint-scroll">{labels.hint}</span>
+            <span className="emaki-hint-drag">{labels.hintDrag}</span>
+          </p>
         </header>
 
         <div ref={viewportRef} className="emaki-viewport">

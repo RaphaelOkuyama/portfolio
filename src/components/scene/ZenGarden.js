@@ -10,7 +10,7 @@ import { SCENE_ACCENTS, THEMES } from '../../lib/palette';
 import { QUALITY_SETTINGS } from '../../lib/journey/quality';
 import { bandOpacity } from '../../lib/journey/math';
 import { pointer } from '../../lib/pointer';
-import { createCameraCurve } from './cameraCurve';
+import { getCameraCurve, useCameraMap } from './useCameraMap';
 import { GARDEN } from './config';
 import Fireflies from './Fireflies';
 
@@ -75,15 +75,16 @@ export default function ZenGarden() {
   const quality = useJourney((s) => s.quality);
   const range = useJourney((s) => s.sectionRanges.stack) ?? GARDEN.fallbackRange;
   const [start, end] = range;
-  const curve = useMemo(() => createCameraCurve(), []);
+  const curve = getCameraCurve();
+  const { toCurve } = useCameraMap();
   const groupRef = useRef(null);
   const stoneRefs = useRef([]);
 
   // Âncora do jardim: ponto da curva dentro da faixa do Stack, abaixo da câmera
   const anchor = useMemo(() => {
-    const point = curve.getPointAt(start + (end - start) * GARDEN.anchor);
+    const point = curve.getPointAt(toCurve(start + (end - start) * GARDEN.anchor));
     return [point.x, point.y - GARDEN.groundDrop, point.z];
-  }, [curve, start, end]);
+  }, [curve, start, end, toCurve]);
 
   const sandDisplacement = QUALITY_SETTINGS[quality]?.sandDisplacement ?? false;
   const [segX, segZ] = GARDEN.segments[sandDisplacement ? 'high' : 'low'];

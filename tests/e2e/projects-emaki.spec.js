@@ -41,13 +41,14 @@ test('o scroll vertical desenrola o rolo na horizontal com a seção fixada', as
   expect(Math.abs(headerLater.y - headerStart.y)).toBeLessThan(4);
 });
 
-test('os painéis se desenrolam ao entrar e o último fica aberto no fim', async ({ page }) => {
+test('o conteúdo dos painéis surge ao entrar e o último fica completo no fim', async ({ page }) => {
   await openHome(page);
   await scrollProjects(page, 1);
   const last = page.locator('.emaki-panel').last();
+  // Nenhum filho do último painel fica apagado quando o rolo chega ao fim
   await expect
-    .poll(() => last.evaluate((el) => getComputedStyle(el).clipPath), { timeout: 5_000 })
-    .not.toContain('100%');
+    .poll(() => last.evaluate((el) => Math.min(...[...el.children].map((c) => Number(getComputedStyle(c).opacity)))), { timeout: 5_000 })
+    .toBeGreaterThan(0.95);
 });
 
 test('focar um painel fora da tela rola o rolo até ele', async ({ page }) => {

@@ -4,13 +4,14 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { Vector3 } from 'three';
 import { journeyStore, effectiveProgress } from '../../store/journey';
 import { clamp01 } from '../../lib/journey/season';
-import { createCameraCurve } from './cameraCurve';
+import { currentCameraMap, getCameraCurve } from './useCameraMap';
+import { cameraT } from '../../lib/journey/cameraMap';
 import { CAMERA_FLIGHT } from './config';
 import { power2InOut, responsiveFov } from '../../lib/journey/math';
 
 // Câmera percorre a curva conforme o progresso (amortecido; imediato em reduced motion)
 export default function JourneyCamera() {
-  const curve = useMemo(() => createCameraCurve(), []);
+  const curve = getCameraCurve();
   const current = useRef(null);
   const position = useMemo(() => new Vector3(), []);
   const tangent = useMemo(() => new Vector3(), []);
@@ -51,7 +52,8 @@ export default function JourneyCamera() {
       current.current += (target - current.current) * k;
     }
 
-    const t = clamp01(current.current);
+    // Progresso → posição na curva (acelera até o torii, ver cameraMap.js)
+    const t = cameraT(clamp01(current.current), currentCameraMap(journey));
     curve.getPointAt(t, position);
     curve.getTangentAt(t, tangent);
     state.camera.position.copy(position);

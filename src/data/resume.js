@@ -106,6 +106,7 @@ export const resumeData = {
     projectsPage: { 
       title: "Meus Projetos", 
       hint: "Role para desenrolar o emakimono — cada painel é um projeto.",
+      hintDrag: "Arraste o emakimono para o lado — cada painel é um projeto.",
       btnAll: "Ver todos os projetos",
       subtitle: "Destaque de alguns projetos desenvolvidos. Para explorar mais repositórios, visite meu perfil no GitHub.",
       btnDetails: "Ver Detalhes",
@@ -317,6 +318,7 @@ export const resumeData = {
     projectsPage: { 
       title: "My Projects", 
       hint: "Scroll to unroll the emakimono — each panel is a project.",
+      hintDrag: "Drag the emakimono sideways — each panel is a project.",
       btnAll: "See all projects",
       subtitle: "Highlight of some developed projects. To explore more repositories, visit my GitHub profile.",
       btnDetails: "View Details",
