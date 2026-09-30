@@ -51,7 +51,7 @@ test('baixar o currículo carimba o hanko e mantém o download', async ({ page }
 
 test('trocar o idioma refaz a divisão em linhas', async ({ page }) => {
   await openHome(page);
-  await page.getByRole('button', { name: /PT/ }).first().click();
+  await page.getByRole('button', { name: 'Mudar idioma para inglês' }).first().click();
   await expect(page.locator('.about-text')).toContainText('I am Raphael Nobuyuki Haga Okuyama');
   expect(await page.locator('.about-line').count()).toBeGreaterThan(1);
 });

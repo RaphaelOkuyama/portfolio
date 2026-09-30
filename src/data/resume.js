@@ -19,7 +19,7 @@ export const profile = {
 export const resumeData = {
   pt: {
     nav: { home: "Home", projects: "Projetos", certificates: "Certificados", contact: "Contato" },
-    footer: { rights: "Todos os direitos reservados." },
+    footer: { rights: "Todos os direitos reservados.", made: "Feito com Next.js, Three.js e GSAP — da primavera ao inverno." },
     hero: {
       roles: ['Desenvolvedor Full-Stack', 'APIs & Arquitetura Limpa', 'Integrações & IA'],
       location: 'Itaquera/SP',
@@ -232,7 +232,7 @@ export const resumeData = {
 
   en: {
     nav: { home: "Home", projects: "Projects", certificates: "Certificates", contact: "Contact" },
-    footer: { rights: "All rights reserved." },
+    footer: { rights: "All rights reserved.", made: "Built with Next.js, Three.js and GSAP — from spring to winter." },
     hero: {
       roles: ['Full-Stack Developer', 'APIs & Clean Architecture', 'Integrations & AI'],
       location: 'Itaquera/SP',

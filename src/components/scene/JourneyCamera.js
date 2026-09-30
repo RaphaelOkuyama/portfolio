@@ -1,12 +1,12 @@
 'use client';
-import { useMemo, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useEffect, useMemo, useRef } from 'react';
+import { useFrame, useThree } from '@react-three/fiber';
 import { Vector3 } from 'three';
 import { journeyStore, effectiveProgress } from '../../store/journey';
 import { clamp01 } from '../../lib/journey/season';
 import { createCameraCurve } from './cameraCurve';
 import { CAMERA_FLIGHT } from './config';
-import { power2InOut } from '../../lib/journey/math';
+import { power2InOut, responsiveFov } from '../../lib/journey/math';
 
 // Câmera percorre a curva conforme o progresso (amortecido; imediato em reduced motion)
 export default function JourneyCamera() {
@@ -14,6 +14,16 @@ export default function JourneyCamera() {
   const current = useRef(null);
   const position = useMemo(() => new Vector3(), []);
   const tangent = useMemo(() => new Vector3(), []);
+
+  // Celular em pé: abre o FOV vertical para o enquadramento não ficar só no torii
+  const camera = useThree((s) => s.camera);
+  const aspect = useThree((s) => s.size.width / Math.max(1, s.size.height));
+  const invalidate = useThree((s) => s.invalidate);
+  useEffect(() => {
+    camera.fov = responsiveFov(aspect);
+    camera.updateProjectionMatrix();
+    invalidate();
+  }, [camera, aspect, invalidate]);
 
   // Troca de rota (jornada ↔ rota congelada): voo de 1,2s com power2.inOut até o novo ponto
   const flight = useRef(null);

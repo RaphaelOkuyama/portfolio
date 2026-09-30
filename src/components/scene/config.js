@@ -61,8 +61,9 @@ export const GARDEN = {
   size: [22, 9],
   segments: { high: [176, 72], low: [1, 1] },
   groundDrop: 2.6,
-  // Onde o jardim fica dentro da faixa do Stack (0 = começo, 1 = fim)
-  anchor: 0.55,
+  // Onde o jardim fica em relação à faixa do Stack (0 = começo, 1 = fim; > 1 = adiante).
+  // Fica à frente da câmera para ser visto de cima enquanto o Stack está na tela
+  anchor: 1.35,
   fallbackRange: [0.3, 0.55],
   stones: [
     { x: -7, z: -1, r: 0.9 },

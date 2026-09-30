@@ -43,6 +43,11 @@ export function SettingsProvider({ children }) {
     applyTheme(initial);
   }, []);
 
+  // Leitores de tela e tradutores seguem o idioma escolhido
+  useEffect(() => {
+    document.documentElement.lang = language === 'pt' ? 'pt-BR' : 'en';
+  }, [language]);
+
   // Dados atuais baseados no idioma
   const currentData = resumeData[language];
 

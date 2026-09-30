@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { AdditiveBlending, BufferAttribute, BufferGeometry, Color, PointsMaterial } from 'three';
+import { AdditiveBlending, BufferAttribute, BufferGeometry, Color, ShaderMaterial } from 'three';
 import { journeyStore, effectiveProgress, useJourney } from '../../store/journey';
 import { SCENE_ACCENTS } from '../../lib/palette';
 import { QUALITY_SETTINGS } from '../../lib/journey/quality';
@@ -11,6 +11,27 @@ import { GARDEN } from './config';
 
 // Um vaga-lume a cada 5 partículas do orçamento de qualidade
 const FIREFLY_RATIO = 5;
+
+// Ponto redondo com brilho suave; tamanho em pixels limitado para não virar um borrão perto da câmera
+const vertexShader = /* glsl */ `
+  uniform float uPixelRatio;
+  void main() {
+    vec4 mv = modelViewMatrix * vec4(position, 1.0);
+    gl_Position = projectionMatrix * mv;
+    gl_PointSize = clamp(28.0 / -mv.z, 1.5, 7.0) * uPixelRatio;
+  }
+`;
+const fragmentShader = /* glsl */ `
+  uniform vec3 uColor;
+  uniform float uOpacity;
+  void main() {
+    float d = length(gl_PointCoord - 0.5);
+    float glow = smoothstep(0.5, 0.0, d);
+    if (glow < 0.01) discard;
+    gl_FragColor = vec4(uColor, glow * glow * uOpacity);
+    #include <colorspace_fragment>
+  }
+`;
 
 // Vaga-lumes sobre o jardim: só à noite, no auge do verão
 export default function Fireflies({ range }) {
@@ -28,13 +49,13 @@ export default function Fireflies({ range }) {
 
   const material = useMemo(
     () =>
-      new PointsMaterial({
-        size: 0.12,
+      new ShaderMaterial({
+        vertexShader,
+        fragmentShader,
         transparent: true,
         depthWrite: false,
         blending: AdditiveBlending,
-        color: new Color(),
-        opacity: 0,
+        uniforms: { uColor: { value: new Color() }, uOpacity: { value: 0 }, uPixelRatio: { value: 1 } },
       }),
     [],
   );
@@ -58,9 +79,11 @@ export default function Fireflies({ range }) {
 
     if (!journey.reducedMotion) time.current += delta;
     const t = time.current;
-    material.color.set(SCENE_ACCENTS[journey.theme].firefly);
+    const u = material.uniforms;
+    u.uColor.value.set(SCENE_ACCENTS[journey.theme].firefly);
+    u.uPixelRatio.value = state.gl.getPixelRatio();
     // Pisca devagar
-    material.opacity = opacity * (0.65 + 0.35 * Math.sin(t * 2.3));
+    u.uOpacity.value = opacity * (0.65 + 0.35 * Math.sin(t * 2.3));
 
     // Deriva suave em volta da posição inicial
     const pos = geometry.attributes.position.array;

@@ -29,9 +29,9 @@ const fragmentShader = /* glsl */ `
   void main() {
     // Correnteza: faixas que descem o rio com leve ondulação lateral
     float flow = sin(vLocal.y * 2.6 + uTime * 1.4 + sin(vLocal.x * 1.7 + uTime * 0.6) * 0.8);
-    float glint = smoothstep(0.97, 1.0, flow) * 0.12;
+    float glint = smoothstep(0.985, 1.0, flow) * 0.05;
     // Margens se fundem com o chão
-    float edge = smoothstep(0.0, 1.2, ${RIVER.size[0] / 2}.0 - abs(vLocal.x));
+    float edge = smoothstep(0.0, 1.2, ${(RIVER.size[0] / 2).toFixed(1)} - abs(vLocal.x));
     vec3 color = uWater * (0.9 + 0.1 * flow) + glint;
     gl_FragColor = vec4(color, uOpacity * edge);
     #include <colorspace_fragment>

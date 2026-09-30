@@ -38,6 +38,7 @@ export default function Navbar() {
   }, { dependencies: [isMobileMenuOpen, isMenuMounted] });
 
   const themeLabel = language === 'pt' ? 'Alternar dia/noite' : 'Toggle day/night';
+  const languageLabel = language === 'pt' ? 'Mudar idioma para inglês' : 'Switch language to Portuguese';
 
   // Ícone do toggle 昼/夜 gira e entra ao trocar de tema
   useGSAP(() => {
@@ -71,7 +72,7 @@ export default function Navbar() {
               ))}
             </div>
             <div style={{ display: 'flex', gap: '15px', paddingLeft: '20px', borderLeft: '1px solid var(--border)' }}>
-              <button onClick={toggleLanguage} style={btnStyle}><Globe size={20} /><span style={{fontSize: '0.8rem', fontWeight: 'bold'}}>{language.toUpperCase()}</span></button>
+              <button onClick={toggleLanguage} style={btnStyle} aria-label={languageLabel}><Globe size={20} /><span style={{fontSize: '0.8rem', fontWeight: 'bold'}}>{language.toUpperCase()}</span></button>
               <button onClick={toggleTheme} style={btnStyle} aria-label={themeLabel}><span className="theme-icon" style={{ display: 'inline-flex' }}>{theme === 'night' ? <Sun size={20} /> : <Moon size={20} />}</span></button>
             </div>
           </div>
@@ -124,7 +125,7 @@ export default function Navbar() {
             </div>
 
             <div style={{ display: 'flex', gap: '20px', marginTop: '10px' }}>
-              <button onClick={toggleLanguage} style={{...btnStyle, transform: 'scale(1.2)'}}><Globe size={24} /> {language.toUpperCase()}</button>
+              <button onClick={toggleLanguage} style={{...btnStyle, transform: 'scale(1.2)'}} aria-label={languageLabel}><Globe size={24} /> {language.toUpperCase()}</button>
               <button onClick={toggleTheme} style={{...btnStyle, transform: 'scale(1.2)'}} aria-label={themeLabel}><span className="theme-icon" style={{ display: 'inline-flex' }}>{theme === 'night' ? <Sun size={24} /> : <Moon size={24} />}</span></button>
             </div>
           </div>

@@ -56,7 +56,15 @@ export default function ZenStack({ techData, icons }) {
               className="zen-stone"
               data-active={active === i}
               style={{ borderRadius: STONE_SHAPES[i % STONE_SHAPES.length] }}
-              onClick={() => setActive(i)}
+              onClick={() => {
+                setActive(i);
+                // No celular o painel fica abaixo da lista: leva o leitor até ele
+                if (window.matchMedia('(max-width: 900px)').matches) {
+                  requestAnimationFrame(() =>
+                    document.getElementById(`${baseId}-panel-${i}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }),
+                  );
+                }
+              }}
               onMouseEnter={() => highlight(i)}
               onMouseLeave={() => highlight(active)}
               onFocus={() => highlight(i)}

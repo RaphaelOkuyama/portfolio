@@ -61,7 +61,10 @@ const fragmentShader = /* glsl */ `
       rake = mix(rake, sin((d - s.z) * 11.0), ring);
     }
     float shade = 0.9 + 0.08 * rake - vDent * 0.12;
-    gl_FragColor = vec4(uSand * shade, uOpacity);
+    // Bordas da areia se dissolvem na cena em vez de um retângulo duro
+    float edge = smoothstep(0.0, 3.0, ${(GARDEN.size[0] / 2).toFixed(1)} - abs(vLocal.x))
+               * smoothstep(0.0, 2.2, ${(GARDEN.size[1] / 2).toFixed(1)} - abs(vLocal.y));
+    gl_FragColor = vec4(uSand * shade, uOpacity * edge);
     #include <colorspace_fragment>
     #include <fog_fragment>
   }

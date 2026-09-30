@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect x="4" y="4" width="56" height="56" rx="10" fill="#fbf8f1"/>
+  <rect x="8" y="8" width="48" height="48" rx="7" fill="none" stroke="#c23b30" stroke-width="5"/>
+  <text x="32" y="44" text-anchor="middle" font-size="32" font-weight="700" fill="#c23b30" font-family="'Hiragino Mincho ProN','Yu Mincho','Noto Serif JP',serif">奥</text>
+</svg>

@@ -32,7 +32,8 @@ export default function AboutSection({ about }) {
           opacity: 0,
           stagger: 0.12,
           ease: 'none',
-          scrollTrigger: { trigger: rootRef.current, start: 'top 75%', end: 'bottom 55%', scrub: 0.6 },
+          // Termina cedo: o texto inteiro já está legível quando a seção chega ao centro
+          scrollTrigger: { trigger: rootRef.current, start: 'top 85%', end: 'top 25%', scrub: 0.6 },
         }),
     });
     return () => split.revert();

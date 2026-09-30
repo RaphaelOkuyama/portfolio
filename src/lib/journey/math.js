@@ -29,3 +29,12 @@ export function winterWeight(seasonMix) {
 export function power2InOut(t) {
   return t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
 }
+
+// FOV vertical da câmera: 50° em telas largas; em telas em pé mantém ~52° de FOV horizontal
+// (senão o torii e os portões enchem a tela do celular), limitado a 85°
+export function responsiveFov(aspect, { base = 50, horizontal = 52, max = 85 } = {}) {
+  if (aspect >= 1) return base;
+  const h = (horizontal * Math.PI) / 180;
+  const v = (2 * Math.atan(Math.tan(h / 2) / aspect) * 180) / Math.PI;
+  return Math.min(max, Math.max(base, v));
+}

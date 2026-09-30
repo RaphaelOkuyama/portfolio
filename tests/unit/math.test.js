@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { smoothstep, bandOpacity, summerWeight, autumnWeight, winterWeight, power2InOut } from '../../src/lib/journey/math';
+import { smoothstep, bandOpacity, summerWeight, autumnWeight, winterWeight, power2InOut, responsiveFov } from '../../src/lib/journey/math';
 import { sumiPath } from '../../src/lib/journey/sumi';
 
 describe('smoothstep e bandOpacity', () => {
@@ -33,5 +33,16 @@ describe('sumiPath', () => {
     expect(d.trim().endsWith(' 600.0')).toBe(true);
     expect(sumiPath(600)).toBe(d);
     expect(d.match(/C/g)).toHaveLength(8);
+  });
+});
+
+describe('responsiveFov', () => {
+  it('50° em telas largas, mais aberto em telas em pé, até 85°', () => {
+    expect(responsiveFov(16 / 9)).toBe(50);
+    expect(responsiveFov(1)).toBe(50);
+    const tall = responsiveFov(0.7);
+    expect(tall).toBeGreaterThan(50);
+    expect(tall).toBeLessThan(85);
+    expect(responsiveFov(0.2)).toBe(85);
   });
 });

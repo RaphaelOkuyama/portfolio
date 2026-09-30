@@ -58,7 +58,8 @@ export default function EmakiProjects({ projects, labels }) {
         ease: 'none',
         scrollTrigger: {
           trigger: pinRef.current,
-          start: 'top top',
+          // Fixa abaixo da navbar para o título não ficar escondido atrás dela
+          start: 'top 72px',
           end: () => `+=${distance()}`,
           pin: true,
           scrub: 0.6,

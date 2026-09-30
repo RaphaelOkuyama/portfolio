@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { BoxGeometry, Color, MeshBasicMaterial, Object3D } from 'three';
+import { Color, CylinderGeometry, MeshBasicMaterial, Object3D } from 'three';
 import { journeyStore, useJourney } from '../../store/journey';
 import { SCENE_ACCENTS } from '../../lib/palette';
 import { mulberry32 } from '../../lib/journey/ridge';
@@ -26,8 +26,10 @@ export default function Lanterns() {
   const capacity = baseCount + LANTERNS.maxReleased;
   const meshRef = useRef(null);
 
-  const geometry = useMemo(() => new BoxGeometry(0.34, 0.42, 0.34), []);
-  const material = useMemo(() => new MeshBasicMaterial({ toneMapped: false }), []);
+  // Lanterna de papel: cilindro levemente afunilado
+  const geometry = useMemo(() => new CylinderGeometry(0.17, 0.21, 0.42, 14), []);
+  // Sem névoa: a lanterna é fonte de luz e deve brilhar mesmo ao longe
+  const material = useMemo(() => new MeshBasicMaterial({ toneMapped: false, fog: false }), []);
   useEffect(
     () => () => {
       geometry.dispose();
