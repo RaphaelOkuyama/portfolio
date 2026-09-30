@@ -46,6 +46,35 @@ describe('SEASONS', () => {
   });
 });
 
+function luminance(hex) {
+  const [r, g, b] = [1, 3, 5].map((i) => {
+    const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+function contrastRatio(a, b) {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+describe('contraste da cena (AA)', () => {
+  it.each(['night', 'day'])('tons de %s têm contraste >= 4.5 com o texto', (theme) => {
+    const text = THEMES[theme].textPrimary;
+    SEASONS[theme].forEach((s, i) => {
+      for (const tone of [s.sky, s.fog, ...s.mountains]) {
+        expect(contrastRatio(tone, text), `${theme}[${i}] ${tone}`).toBeGreaterThanOrEqual(4.5);
+      }
+    });
+  });
+
+  it.each(['night', 'day'])('montanha próxima destaca do céu em %s (>= 1.25)', (theme) => {
+    SEASONS[theme].forEach((s, i) => {
+      expect(contrastRatio(s.mountains[0], s.sky), `${theme}[${i}]`).toBeGreaterThanOrEqual(1.25);
+    });
+  });
+});
+
 describe('normalizeTheme', () => {
   it.each([
     ['day', 'day'],

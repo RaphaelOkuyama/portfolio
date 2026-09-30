@@ -32,16 +32,16 @@ export const THEMES = {
 // mountains = [perto, meio, longe]
 export const SEASONS = {
   night: [
-    { sky: '#1c1f3a', fog: '#2b2c4d', mountains: ['#0f1124', '#1f2140', '#34365c'] },
-    { sky: '#0f2226', fog: '#1a3336', mountains: ['#08161a', '#12272b', '#21393d'] },
-    { sky: '#241826', fog: '#352434', mountains: ['#150d16', '#281a28', '#3f2b3d'] },
-    { sky: '#161d2b', fog: '#26303f', mountains: ['#0b1019', '#1a2230', '#2f3a4b'] },
+    { sky: '#2d3266', fog: '#3b4180', mountains: ['#05061a', '#20244f', '#4a5090'] },
+    { sky: '#1a3d45', fog: '#25525c', mountains: ['#030b0e', '#143840', '#2d6570'] },
+    { sky: '#3d2a44', fog: '#553a5c', mountains: ['#0a040c', '#331d38', '#66407a'] },
+    { sky: '#2a364d', fog: '#3a4a68', mountains: ['#050810', '#1f2b3f', '#4a5f82'] },
   ],
   day: [
-    { sky: '#f6e7e4', fog: '#f1dcdc', mountains: ['#6b6f86', '#9a9cb3', '#c8c6d6'] },
-    { sky: '#e3efe6', fog: '#d6e6dc', mountains: ['#2f5a4a', '#5f8a76', '#a3c2b0'] },
-    { sky: '#f4e3cf', fog: '#ecd3b8', mountains: ['#7a3b2a', '#a8674a', '#d3a684'] },
-    { sky: '#eef1f4', fog: '#e2e7ec', mountains: ['#4a5563', '#7f8a98', '#b9c2cc'] },
+    { sky: '#f6e7e4', fog: '#f1dcdc', mountains: ['#a3809a', '#bf9fb6', '#dcc3d2'] },
+    { sky: '#e3efe6', fog: '#d6e6dc', mountains: ['#5a9a7a', '#78ad92', '#a9cdb9'] },
+    { sky: '#f4e3cf', fog: '#ecd3b8', mountains: ['#c47642', '#cf8f66', '#e3b791'] },
+    { sky: '#eef1f4', fog: '#e2e7ec', mountains: ['#7a8aa0', '#93a2b5', '#b9c5d2'] },
   ],
 };
 

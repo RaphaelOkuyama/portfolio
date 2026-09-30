@@ -19,9 +19,9 @@ function layerPath({ seed, base, amp }) {
   return `M0,${H} ${ridge} L${W},${H} Z`;
 }
 
-// Fundo pintado para navegadores sem WebGL: primavera do tema atual
-export default function StaticBackdrop({ theme }) {
-  const season = sampleSeason(SEASONS[theme], 0);
+// Fundo pintado para navegadores sem WebGL: estação atual do tema
+export default function StaticBackdrop({ theme, mix = 0 }) {
+  const season = sampleSeason(SEASONS[theme], mix);
   return (
     <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMax slice" style={{ width: '100%', height: '100%', display: 'block' }}>
       <rect width={W} height={H} fill={season.sky} />

@@ -32,6 +32,7 @@ export default function SceneCanvas() {
   const [failed, setFailed] = useState(false);
   const quality = useJourney((s) => s.quality);
   const theme = useJourney((s) => s.theme);
+  const mix = useJourney((s) => Math.round(s.seasonMix));
 
   useEffect(() => {
     setWebgl(hasWebGL());
@@ -40,7 +41,7 @@ export default function SceneCanvas() {
   if (webgl === false || failed) {
     return (
       <div aria-hidden="true" data-scene="fallback" style={wrapperStyle}>
-        <StaticBackdrop theme={theme} />
+        <StaticBackdrop theme={theme} mix={mix} />
       </div>
     );
   }
