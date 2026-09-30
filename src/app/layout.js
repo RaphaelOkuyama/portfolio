@@ -2,7 +2,7 @@ import './globals.css';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import SocialSidebar from '../components/SocialSidebar';
-import CustomCursor from '../components/CustomCursor';
+import InkCursor from '../components/InkCursor';
 import JourneySync from '../components/journey/JourneySync';
 import SmoothScroll from '../components/journey/SmoothScroll';
 import SceneCanvas from '../components/scene/SceneCanvas';
@@ -35,7 +35,7 @@ export default function RootLayout({ children }) {
           <SmoothScroll />
           <SceneCanvas />
           <EnsoLoader />
-          <CustomCursor />
+          <InkCursor />
           <Navbar />
           
           <SocialSidebar />
