@@ -1035,3 +1035,30 @@ html.is-loading body {
 @media (max-width: 1099px) {
   .social-sidebar { display: none !important; }
 }
+
+/* Papel washi sobre a cena: fibra estática (sem granulado animado) + vinheta pintada */
+.washi {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' seed='9' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.46 0 0 0 0 0.4 0 0 0 0.6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+  mix-blend-mode: soft-light;
+  opacity: 0.35;
+}
+
+.washi::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 85% 75% at 50% 45%, transparent 55%, rgb(5 7 13 / 0.42) 100%);
+}
+
+[data-theme='day'] .washi {
+  mix-blend-mode: multiply;
+  opacity: 0.18;
+}
+
+[data-theme='day'] .washi::after {
+  background: radial-gradient(ellipse 85% 75% at 50% 45%, transparent 60%, rgb(120 90 55 / 0.14) 100%);
+}

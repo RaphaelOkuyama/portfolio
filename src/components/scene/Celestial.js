@@ -1,55 +1,97 @@
 'use client';
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Color } from 'three';
+import { Color, ShaderMaterial } from 'three';
 import { journeyStore, effectiveProgress } from '../../store/journey';
 import { SCENE_ACCENTS } from '../../lib/palette';
 import { CELESTIAL } from './config';
 import { smoothstep } from '../../lib/journey/math';
+import { NOISE } from './glsl';
 
-// Opacidade do disco e do halo por tema: a lua brilha mais que o sol pálido
-const OPACITY = { night: { disc: 1, halo: 0.18 }, day: { disc: 0.55, halo: 0.1 } };
+// Intensidade do disco, do halo e das manchas (mares da lua) por tema
+const LOOK = { night: { disc: 1, halo: 0.42, maria: 1 }, day: { disc: 0.6, halo: 0.3, maria: 0 } };
 
+// Tamanho do quad em raios do disco: sobra espaço para o halo se apagar
+const EXTENT = 7;
 
-// Sol (昼) / lua (夜): disco com halo, fora da névoa
+const vertexShader = /* glsl */ `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const fragmentShader = /* glsl */ `
+  uniform vec3 uColor;
+  uniform float uDisc;
+  uniform float uHalo;
+  uniform float uMaria;
+  varying vec2 vUv;
+  ${NOISE}
+
+  void main() {
+    vec2 p = (vUv - 0.5) * ${EXTENT.toFixed(1)};
+    float d = length(p);
+    float disc = smoothstep(1.0, 0.96, d);
+    // Mares lunares: manchas suaves só dentro do disco
+    float maria = smoothstep(0.45, 0.75, fbm(p * 1.6 + 3.0)) * uMaria * 0.16;
+    // Halo em duas camadas: brilho curto em volta + véu largo
+    float halo = (exp(-max(d - 1.0, 0.0) * 2.2) * 0.7 + exp(-d * 0.6) * 0.3) * uHalo;
+    // Zera antes da borda do quad: sem retângulo visível no céu
+    halo *= 1.0 - smoothstep(${(EXTENT / 2 - 1.2).toFixed(1)}, ${(EXTENT / 2).toFixed(1)}, d);
+    float alpha = max(disc * uDisc, halo * (1.0 - disc));
+    vec3 col = uColor * (1.0 - maria * disc);
+    gl_FragColor = vec4(col, alpha);
+    #include <colorspace_fragment>
+  }
+`;
+
+// Sol (昼) / lua (夜): disco com halo pintado, fora da névoa
 export default function Celestial() {
-  const discRef = useRef(null);
-  const haloRef = useRef(null);
   const target = useMemo(() => new Color(), []);
   const initialized = useRef(false);
+  const material = useMemo(
+    () =>
+      new ShaderMaterial({
+        vertexShader,
+        fragmentShader,
+        transparent: true,
+        depthWrite: false,
+        fog: false,
+        uniforms: {
+          uColor: { value: new Color() },
+          uDisc: { value: 0 },
+          uHalo: { value: 0 },
+          uMaria: { value: 0 },
+        },
+      }),
+    [],
+  );
+
+  useEffect(() => () => material.dispose(), [material]);
 
   useFrame((state, delta) => {
-    const disc = discRef.current;
-    const halo = haloRef.current;
-    if (!disc || !halo) return;
     const store = journeyStore.getState();
-    const { theme } = store;
+    const look = LOOK[store.theme];
     // Some do hero em diante (e nas rotas congeladas, onde o progresso efetivo é 0.7)
     const visible = 1 - smoothstep(0.08, 0.18, effectiveProgress(store));
-    const discTarget = OPACITY[theme].disc * visible;
-    const haloTarget = OPACITY[theme].halo * visible;
-    target.set(SCENE_ACCENTS[theme].celestial);
+    target.set(SCENE_ACCENTS[store.theme].celestial);
     const k = initialized.current ? 1 - Math.exp(-delta * 4) : 1;
     initialized.current = true;
 
-    disc.color.lerp(target, k);
-    halo.color.copy(disc.color);
-    disc.opacity += (discTarget - disc.opacity) * k;
-    halo.opacity += (haloTarget - halo.opacity) * k;
+    const u = material.uniforms;
+    u.uColor.value.lerp(target, k);
+    u.uDisc.value += (look.disc * visible - u.uDisc.value) * k;
+    u.uHalo.value += (look.halo * visible - u.uHalo.value) * k;
+    u.uMaria.value += (look.maria - u.uMaria.value) * k;
 
-    if (Math.abs(disc.opacity - discTarget) > 0.002) state.invalidate();
+    if (Math.abs(u.uDisc.value - look.disc * visible) > 0.002) state.invalidate();
   });
 
   return (
-    <group position={CELESTIAL.position}>
-      <mesh>
-        <circleGeometry args={[CELESTIAL.radius * 2.2, 48]} />
-        <meshBasicMaterial ref={haloRef} transparent opacity={0} fog={false} depthWrite={false} />
-      </mesh>
-      <mesh position={[0, 0, 0.01]}>
-        <circleGeometry args={[CELESTIAL.radius, 48]} />
-        <meshBasicMaterial ref={discRef} transparent opacity={0} fog={false} depthWrite={false} />
-      </mesh>
-    </group>
+    <mesh position={CELESTIAL.position} material={material}>
+      <planeGeometry args={[CELESTIAL.radius * EXTENT, CELESTIAL.radius * EXTENT]} />
+    </mesh>
   );
 }

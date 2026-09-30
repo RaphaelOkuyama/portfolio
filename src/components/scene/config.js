@@ -118,3 +118,48 @@ export const LOST_FOG = { range: [0.5, 11], skyMix: 0.75 };
 
 // Voo da câmera ao entrar/sair de uma rota congelada (spec §3.4)
 export const CAMERA_FLIGHT = { duration: 1.2 };
+
+// Céu pintado (degradê, nuvens em faixa, estrelas): esfera presa à câmera, dentro do `far`
+export const SKY = { radius: 240 };
+
+// Montanhas ukiyo-e: névoa subindo do pé (mistDepth abaixo da base até mistReach da amplitude)
+// e borda clara no cume puxada para a cor do sol/lua
+export const MOUNTAIN_LOOK = {
+  mistDepth: 3,
+  mistReach: 0.4,
+  night: { mist: 0.5, rim: 0.55, rimTint: 0.4 },
+  day: { mist: 0.32, rim: 0.4, rimTint: 0.55 },
+};
+
+// Sugi (杉) nas cristas: fora do vale por onde a câmera passa; camadas distantes ganham
+// árvores maiores para continuarem legíveis
+export const FOREST = {
+  count: { high: 110, low: 45 },
+  halfWidth: 72,
+  valleyHalf: 13,
+  growWithDistance: 0.12,
+};
+
+// Kasumi (霞): faixas de névoa entre as camadas, à deriva
+export const KASUMI = {
+  width: 190,
+  every: { high: 1, low: 2 },
+  opacity: { night: 0.5, day: 0.6 },
+  // Clareia a cor da névoa (dia: papel; noite: luar)
+  lighten: { night: 0.12, day: 0.35 },
+  // Some perto da câmera para não virar um borrão na tela
+  fadeNear: [3, 12],
+};
+
+// Bando de pássaros cruzando o céu de tempos em tempos
+export const BIRDS = {
+  count: 7,
+  cycle: 28,
+  flight: 16,
+  delay: 4,
+  span: 70,
+  ahead: 80,
+  height: 16,
+  scale: 0.55,
+  opacity: { night: 0.75, day: 0.7 },
+};

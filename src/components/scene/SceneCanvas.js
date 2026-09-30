@@ -56,6 +56,7 @@ export default function SceneCanvas() {
     return (
       <div aria-hidden="true" data-scene="fallback" style={wrapperStyle}>
         <StaticBackdrop theme={theme} mix={mix} />
+        <div className="washi" />
       </div>
     );
   }
@@ -67,6 +68,8 @@ export default function SceneCanvas() {
           <Canvas3D />
         </SceneErrorBoundary>
       ) : null}
+      {/* Papel washi estático + vinheta por cima da cena (abaixo do conteúdo) */}
+      <div className="washi" />
     </div>
   );
 }

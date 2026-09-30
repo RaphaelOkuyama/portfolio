@@ -12,6 +12,9 @@ import ZenGarden from './ZenGarden';
 import Momiji from './Momiji';
 import Snow from './Snow';
 import River from './River';
+import Sky from './Sky';
+import Kasumi from './Kasumi';
+import Birds from './Birds';
 
 // Monta a cena; no frameloop "demand" qualquer mudança da store pede um frame
 export default function World() {
@@ -39,8 +42,11 @@ export default function World() {
     <>
       <Atmosphere />
       <JourneyCamera />
+      <Sky />
       <Celestial />
+      <Birds />
       <MountainLayers />
+      <Kasumi />
       <Torii />
       <ZenGarden />
       <Momiji />
