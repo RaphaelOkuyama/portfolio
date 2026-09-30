@@ -86,3 +86,32 @@ export const MOMIJI = {
   size: [0.3, 0.3],
   countScale: 0.6,
 };
+
+// Neve (雪) da Experiência ao fim da jornada
+export const SNOW = {
+  halfSize: [16, 8, 24],
+  fallbackStart: 0.72,
+  size: [0.09, 0.09],
+  countScale: 0.8,
+};
+
+// Rio escuro no fim do caminho, com lanternas (灯籠流し) descendo a correnteza
+export const RIVER = {
+  // Distância abaixo do fim da curva e tamanho (largura x comprimento)
+  drop: 1.6,
+  size: [12, 40],
+  // A faixa começa um pouco depois do fim da câmera
+  offsetZ: -16,
+  fallbackStart: 0.88,
+};
+
+export const LANTERNS = {
+  count: { high: 10, low: 5 },
+  maxReleased: 8,
+  // Faixa em z local do rio (a câmera fica do lado +z): as lanternas andam para -z, se afastando
+  laneZ: [-12, 8],
+  laneX: [-3.5, 3.5],
+  speed: 0.35,
+  // Intensidade da luz: > 1 dispara o bloom (só em qualidade alta)
+  glow: { night: 3.4, day: 1.15 },
+};

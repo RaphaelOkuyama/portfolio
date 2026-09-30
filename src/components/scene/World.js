@@ -11,6 +11,8 @@ import Celestial from './Celestial';
 import SenbonTorii from './SenbonTorii';
 import ZenGarden from './ZenGarden';
 import Momiji from './Momiji';
+import Snow from './Snow';
+import River from './River';
 
 // Monta a cena; no frameloop "demand" qualquer mudança da store pede um frame
 export default function World() {
@@ -25,6 +27,7 @@ export default function World() {
           state.route !== prev.route ||
           state.quality !== prev.quality ||
           state.activeStone !== prev.activeStone ||
+          state.lanternReleases !== prev.lanternReleases ||
           state.sectionRanges !== prev.sectionRanges ||
           (state.route === 'journey' && state.progress !== prev.progress);
         if (changed) invalidate();
@@ -42,6 +45,8 @@ export default function World() {
       <SenbonTorii />
       <ZenGarden />
       <Momiji />
+      <Snow />
+      <River />
       <Petals />
     </>
   );

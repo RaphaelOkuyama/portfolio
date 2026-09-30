@@ -219,6 +219,13 @@ export const resumeData = {
       form: { 
         nameLabel: "Nome", namePlaceholder: "Seu Nome", emailLabel: "Email", emailPlaceholder: "Seu Email", 
         messageLabel: "Mensagem", messagePlaceholder: "Sua Mensagem", btn: "Enviar Mensagem" 
+      },
+      sending: "Enviando...",
+      toast: {
+        loading: "Enviando mensagem...",
+        success: "Mensagem enviada com sucesso! Ela desce o rio numa lanterna.",
+        error: "Erro ao enviar mensagem. Tente novamente.",
+        network: "Erro de conexão. Verifique sua rede."
       }
     }
   },
@@ -423,6 +430,13 @@ export const resumeData = {
       form: { 
         nameLabel: "Name", namePlaceholder: "Your Name", emailLabel: "Email", emailPlaceholder: "Your Email", 
         messageLabel: "Message", messagePlaceholder: "Your Message", btn: "Send Message" 
+      },
+      sending: "Sending...",
+      toast: {
+        loading: "Sending message...",
+        success: "Message sent! It floats down the river in a lantern.",
+        error: "Failed to send the message. Please try again.",
+        network: "Connection error. Check your network."
       }
     }
   }

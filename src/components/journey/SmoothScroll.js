@@ -45,10 +45,23 @@ export default function SmoothScroll() {
     };
   }, [reducedMotion]);
 
-  // Troca de rota: volta ao topo e recalcula os triggers da página nova
+  // Troca de rota: recalcula os triggers da página nova e vai ao topo,
+  // ou à âncora da URL (ex.: /#contato) depois que o pin mediu a página
   useEffect(() => {
-    lenisRef.current?.scrollTo(0, { immediate: true });
-    const id = requestAnimationFrame(() => ScrollTrigger.refresh());
+    const scrollTo = (y) => {
+      const lenis = lenisRef.current;
+      if (!lenis) return window.scrollTo(0, y);
+      // O Lenis guarda a altura da página anterior e limitaria o scroll a ela
+      lenis.resize();
+      return lenis.scrollTo(y, { immediate: true, force: true });
+    };
+    // Na navegação do cliente o hash só aparece na URL depois do commit: lê no próximo frame
+    const id = requestAnimationFrame(() => {
+      ScrollTrigger.refresh();
+      const hash = window.location.hash.slice(1);
+      const target = hash ? document.getElementById(hash) : null;
+      scrollTo(target ? target.getBoundingClientRect().top + window.scrollY : 0);
+    });
     return () => cancelAnimationFrame(id);
   }, [pathname]);
 

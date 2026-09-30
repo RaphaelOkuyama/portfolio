@@ -19,3 +19,8 @@ export function summerWeight(seasonMix) {
 export function autumnWeight(seasonMix) {
   return Math.max(0, 1 - Math.abs(seasonMix - 2) / 0.8);
 }
+
+// Neve: começa no fim do outono e fica cheia no inverno (mix 3)
+export function winterWeight(seasonMix) {
+  return smoothstep(2.3, 2.8, seasonMix);
+}

@@ -6,6 +6,7 @@ import { journeyStore, useJourney } from '../../store/journey';
 import { QUALITY_SETTINGS } from '../../lib/journey/quality';
 import { CAMERA_PATH } from './config';
 import World from './World';
+import Effects from './Effects';
 import { trackPointer } from '../../lib/pointer';
 
 // FPS abaixo de 45 durante a amostra (~2,5s) rebaixa a qualidade
@@ -41,6 +42,7 @@ export default function Canvas3D() {
         <PerformanceMonitor bounds={FPS_BOUNDS} onDecline={() => journeyStore.getState().downgradeQuality()} />
       ) : null}
       <World />
+      <Effects />
     </Canvas>
   );
 }

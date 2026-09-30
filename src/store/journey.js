@@ -26,6 +26,8 @@ export function createJourneyStore() {
     sectionRanges: {},
     // Pedra do jardim zen em destaque (índice da categoria do Stack) ou null
     activeStone: null,
+    // Quantas mensagens do contato já viraram lanterna (a cena solta uma por envio)
+    lanternReleases: 0,
 
     setProgress: (p) => {
       const progress = clamp01(p);
@@ -50,6 +52,7 @@ export function createJourneyStore() {
       set({ sectionRanges: { ...get().sectionRanges, [id]: range } });
     },
     setActiveStone: (activeStone) => set({ activeStone }),
+    releaseLantern: () => set({ lanternReleases: get().lanternReleases + 1 }),
   }));
 }
 

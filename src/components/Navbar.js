@@ -15,7 +15,7 @@ export default function Navbar() {
     { name: currentData.nav.home, path: '/' },
     { name: currentData.nav.projects, path: '/projects' },
     { name: currentData.nav.certificates, path: '/certificates' },
-    { name: currentData.nav.contact, path: '/contact' },
+    { name: currentData.nav.contact, path: '/#contato' },
   ];
 
   // Menu mobile: continua montado durante a animação de saída

@@ -3,6 +3,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { gsap, useGSAP } from '../lib/gsap';
 import ScrollReveal from './ScrollReveal';
+import { sumiPath } from '../lib/journey/sumi';
 import Section from './journey/Section';
 
 export default function ExperienceSection({ experience, title }) {
@@ -16,13 +17,33 @@ export default function ExperienceSection({ experience, title }) {
     return () => window.removeEventListener('resize', checkDevice);
   }, []);
   
-  // Linha da timeline preenche conforme o scroll; itens entram pelos lados
+  // Altura da timeline para desenhar a pincelada no tamanho real (sem distorcer o traço)
+  const timelineRef = useRef(null);
+  const [brushHeight, setBrushHeight] = useState(0);
+  useEffect(() => {
+    const el = timelineRef.current;
+    if (!el) return undefined;
+    const observer = new ResizeObserver(([entry]) => setBrushHeight(Math.round(entry.contentRect.height)));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // 歩: a pincelada sumi-e se desenha com o scroll; em cada marco uma gota de tinta se espalha
   useGSAP(() => {
-    gsap.fromTo('.timeline-progress', { scaleY: 0 }, {
-      scaleY: 1,
-      ease: 'none',
-      scrollTrigger: { trigger: refExperience.current, start: 'top center', end: 'bottom center', scrub: 0.5 },
-    });
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (brushHeight > 0 && !reduced) {
+      gsap.fromTo('.sumi-stroke', { drawSVG: '0%' }, {
+        drawSVG: '100%',
+        ease: 'none',
+        scrollTrigger: { trigger: timelineRef.current, start: 'top 65%', end: 'bottom 55%', scrub: 0.5 },
+      });
+      gsap.utils.toArray('.ink-drop').forEach((drop) => {
+        gsap.fromTo(drop, { scale: 0, opacity: 0 }, {
+          scale: 1, opacity: 1, duration: 0.7, ease: 'expo.out',
+          scrollTrigger: { trigger: drop, start: 'top 60%', toggleActions: 'play none none reverse' },
+        });
+      });
+    }
     gsap.utils.toArray('.exp-anim').forEach((el) => {
       gsap.from(el, {
         opacity: 0,
@@ -32,19 +53,31 @@ export default function ExperienceSection({ experience, title }) {
         scrollTrigger: { trigger: el, start: 'top bottom', once: true },
       });
     });
-  }, { scope: refExperience, dependencies: [isDesktop, experience], revertOnUpdate: true });
+  }, { scope: refExperience, dependencies: [isDesktop, experience, brushHeight], revertOnUpdate: true });
 
   return (
     <Section id="experience" style={{ padding: '100px 0', paddingBottom: '150px' }} ref={refExperience}>
       <ScrollReveal>
-        <h2 style={{ fontSize: '2.5rem', marginBottom: '80px', textAlign: 'center' }}>{title}</h2>
+        <h2 className="section-title section-title-center">
+          <span className="section-kanji font-jp" aria-hidden="true">歩</span>
+          {title}
+        </h2>
         
-        <div style={{ position: 'relative', maxWidth: '1000px', margin: '0 auto' }}>
+        <div ref={timelineRef} style={{ position: 'relative', maxWidth: '1000px', margin: '0 auto' }}>
           
-          {/* LINHA CENTRAL */}
-          <div className="timeline-line" style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: '4px', background: 'var(--border)', transform: 'translateX(-50%)', borderRadius: '4px' }}>
-            <div className="timeline-progress" style={{ width: '100%', background: 'var(--accent)', transformOrigin: 'top', height: '100%' }} />
-          </div>
+          {/* PINCELADA CENTRAL (sumi-e): rastro claro + traço de tinta desenhado pelo scroll */}
+          {brushHeight > 0 && (
+            <svg
+              className="timeline-line sumi-brush"
+              aria-hidden="true"
+              width="40"
+              height={brushHeight}
+              viewBox={`0 0 40 ${brushHeight}`}
+            >
+              <path className="sumi-track" d={sumiPath(brushHeight)} />
+              <path className="sumi-stroke" d={sumiPath(brushHeight)} />
+            </svg>
+          )}
 
           <div className="experience-container">
             {experience.map((exp, index) => {
@@ -76,7 +109,7 @@ export default function ExperienceSection({ experience, title }) {
                   </div>
 
                   {/* PONTO CENTRAL */}
-                  <div className="timeline-dot" style={{ width: '20px', height: '20px', background: 'var(--accent)', borderRadius: '50%', border: '4px solid var(--bg-color)', zIndex: 10, flexShrink: 0 }} />
+                  <span className="timeline-dot ink-drop" aria-hidden="true" />
 
                   {/* DIREITA - Sempre alinhada à esquerda no desktop */}
                   {isDesktop && (

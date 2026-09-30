@@ -665,3 +665,157 @@ a { text-decoration: none; color: inherit; }
   .emaki-rod { display: none; }
   .emaki-panel { width: auto; min-height: 0; border: 1px solid var(--border); border-radius: 14px; }
 }
+
+/* --- FASE 5: Experiência em pincelada sumi-e (墨絵) --- */
+.section-title-center {
+  justify-content: center;
+  border-left: none;
+  padding-left: 0;
+  margin-bottom: 80px;
+}
+.sumi-brush {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  overflow: visible;
+  pointer-events: none;
+}
+.sumi-brush path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.sumi-track {
+  stroke: var(--border);
+  stroke-width: 3;
+}
+.sumi-stroke {
+  stroke: var(--ink);
+  stroke-width: 7;
+  opacity: 0.9;
+}
+/* Gota de tinta nos marcos: borda irregular e miolo mais escuro */
+.ink-drop {
+  position: relative;
+  z-index: 10;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 48% 52% 44% 56% / 55% 45% 55% 45%;
+  background: radial-gradient(circle at 45% 45%, var(--ink) 0 45%, color-mix(in srgb, var(--ink) 55%, transparent) 70%, transparent 100%);
+}
+
+/* --- Contato (縁) --- */
+.contact-section {
+  padding: 100px 0 140px;
+}
+.contact-copy {
+  padding: 28px 30px;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--bg-color) 82%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.contact-subtitle {
+  color: var(--text-secondary);
+  margin-bottom: 30px;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+.contact-channels {
+  margin: 0 0 18px;
+  color: var(--accent);
+}
+.contact-link {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+  margin-bottom: 15px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text-primary);
+  overflow: hidden;
+}
+.contact-link svg { color: var(--accent); flex-shrink: 0; }
+.contact-link strong { display: block; font-size: 0.9rem; }
+.contact-link span { color: var(--text-secondary); font-size: 0.9rem; }
+.contact-card {
+  position: relative;
+  width: 100%;
+  padding: clamp(20px, 5vw, 40px);
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  transform-origin: 50% 0;
+}
+.contact-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+.contact-input {
+  width: 100%;
+  padding: 15px;
+  margin-bottom: 18px;
+  background: var(--bg-color);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 1rem;
+  outline: none;
+}
+.contact-input:focus-visible {
+  border-color: var(--accent);
+  outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent);
+}
+.contact-submit {
+  width: 100%;
+  padding: 15px;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--accent);
+  color: var(--on-accent);
+  border: none;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+.contact-submit:disabled { opacity: 0.7; cursor: progress; }
+
+/* Lanterna de papel (tōrō nagashi) que nasce do formulário enviado */
+.paper-lantern {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  width: 34px;
+  height: 44px;
+  margin-left: -17px;
+  border-radius: 8px 8px 12px 12px;
+  background: linear-gradient(180deg, #fff3cf, #ffc46b 70%, #e8913a);
+  box-shadow: 0 0 22px 8px rgba(255, 190, 90, 0.55);
+  pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
+}
+.paper-lantern::before,
+.paper-lantern::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--wood);
+}
+.paper-lantern::before { top: -3px; }
+.paper-lantern::after { bottom: -3px; }
