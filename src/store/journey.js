@@ -20,6 +20,8 @@ export function createJourneyStore() {
     reducedMotion: false,
     route: 'journey',
     assetsProgress: 0,
+    sceneReady: false,
+    loaderDone: false,
 
     setProgress: (p) => {
       const progress = clamp01(p);
@@ -35,6 +37,8 @@ export function createJourneyStore() {
     setReducedMotion: (reducedMotion) => set({ reducedMotion }),
     setRoute: (route) => set({ route, seasonMix: mixFor(get().progress, route) }),
     setAssetsProgress: (n) => set({ assetsProgress: Math.min(100, Math.max(0, n)) }),
+    setSceneReady: () => set({ sceneReady: true }),
+    setLoaderDone: () => set({ loaderDone: true }),
   }));
 }
 

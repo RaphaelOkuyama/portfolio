@@ -27,6 +27,7 @@ export default function Canvas3D() {
   return (
     <Canvas
       flat
+      onCreated={() => journeyStore.getState().setSceneReady()}
       dpr={settings.dpr}
       frameloop={frameloop}
       camera={{ fov: 50, near: 0.1, far: 300, position: CAMERA_PATH[0] }}

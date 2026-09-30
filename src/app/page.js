@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import { gsap, useGSAP } from '../lib/gsap';
 import { useSettings } from '../context/SettingsContext';
 import { 
@@ -8,14 +8,13 @@ import {
   GitBranch, ShieldCheck, Download, CreditCard, Boxes, BarChart3
 } from 'lucide-react';
 import { profile } from '../data/resume';
-import LoadingScreen from '../components/LoadingScreen';
 import ScrollReveal from '../components/ScrollReveal';
 import Reveal from '../components/Reveal';
 import Section from '../components/journey/Section';
+import { useJourney } from '../store/journey';
 import ExperienceSection from '../components/ExperienceSection';
 
 export default function Home() {
-  const [isLoading, setIsLoading] = useState(true);
   const { currentData } = useSettings();
   
   const hero = currentData?.hero || {};
@@ -37,24 +36,17 @@ export default function Home() {
     <BarChart3 size={24} key="data" />
   ];
 
-  useEffect(() => {
-    if (!isLoading) {
-      window.scrollTo(0, 0);
-      setTimeout(() => window.scrollTo(0, 0), 10);
-    }
-  }, [isLoading]);
-
   const heroRef = useRef(null);
 
-  // Nome letra a letra + indicador de scroll
+  const loaderDone = useJourney((s) => s.loaderDone);
+
+  // Entrada do hero quando o ensō termina
   useGSAP(() => {
-    if (isLoading) return;
+    if (!loaderDone) return;
     gsap.from('.hero-title span', { opacity: 0, duration: 0.3, stagger: 0.08 });
     gsap.from('.hero-scroll', { opacity: 0, delay: 1, duration: 0.5 });
     gsap.to('.hero-scroll-arrow', { keyframes: { y: [0, 10, 0], easeEach: 'sine.inOut' }, duration: 2, repeat: -1 });
-  }, { scope: heroRef, dependencies: [isLoading] });
-
-  if (isLoading) return <LoadingScreen onComplete={() => setIsLoading(false)} />;
+  }, { scope: heroRef, dependencies: [loaderDone] });
 
   return (
     <div className="container">

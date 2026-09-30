@@ -1,7 +1,7 @@
 'use client';
 import { Component, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { useJourney } from '../../store/journey';
+import { journeyStore, useJourney } from '../../store/journey';
 import { hasWebGL } from '../../lib/webgl';
 import StaticBackdrop from './StaticBackdrop';
 
@@ -37,6 +37,11 @@ export default function SceneCanvas() {
   useEffect(() => {
     setWebgl(hasWebGL());
   }, []);
+
+  // O fundo estático também conta como cena pronta para o loader
+  useEffect(() => {
+    if (webgl === false || failed) journeyStore.getState().setSceneReady();
+  }, [webgl, failed]);
 
   if (webgl === false || failed) {
     return (

@@ -38,6 +38,11 @@ body {
 
 a { text-decoration: none; color: inherit; }
 
+/* Kana/kanji decorativos: fontes japonesas do sistema, sem download */
+.font-jp {
+  font-family: 'Hiragino Mincho ProN', 'Yu Mincho', 'YuMincho', 'Noto Serif JP', serif;
+}
+
 /* CURSOR (Apenas Desktop) */
 @media (min-width: 768px) {
   body, a, button, input, textarea { cursor: none !important; }

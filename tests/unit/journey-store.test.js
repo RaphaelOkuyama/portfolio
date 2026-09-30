@@ -85,3 +85,15 @@ describe('demais setters', () => {
     expect(store.getState()).toMatchObject({ theme: 'day', reducedMotion: true, assetsProgress: 100 });
   });
 });
+
+describe('loader', () => {
+  it('começa com a cena e o loader pendentes', () => {
+    expect(store.getState()).toMatchObject({ sceneReady: false, loaderDone: false });
+  });
+
+  it('marca cena pronta e loader concluído', () => {
+    store.getState().setSceneReady();
+    store.getState().setLoaderDone();
+    expect(store.getState()).toMatchObject({ sceneReady: true, loaderDone: true });
+  });
+});
