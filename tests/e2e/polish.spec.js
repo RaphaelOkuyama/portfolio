@@ -99,8 +99,9 @@ test.describe('Robustez da cena', () => {
   test('se o chunk 3D falhar, o fundo estático assume e o site segue', async ({ page }) => {
     await inspectChunks(page, (body) => (body.includes('WebGLRenderer') ? 'abort' : 'continue'));
     await page.goto('/');
-    await expect(page.locator('[data-scene="fallback"] svg')).toHaveCount(1, { timeout: 15_000 });
-    await waitLoader(page);
+    // Interceptar todos os chunks deixa a carga lenta sob a suíte inteira: mais folga aqui
+    await expect(page.locator('[data-scene="fallback"] svg')).toHaveCount(1, { timeout: 20_000 });
+    await expect(loader(page)).toHaveCount(0, { timeout: 20_000 });
     await expect(page.locator('.hero-title')).toBeVisible();
   });
 

@@ -12,11 +12,22 @@ import { trackPointer } from '../../lib/pointer';
 
 // FPS abaixo de 45 durante a amostra (~2,5s) rebaixa a qualidade
 const FPS_BOUNDS = () => [45, 1000];
+// Só mede depois que a cena assentou: no começo a compilação de shaders e o download
+// dos chunks derrubam o FPS e rebaixariam a qualidade (sumindo o bloom) sem motivo
+const MONITOR_WARMUP_MS = 4000;
 
 export default function Canvas3D() {
   const quality = useJourney((s) => s.quality);
   const route = useJourney((s) => s.route);
+  const loaderDone = useJourney((s) => s.loaderDone);
   const [hidden, setHidden] = useState(false);
+  const [warmedUp, setWarmedUp] = useState(false);
+
+  useEffect(() => {
+    if (!loaderDone) return undefined;
+    const id = setTimeout(() => setWarmedUp(true), MONITOR_WARMUP_MS);
+    return () => clearTimeout(id);
+  }, [loaderDone]);
 
   useEffect(() => {
     const onVisibility = () => setHidden(document.hidden);
@@ -39,7 +50,7 @@ export default function Canvas3D() {
       gl={{ antialias: quality === 'high', powerPreference: 'high-performance' }}
     >
       {/* Fora do frameloop "always" os frames chegam em rajadas e o FPS medido não vale */}
-      {frameloop === 'always' ? (
+      {frameloop === 'always' && warmedUp ? (
         <PerformanceMonitor bounds={FPS_BOUNDS} onDecline={() => journeyStore.getState().downgradeQuality()} />
       ) : null}
       <World />

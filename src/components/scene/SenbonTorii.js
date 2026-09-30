@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { MeshBasicMaterial, Vector3 } from 'three';
-import { useJourney } from '../../store/journey';
+import { journeyStore, effectiveProgress, useJourney } from '../../store/journey';
 import { smoothstep } from '../../lib/journey/math';
 import ToriiGate, { useToriiMaterials } from './ToriiGate';
 import { createCameraCurve } from './cameraCurve';
@@ -65,12 +65,14 @@ export default function SenbonTorii() {
 
   useFrame((state) => {
     let changed = false;
+    // O hero tem um torii só; o túnel de portões surge quando o "Sobre" começa
+    const entering = smoothstep(start - 0.06, start, effectiveProgress(journeyStore.getState()));
     gates.forEach((gate, i) => {
       const m = materials[i];
       if (!m) return;
       m.body.color.copy(shared.body.color);
       m.top.color.copy(shared.top.color);
-      const opacity = smoothstep(FADE_NEAR, FADE_FAR, state.camera.position.distanceTo(gate.center));
+      const opacity = entering * smoothstep(FADE_NEAR, FADE_FAR, state.camera.position.distanceTo(gate.center));
       m.body.opacity = opacity;
       m.top.opacity = opacity;
       m.body.visible = opacity > 0.01;
