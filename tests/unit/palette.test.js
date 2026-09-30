@@ -91,7 +91,7 @@ describe('normalizeTheme', () => {
 describe('SCENE_ACCENTS', () => {
   it('os dois temas têm pétala, torii, topo do torii e astro em hex', () => {
     for (const theme of ['night', 'day']) {
-      expect(Object.keys(SCENE_ACCENTS[theme]).sort()).toEqual(['celestial', 'petal', 'torii', 'toriiTop']);
+      expect(Object.keys(SCENE_ACCENTS[theme]).sort()).toEqual(['celestial', 'firefly', 'petal', 'sand', 'stone', 'torii', 'toriiTop']);
       Object.values(SCENE_ACCENTS[theme]).forEach((c) => expect(c).toMatch(HEX));
     }
   });

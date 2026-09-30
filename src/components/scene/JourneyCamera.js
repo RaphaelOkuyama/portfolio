@@ -1,14 +1,14 @@
 'use client';
 import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { CatmullRomCurve3, Vector3 } from 'three';
+import { Vector3 } from 'three';
 import { journeyStore, effectiveProgress } from '../../store/journey';
 import { clamp01 } from '../../lib/journey/season';
-import { CAMERA_PATH } from './config';
+import { createCameraCurve } from './cameraCurve';
 
 // Câmera percorre a curva conforme o progresso (amortecido; imediato em reduced motion)
 export default function JourneyCamera() {
-  const curve = useMemo(() => new CatmullRomCurve3(CAMERA_PATH.map((p) => new Vector3(...p))), []);
+  const curve = useMemo(() => createCameraCurve(), []);
   const current = useRef(null);
   const position = useMemo(() => new Vector3(), []);
   const tangent = useMemo(() => new Vector3(), []);

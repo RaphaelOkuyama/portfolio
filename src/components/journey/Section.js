@@ -17,13 +17,20 @@ export default function Section({ id, as: Tag = 'section', ref: externalRef, chi
     const report = (self) => {
       if (self.isActive) journeyStore.getState().setSection(id, self.progress);
     };
-    ScrollTrigger.create({
+    // Faixa da seção em fração do progresso: a cena posiciona objetos (senbon, jardim) por ela
+    const reportRange = (self) => {
+      const max = ScrollTrigger.maxScroll(window);
+      if (max > 0) journeyStore.getState().setSectionRange(id, self.start / max, self.end / max);
+    };
+    const trigger = ScrollTrigger.create({
       trigger: localRef.current,
       start: 'top center',
       end: 'bottom center',
       onToggle: report,
       onUpdate: report,
+      onRefresh: reportRange,
     });
+    reportRange(trigger);
   }, { dependencies: [id] });
 
   return (

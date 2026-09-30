@@ -22,6 +22,10 @@ export function createJourneyStore() {
     assetsProgress: 0,
     sceneReady: false,
     loaderDone: false,
+    // Faixa [início, fim] de cada seção em fração do progresso (medida pelo ScrollTrigger)
+    sectionRanges: {},
+    // Pedra do jardim zen em destaque (índice da categoria do Stack) ou null
+    activeStone: null,
 
     setProgress: (p) => {
       const progress = clamp01(p);
@@ -39,6 +43,13 @@ export function createJourneyStore() {
     setAssetsProgress: (n) => set({ assetsProgress: Math.min(100, Math.max(0, n)) }),
     setSceneReady: () => set({ sceneReady: true }),
     setLoaderDone: () => set({ loaderDone: true }),
+    setSectionRange: (id, start, end) => {
+      const range = [clamp01(start), clamp01(end)];
+      const prev = get().sectionRanges[id];
+      if (prev && Math.abs(prev[0] - range[0]) < 1e-4 && Math.abs(prev[1] - range[1]) < 1e-4) return;
+      set({ sectionRanges: { ...get().sectionRanges, [id]: range } });
+    },
+    setActiveStone: (activeStone) => set({ activeStone }),
   }));
 }
 

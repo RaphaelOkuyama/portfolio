@@ -34,6 +34,7 @@ export const resumeData = {
     },
     techSection: {
       title: "Tecnologias & Ferramentas",
+      hint: "Cada pedra do jardim é uma área. Escolha uma para ver as ferramentas.",
       categories: [
         { name: "Linguagens", items: ["TypeScript", "JavaScript", "Python", "SQL"] },
         { name: "Front-end", items: ["React", "Next.js", "Tailwind CSS", "Shadcn/ui", "Vite", "GSAP"] },
@@ -237,6 +238,7 @@ export const resumeData = {
     },
     techSection: {
       title: "Technologies & Tools",
+      hint: "Each stone in the garden is an area. Pick one to see the tools.",
       categories: [
         { name: "Languages", items: ["TypeScript", "JavaScript", "Python", "SQL"] },
         { name: "Front-end", items: ["React", "Next.js", "Tailwind CSS", "Shadcn/ui", "Vite", "GSAP"] },

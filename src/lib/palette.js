@@ -14,6 +14,8 @@ export const THEMES = {
     cardBg: '#161f33',
     ink: '#e8e4da',
     paper: '#1b2438',
+    hanko: '#b8392e',
+    wood: '#5a3b24',
   },
   day: {
     bgColor: '#f3eee3',
@@ -25,6 +27,8 @@ export const THEMES = {
     cardBg: '#ebe4d5',
     ink: '#1f1d1a',
     paper: '#fbf8f1',
+    hanko: '#c23b30',
+    wood: '#7a5230',
   },
 };
 
@@ -47,8 +51,14 @@ export const SEASONS = {
 
 // Elementos decorativos da cena (não ficam atrás de texto corrido)
 export const SCENE_ACCENTS = {
-  night: { petal: '#d99bb0', torii: '#8f2a23', toriiTop: '#0b0d14', celestial: '#f3ead2' },
-  day: { petal: '#f0a8bd', torii: '#c23b30', toriiTop: '#1f1d1a', celestial: '#f7e3b5' },
+  night: {
+    petal: '#d99bb0', torii: '#8f2a23', toriiTop: '#0b0d14', celestial: '#f3ead2',
+    sand: '#343a52', stone: '#12141d', firefly: '#f6e27a',
+  },
+  day: {
+    petal: '#f0a8bd', torii: '#c23b30', toriiTop: '#1f1d1a', celestial: '#f7e3b5',
+    sand: '#e6dac2', stone: '#4a463f', firefly: '#f6e27a',
+  },
 };
 
 // Aceita valores antigos salvos no localStorage ('dark'/'light')

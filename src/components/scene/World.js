@@ -8,6 +8,8 @@ import MountainLayers from './MountainLayers';
 import Petals from './Petals';
 import Torii from './Torii';
 import Celestial from './Celestial';
+import SenbonTorii from './SenbonTorii';
+import ZenGarden from './ZenGarden';
 
 // Monta a cena; no frameloop "demand" qualquer mudança da store pede um frame
 export default function World() {
@@ -21,6 +23,8 @@ export default function World() {
           state.seasonMix !== prev.seasonMix ||
           state.route !== prev.route ||
           state.quality !== prev.quality ||
+          state.activeStone !== prev.activeStone ||
+          state.sectionRanges !== prev.sectionRanges ||
           (state.route === 'journey' && state.progress !== prev.progress);
         if (changed) invalidate();
       }),
@@ -34,6 +38,8 @@ export default function World() {
       <Celestial />
       <MountainLayers />
       <Torii />
+      <SenbonTorii />
+      <ZenGarden />
       <Petals />
     </>
   );

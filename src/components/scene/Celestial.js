@@ -5,14 +5,11 @@ import { Color } from 'three';
 import { journeyStore, effectiveProgress } from '../../store/journey';
 import { SCENE_ACCENTS } from '../../lib/palette';
 import { CELESTIAL } from './config';
+import { smoothstep } from '../../lib/journey/math';
 
 // Opacidade do disco e do halo por tema: a lua brilha mais que o sol pálido
 const OPACITY = { night: { disc: 1, halo: 0.18 }, day: { disc: 0.55, halo: 0.1 } };
 
-function smoothstep(edge0, edge1, x) {
-  const t = Math.min(1, Math.max(0, (x - edge0) / (edge1 - edge0)));
-  return t * t * (3 - 2 * t);
-}
 
 // Sol (昼) / lua (夜): disco com halo, fora da névoa
 export default function Celestial() {

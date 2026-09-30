@@ -5,11 +5,11 @@ import { gsap, useGSAP } from '../lib/gsap';
 import { useSettings } from '../context/SettingsContext';
 import { 
   Layout, Server, Code, Database, ChevronDown, 
-  GitBranch, ShieldCheck, Download, CreditCard, Boxes, BarChart3
+  GitBranch, ShieldCheck, CreditCard, Boxes, BarChart3
 } from 'lucide-react';
 import { profile } from '../data/resume';
-import ScrollReveal from '../components/ScrollReveal';
-import Reveal from '../components/Reveal';
+import AboutSection from '../components/about/AboutSection';
+import ZenStack from '../components/stack/ZenStack';
 import Section from '../components/journey/Section';
 import { useJourney } from '../store/journey';
 import { buildNameSequence, SCRAMBLE_CHARS, NAME_HOLD_SECONDS, NAME_SCRAMBLE_SECONDS } from '../lib/hero/name';
@@ -111,70 +111,9 @@ export default function Home() {
         </div>
       </Section>
 
-      <Section id="about" style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', padding: '0 0 80px 0' }}>
-        <ScrollReveal>
-          <div className="responsive-grid" style={{ alignItems: 'center' }}>
-            
-            <div>
-              <h2 style={{ fontSize: '2.5rem', marginBottom: '30px', borderLeft: '5px solid var(--accent)', paddingLeft: '20px' }}>{about.title}</h2>
-              <p style={{ fontSize: '1.1rem', lineHeight: 1.7, color: 'var(--text-secondary)', marginBottom: '30px' }}>{about.desc}</p>
-              
-              <a
-                href="/curriculo.pdf" 
-                download="Raphael_Okuyama_CV.pdf"
-                className="btn-fill"
-                style={{ 
-                  display: 'inline-flex', alignItems: 'center', gap: '10px', 
-                  padding: '12px 30px', borderRadius: '50px', 
-                  border: '2px solid var(--text-secondary)', 
-                  color: 'var(--text-primary)', textDecoration: 'none', 
-                  fontWeight: 'bold', cursor: 'pointer'
-                }}
-              >
-                <Download size={20} />
-                {about.btnResume}
-              </a>
-            </div>
+      <AboutSection about={about} />
 
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <div
-                className="photo-tilt"
-                style={{ position: 'relative', width: '100%', maxWidth: '350px', height: 'auto', aspectRatio: '1/1', borderRadius: '20px', overflow: 'hidden', border: '2px solid var(--border)' }}
-              >
-                <img src="/profile.jpg" alt="Raphael Okuyama" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                <div className="photo-overlay" style={{ position: 'absolute', inset: 0, background: 'var(--accent)', mixBlendMode: 'overlay' }} />
-              </div>
-            </div>
-          </div>
-        </ScrollReveal>
-      </Section>
-
-      <Section id="stack" style={{ padding: '80px 0' }}>
-        <ScrollReveal>
-          <h2 style={{ fontSize: '2.5rem', marginBottom: '50px', borderLeft: '5px solid var(--accent)', paddingLeft: '20px' }}>{techData.title}</h2>
-          <Reveal className="cards-grid" trigger="scroll" stagger={0.1} duration={0.5}>
-            {techData.categories.map((cat, i) => (
-              <div
-                key={i}
-                className="hover-lift"
-                style={{ background: 'var(--card-bg)', padding: '25px', borderRadius: '15px', border: '1px solid var(--border)' }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '20px', color: 'var(--accent)' }}>
-                  {categoryIcons[i]}
-                  <h3 style={{ fontSize: '1.3rem', margin: 0, color: 'var(--text-primary)' }}>{cat.name}</h3>
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-                  {cat.items.map((item, idx) => (
-                    <span key={idx} style={{ fontSize: '0.9rem', padding: '5px 12px', background: 'var(--bg-color)', border: '1px solid var(--border)', borderRadius: '20px', color: 'var(--text-secondary)' }}>
-                      {item}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </Reveal>
-        </ScrollReveal>
-      </Section>
+      <ZenStack techData={techData} icons={categoryIcons} />
 
       <ExperienceSection experience={experience} title={currentData.experienceTitle} />
 

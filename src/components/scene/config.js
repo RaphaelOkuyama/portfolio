@@ -41,3 +41,39 @@ export const TORII = {
 
 // Sol (昼) / lua (夜) no céu, visível do começo do caminho
 export const CELESTIAL = { position: [-14, 22, -90], radius: 4 };
+
+// Senbon torii (千本鳥居): portões menores enfileirados no caminho da câmera durante o "Sobre".
+// A base fica `baseDrop` abaixo da câmera: o nuki passa ~0,8 acima dela.
+export const SENBON = {
+  count: { high: 12, low: 6 },
+  pillarHeight: 5.2,
+  pillarRadius: 0.2,
+  span: 3.6,
+  kasagiY: 4.9,
+  nukiY: 4.1,
+  baseDrop: 3.3,
+  // Faixa padrão (fração do progresso) até a seção medir a posição real
+  fallbackRange: [0.13, 0.29],
+};
+
+// Jardim zen (枯山水) visto de cima durante o "Stack": areia rastelada + 9 pedras
+export const GARDEN = {
+  size: [22, 9],
+  segments: { high: [176, 72], low: [1, 1] },
+  groundDrop: 2.6,
+  // Onde o jardim fica dentro da faixa do Stack (0 = começo, 1 = fim)
+  anchor: 0.55,
+  fallbackRange: [0.3, 0.55],
+  stones: [
+    { x: -7, z: -1, r: 0.9 },
+    { x: -5.8, z: 0.6, r: 0.55 },
+    { x: -6.3, z: -2.2, r: 0.45 },
+    { x: 0.5, z: 1.2, r: 1.0 },
+    { x: 1.8, z: -0.4, r: 0.6 },
+    { x: -0.6, z: -1.4, r: 0.5 },
+    { x: 6.5, z: 0.3, r: 0.85 },
+    { x: 7.6, z: -1.5, r: 0.5 },
+    { x: 5.4, z: -1.9, r: 0.6 },
+  ],
+  fireflyVolume: { x: [-11, 11], y: [0.3, 3], z: [-4.5, 4.5] },
+};
