@@ -63,7 +63,7 @@ a { text-decoration: none; color: inherit; }
 }
 
 /* CURSOR (Apenas Desktop) */
-@media (min-width: 768px) {
+@media (pointer: fine) and (min-width: 768px) {
   body, a, button, input, textarea { cursor: none !important; }
 }
 
