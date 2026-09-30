@@ -24,3 +24,8 @@ export function autumnWeight(seasonMix) {
 export function winterWeight(seasonMix) {
   return smoothstep(2.3, 2.8, seasonMix);
 }
+
+// Mesma curva do ease "power2.inOut" do GSAP
+export function power2InOut(t) {
+  return t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
+}

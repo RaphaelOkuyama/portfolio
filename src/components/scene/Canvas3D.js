@@ -1,12 +1,13 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { PerformanceMonitor } from '@react-three/drei';
 import { journeyStore, useJourney } from '../../store/journey';
 import { QUALITY_SETTINGS } from '../../lib/journey/quality';
 import { CAMERA_PATH } from './config';
 import World from './World';
-import Effects from './Effects';
+// Pós-processamento só é baixado quando a qualidade alta pede
+const Effects = lazy(() => import('./Effects'));
 import { trackPointer } from '../../lib/pointer';
 
 // FPS abaixo de 45 durante a amostra (~2,5s) rebaixa a qualidade
@@ -42,7 +43,11 @@ export default function Canvas3D() {
         <PerformanceMonitor bounds={FPS_BOUNDS} onDecline={() => journeyStore.getState().downgradeQuality()} />
       ) : null}
       <World />
-      <Effects />
+      {settings.postprocessing ? (
+        <Suspense fallback={null}>
+          <Effects />
+        </Suspense>
+      ) : null}
     </Canvas>
   );
 }

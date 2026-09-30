@@ -14,6 +14,7 @@ function nativeProgress() {
 // Scroll suave (Lenis) guiado pelo ticker do GSAP; escreve o progresso na store
 export default function SmoothScroll() {
   const reducedMotion = useJourney((s) => s.reducedMotion);
+  const loaderDone = useJourney((s) => s.loaderDone);
   const pathname = usePathname();
   const lenisRef = useRef(null);
 
@@ -44,6 +45,15 @@ export default function SmoothScroll() {
       lenisRef.current = null;
     };
   }, [reducedMotion]);
+
+  // Enquanto o ensō carrega, a página não rola por baixo do overlay
+  useEffect(() => {
+    document.documentElement.classList.toggle('is-loading', !loaderDone);
+    const lenis = lenisRef.current;
+    if (!lenis) return;
+    if (loaderDone) lenis.start();
+    else lenis.stop();
+  }, [loaderDone, reducedMotion]);
 
   // Troca de rota: recalcula os triggers da página nova e vai ao topo,
   // ou à âncora da URL (ex.: /#contato) depois que o pin mediu a página

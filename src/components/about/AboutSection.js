@@ -1,5 +1,6 @@
 'use client';
 import { useRef } from 'react';
+import Image from 'next/image';
 import { Download } from 'lucide-react';
 import { gsap, SplitText, useGSAP } from '../../lib/gsap';
 import Section from '../journey/Section';
@@ -23,6 +24,8 @@ export default function AboutSection({ about }) {
       mask: 'lines',
       linesClass: 'about-line',
       autoSplit: true,
+      // Sem aria-label no <p> (proibido em parágrafo): as linhas mantêm o texto legível
+      aria: 'none',
       onSplit: (self) =>
         gsap.from(self.lines, {
           yPercent: 110,
@@ -108,7 +111,7 @@ export default function AboutSection({ about }) {
           <div ref={scrollRef} className="kakejiku" data-kakejiku="">
             <div className="kakejiku-rod" />
             <div className="kakejiku-photo photo-tilt">
-              <img src="/profile.jpg" alt="Raphael Okuyama" />
+              <Image src="/profile.jpg" alt="Raphael Okuyama" fill sizes="(max-width: 768px) 80vw, 320px" />
               <div className="photo-overlay" />
             </div>
             <div className="kakejiku-rod kakejiku-rod-bottom" />

@@ -28,6 +28,8 @@ export function createJourneyStore() {
     activeStone: null,
     // Quantas mensagens do contato já viraram lanterna (a cena solta uma por envio)
     lanternReleases: 0,
+    // Página 404 aberta: a cena fecha a névoa (迷子)
+    lost: false,
 
     setProgress: (p) => {
       const progress = clamp01(p);
@@ -53,6 +55,7 @@ export function createJourneyStore() {
     },
     setActiveStone: (activeStone) => set({ activeStone }),
     releaseLantern: () => set({ lanternReleases: get().lanternReleases + 1 }),
+    setLost: (lost) => set({ lost }),
   }));
 }
 

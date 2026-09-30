@@ -1,19 +1,37 @@
 'use client';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { gsap, useGSAP } from '../lib/gsap';
-import { ArrowLeft, TerminalSquare } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
+import { journeyStore } from '../store/journey';
 
+// Trilha de pegadas que some na névoa
+const TRAIL_PATH = 'M 10 40 C 60 10, 100 70, 150 40 S 240 10, 290 40 S 380 70, 430 38';
+
+// 迷子 (maigo, "perdido"): névoa densa na cena e uma trilha que se apaga
 export default function NotFound() {
   const { language } = useSettings();
   const rootRef = useRef(null);
 
+  // A cena fecha a névoa enquanto esta página está aberta
+  useEffect(() => {
+    journeyStore.getState().setLost(true);
+    return () => journeyStore.getState().setLost(false);
+  }, []);
+
   useGSAP(() => {
-    // Entrada
-    gsap.from('.nf-icon', { scale: 0, duration: 0.8, ease: 'back.out(2.5)' });
-    gsap.to('.nf-caret', { opacity: 0, duration: 0.4, ease: 'steps(1)', repeat: -1, yoyo: true });
-    gsap.from('.nf-fade', { opacity: 0, y: 20, duration: 0.5, stagger: 0.1, delay: 0.2, clearProps: 'transform,opacity' });
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) return undefined;
+
+    gsap.from('.nf-kanji', { autoAlpha: 0, y: 16, filter: 'blur(8px)', duration: 1.2, ease: 'power2.out' });
+    gsap.from('.nf-fade', { opacity: 0, y: 20, duration: 0.5, stagger: 0.1, delay: 0.3, clearProps: 'transform,opacity' });
+
+    // A trilha se desenha e depois se apaga a partir do começo, como pegadas sumindo
+    gsap
+      .timeline({ repeat: -1, repeatDelay: 0.6 })
+      .fromTo('.nf-trail', { drawSVG: '0% 0%' }, { drawSVG: '0% 100%', duration: 1.8, ease: 'power1.inOut' })
+      .to('.nf-trail', { drawSVG: '100% 100%', duration: 1.6, ease: 'power1.in' }, '+=0.4');
 
     // "404" de fundo segue o mouse em sentido oposto
     const moveX = gsap.quickTo('.nf-bg', 'x', { duration: 1.2, ease: 'power3.out' });
@@ -22,7 +40,6 @@ export default function NotFound() {
       moveX(((e.clientX / window.innerWidth) * 2 - 1) * -30);
       moveY(((e.clientY / window.innerHeight) * 2 - 1) * -30);
     };
-
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, { scope: rootRef });
@@ -30,12 +47,12 @@ export default function NotFound() {
   const text = {
     pt: {
       subtitle: "Página não encontrada",
-      desc: "Parece que você navegou para fora do mapa. A rota que você tentou acessar não existe ou foi refatorada.",
+      desc: "Parece que você se perdeu na névoa da montanha. A rota que você tentou acessar não existe ou foi refatorada.",
       btn: "Voltar para a base"
     },
     en: {
       subtitle: "Page Not Found",
-      desc: "Looks like you navigated off the map. The route you tried to access doesn't exist or was refactored.",
+      desc: "Looks like you got lost in the mountain mist. The route you tried to access doesn't exist or was refactored.",
       btn: "Return to base"
     }
   };
@@ -43,74 +60,21 @@ export default function NotFound() {
   const t = text[language] || text.pt;
 
   return (
-    <div ref={rootRef} style={{
-      minHeight: '85vh',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      textAlign: 'center',
-      padding: '0 20px',
-      position: 'relative',
-      overflow: 'hidden'
-    }}>
+    <div ref={rootRef} className="nf-root">
+      <div className="nf-bg" aria-hidden="true">404</div>
 
-      <div
-        className="nf-bg"
-        style={{
-          position: 'absolute',
-          fontSize: 'clamp(12rem, 35vw, 30rem)',
-          fontWeight: '900',
-          color: 'var(--accent)',
-          opacity: 0.05,
-          zIndex: -1,
-          userSelect: 'none',
-          lineHeight: 1,
-          pointerEvents: 'none'
-        }}
-      >
-        404
-      </div>
+      <p className="nf-kanji font-jp" aria-hidden="true">迷子</p>
 
-      <div
-        className="nf-icon"
-        style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '20px' }}
-      >
-        <TerminalSquare size={56} color="var(--accent)" />
-        <div
-          className="nf-caret"
-          style={{ width: '25px', height: '6px', background: 'var(--accent)', marginTop: '20px' }}
-        />
-      </div>
+      <svg className="nf-trail-svg" viewBox="0 0 440 80" aria-hidden="true">
+        <path className="nf-trail" d={TRAIL_PATH} />
+      </svg>
 
-      <h1
-        className="nf-fade"
-        style={{ fontSize: 'clamp(2rem, 5vw, 3rem)', marginBottom: '15px', color: 'var(--text-primary)' }}
-      >
-        {t.subtitle}
-      </h1>
-
-      <p
-        className="nf-fade"
-        style={{ color: 'var(--text-secondary)', maxWidth: '500px', fontSize: '1.1rem', lineHeight: 1.6, marginBottom: '40px' }}
-      >
-        {t.desc}
-      </p>
+      <h1 className="nf-fade nf-title">{t.subtitle}</h1>
+      <p className="nf-fade nf-desc">{t.desc}</p>
 
       <div className="nf-fade">
-        <Link href="/" style={{ textDecoration: 'none' }}>
-          <button
-            className="glow-btn"
-            style={{
-              display: 'flex', alignItems: 'center', gap: '10px',
-              padding: '14px 30px', borderRadius: '50px',
-              border: '1px solid var(--accent)', background: 'color-mix(in srgb, var(--accent) 12%, transparent)',
-              color: 'var(--accent)', cursor: 'pointer',
-              fontWeight: 'bold', fontSize: '1rem'
-            }}
-          >
-            <ArrowLeft size={20} /> {t.btn}
-          </button>
+        <Link href="/" className="glow-btn nf-back">
+          <ArrowLeft size={20} aria-hidden="true" /> {t.btn}
         </Link>
       </div>
     </div>

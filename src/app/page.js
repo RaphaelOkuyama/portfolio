@@ -43,15 +43,15 @@ export default function Home() {
 
   const loaderDone = useJourney((s) => s.loaderDone);
 
-  // Entrada do hero quando o ensō termina; depois o nome cicla latino → katakana → kanji
+  // O nome fica visível desde o HTML do servidor (é o LCP): o fade do ensō já o revela.
+  // Quando o loader termina, entra a seta de scroll e o nome cicla latino → katakana → kanji.
   useGSAP(() => {
     if (!loaderDone) {
-      gsap.set(['.hero-name', '.hero-scroll'], { autoAlpha: 0 });
+      gsap.set('.hero-scroll', { autoAlpha: 0 });
       return;
     }
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    gsap.fromTo('.hero-name', { y: 12 }, { autoAlpha: 1, y: 0, duration: reduced ? 0 : 0.8, ease: 'power2.out' });
     gsap.to('.hero-scroll', { autoAlpha: 1, delay: reduced ? 0 : 1, duration: reduced ? 0 : 0.5 });
     if (reduced) return;
 

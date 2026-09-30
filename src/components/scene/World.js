@@ -28,6 +28,7 @@ export default function World() {
           state.quality !== prev.quality ||
           state.activeStone !== prev.activeStone ||
           state.lanternReleases !== prev.lanternReleases ||
+          state.lost !== prev.lost ||
           state.sectionRanges !== prev.sectionRanges ||
           (state.route === 'journey' && state.progress !== prev.progress);
         if (changed) invalidate();

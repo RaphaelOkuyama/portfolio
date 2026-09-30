@@ -819,3 +819,104 @@ a { text-decoration: none; color: inherit; }
 }
 .paper-lantern::before { top: -3px; }
 .paper-lantern::after { bottom: -3px; }
+
+/* --- FASE 6: carimbo hanko nos certificados (証) --- */
+.cert-hanko {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--hanko);
+  border-radius: 6px;
+  color: var(--hanko);
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1;
+  transform: rotate(-8deg);
+  pointer-events: none;
+}
+.responsive-title.section-title {
+  border-left: none;
+  padding-left: 0;
+  font-size: clamp(2rem, 5vw, 3rem);
+}
+/* Espaço para o carimbo não cobrir o título do certificado */
+.cert-card > div:first-of-type {
+  padding-right: 36px;
+}
+
+/* --- 404 迷子 --- */
+.nf-root {
+  min-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0 20px;
+  position: relative;
+  overflow: hidden;
+}
+.nf-bg {
+  position: absolute;
+  z-index: -1;
+  font-size: clamp(12rem, 35vw, 30rem);
+  font-weight: 900;
+  line-height: 1;
+  color: var(--accent);
+  opacity: 0.05;
+  user-select: none;
+  pointer-events: none;
+}
+.nf-kanji {
+  margin: 0;
+  font-size: clamp(3.5rem, 10vw, 6rem);
+  line-height: 1;
+  color: var(--ink);
+  letter-spacing: 0.15em;
+}
+.nf-trail-svg {
+  width: min(440px, 80vw);
+  height: auto;
+  margin: 10px 0 24px;
+}
+.nf-trail {
+  fill: none;
+  stroke: var(--text-secondary);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+.nf-title {
+  font-size: clamp(2rem, 5vw, 3rem);
+  margin: 0 0 15px;
+  color: var(--text-primary);
+}
+.nf-desc {
+  color: var(--text-secondary);
+  max-width: 500px;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin: 0 0 40px;
+}
+.nf-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 30px;
+  border-radius: 50px;
+  border: 1px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+/* Sem scroll enquanto o loader ensō cobre a página */
+html.is-loading,
+html.is-loading body {
+  overflow: hidden;
+}

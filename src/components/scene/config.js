@@ -115,3 +115,9 @@ export const LANTERNS = {
   // Intensidade da luz: > 1 dispara o bloom (só em qualidade alta)
   glow: { night: 3.4, day: 1.15 },
 };
+
+// 404 (迷子): névoa densa que engole o caminho
+export const LOST_FOG = { range: [0.5, 11], skyMix: 0.75 };
+
+// Voo da câmera ao entrar/sair de uma rota congelada (spec §3.4)
+export const CAMERA_FLIGHT = { duration: 1.2 };

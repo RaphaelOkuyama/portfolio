@@ -12,6 +12,7 @@ export default function JourneySync() {
   const { theme } = useSettings();
   const section = useJourney((s) => s.section);
   const season = useJourney((s) => seasonNameFromMix(s.seasonMix));
+  const lost = useJourney((s) => s.lost);
 
   useQuality();
 
@@ -38,6 +39,11 @@ export default function JourneySync() {
   useEffect(() => {
     document.documentElement.dataset.season = season;
   }, [season]);
+
+  useEffect(() => {
+    if (lost) document.documentElement.dataset.lost = 'true';
+    else delete document.documentElement.dataset.lost;
+  }, [lost]);
 
   return null;
 }

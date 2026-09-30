@@ -77,7 +77,13 @@ export default function Navbar() {
           </div>
 
           {/* MOBILE MENU BUTTON */}
-          <button className="mobile-menu-btn" onClick={toggleMenu} style={{ background: 'none', border: 'none', color: 'var(--text-primary)', zIndex: 51 }}>
+          <button
+            className="mobile-menu-btn"
+            onClick={toggleMenu}
+            aria-label={isMobileMenuOpen ? (language === 'pt' ? 'Fechar menu' : 'Close menu') : (language === 'pt' ? 'Abrir menu' : 'Open menu')}
+            aria-expanded={isMobileMenuOpen}
+            style={{ background: 'none', border: 'none', color: 'var(--text-primary)', zIndex: 51 }}
+          >
             {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
           </button>
         </div>

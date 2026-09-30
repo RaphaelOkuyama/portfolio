@@ -5,6 +5,8 @@ import { Vector3 } from 'three';
 import { journeyStore, effectiveProgress } from '../../store/journey';
 import { clamp01 } from '../../lib/journey/season';
 import { createCameraCurve } from './cameraCurve';
+import { CAMERA_FLIGHT } from './config';
+import { power2InOut } from '../../lib/journey/math';
 
 // Câmera percorre a curva conforme o progresso (amortecido; imediato em reduced motion)
 export default function JourneyCamera() {
@@ -13,12 +15,31 @@ export default function JourneyCamera() {
   const position = useMemo(() => new Vector3(), []);
   const tangent = useMemo(() => new Vector3(), []);
 
+  // Troca de rota (jornada ↔ rota congelada): voo de 1,2s com power2.inOut até o novo ponto
+  const flight = useRef(null);
+  const lastRoute = useRef(null);
+
   useFrame((state, delta) => {
     const journey = journeyStore.getState();
     const target = effectiveProgress(journey);
     if (current.current === null) current.current = target;
-    const k = journey.reducedMotion ? 1 : 1 - Math.exp(-delta * 3);
-    current.current += (target - current.current) * k;
+
+    if (lastRoute.current !== null && journey.route !== lastRoute.current && !journey.reducedMotion) {
+      flight.current = { from: current.current, elapsed: 0 };
+    }
+    lastRoute.current = journey.route;
+
+    if (flight.current) {
+      // Delta limitado: no frameloop "demand" o primeiro frame pode vir depois de uma pausa longa
+      flight.current.elapsed += Math.min(delta, 1 / 30);
+      const p = Math.min(1, flight.current.elapsed / CAMERA_FLIGHT.duration);
+      current.current = flight.current.from + (target - flight.current.from) * power2InOut(p);
+      if (p >= 1) flight.current = null;
+      state.invalidate();
+    } else {
+      const k = journey.reducedMotion ? 1 : 1 - Math.exp(-delta * 3);
+      current.current += (target - current.current) * k;
+    }
 
     const t = clamp01(current.current);
     curve.getPointAt(t, position);

@@ -1,5 +1,6 @@
 'use client';
-import Reveal from '../../components/Reveal';
+import { useRef } from 'react';
+import { gsap, ScrollTrigger, useGSAP } from '../../lib/gsap';
 import { useSettings } from '../../context/SettingsContext';
 import { CheckCircle, ExternalLink, Award } from 'lucide-react';
 import { FaReact, FaNodeJs, FaHtml5, FaCss3Alt, FaGitAlt, FaGithub, FaBootstrap, FaSass } from 'react-icons/fa';
@@ -33,16 +34,50 @@ export default function Certificates() {
     return <Award size={iconSize} />;
   };
 
+  const gridRef = useRef(null);
+
+  // 証: cada cartão entra e recebe um carimbo hanko com impacto (CustomEase 'hanko')
+  useGSAP(() => {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const cards = gsap.utils.toArray('.cert-card', gridRef.current);
+    if (reduced) {
+      gsap.set(cards.map((c) => c.querySelector('.cert-hanko')), { autoAlpha: 1, scale: 1, rotate: -8 });
+      return;
+    }
+    gsap.set(cards, { autoAlpha: 0, y: 24 });
+    ScrollTrigger.batch(cards, {
+      start: 'top 92%',
+      once: true,
+      onEnter: (batch) => {
+        const stamps = batch.map((c) => c.querySelector('.cert-hanko'));
+        gsap
+          .timeline()
+          .to(batch, { autoAlpha: 1, y: 0, duration: 0.5, ease: 'power2.out', stagger: 0.06 })
+          .fromTo(
+            stamps,
+            { autoAlpha: 0, scale: 1.6, rotate: -22 },
+            { autoAlpha: 1, scale: 1, rotate: -8, duration: 0.45, ease: 'hanko', stagger: 0.06 },
+            0.25,
+          )
+          // Tremor curto do cartão no impacto
+          .fromTo(batch, { x: 0 }, { keyframes: { x: [-2, 2, -1, 0] }, duration: 0.25, stagger: 0.06 }, 0.42);
+      },
+    });
+  }, { scope: gridRef, dependencies: [certificates] });
+
   return (
     <div className="container" style={{ padding: '80px 24px' }}>
-      <Reveal>
+      <div>
 
-        <h1 className="responsive-title">{certificatesPage.title}</h1>
+        <h1 className="responsive-title section-title">
+          <span className="section-kanji font-jp" aria-hidden="true">証</span>
+          {certificatesPage.title}
+        </h1>
         <p style={{ color: 'var(--text-secondary)', marginBottom: '50px', fontSize: '1.2rem' }}>
           {certificatesPage.subtitle}
         </p>
 
-        <Reveal className="certificates-grid" from={{ opacity: 0, x: -20 }} stagger={0.05}>
+        <div ref={gridRef} className="certificates-grid">
           {certificates.map((cert) => (
             <div
               key={cert.id}
@@ -55,9 +90,11 @@ export default function Certificates() {
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '15px',
-                height: '100%'
+                height: '100%',
+                position: 'relative'
               }}
             >
+              <span className="cert-hanko font-jp" aria-hidden="true">証</span>
               <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, width: '60px', height: '60px' }}>
                   {getCertificateIcon(cert.name)}
@@ -96,9 +133,9 @@ export default function Certificates() {
               )}
             </div>
           ))}
-        </Reveal>
+        </div>
 
-      </Reveal>
+      </div>
     </div>
   );
 }

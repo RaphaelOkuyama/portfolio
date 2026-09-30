@@ -20,7 +20,8 @@ export default function Momiji() {
   }, [curve, start, end]);
 
   const weight = useCallback(
-    (journey) => autumnWeight(journey.seasonMix) * bandOpacity(effectiveProgress(journey), start, end, 0.06),
+    // No 404 (迷子) só a névoa aparece
+    (journey) => (journey.lost ? 0 : autumnWeight(journey.seasonMix) * bandOpacity(effectiveProgress(journey), start, end, 0.06)),
     [start, end],
   );
 

@@ -34,8 +34,17 @@ export default function SceneCanvas() {
   const theme = useJourney((s) => s.theme);
   const mix = useJourney((s) => Math.round(s.seasonMix));
 
+  // Só monta a cena 3D quando o navegador fica ocioso: o texto e o loader pintam antes
+  // do three.js (parse + shaders) ocupar a thread principal
+  const [idle, setIdle] = useState(false);
   useEffect(() => {
     setWebgl(hasWebGL());
+    if ('requestIdleCallback' in window) {
+      const id = window.requestIdleCallback(() => setIdle(true), { timeout: 1200 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = setTimeout(() => setIdle(true), 200);
+    return () => clearTimeout(id);
   }, []);
 
   // O fundo estático também conta como cena pronta para o loader
@@ -53,7 +62,7 @@ export default function SceneCanvas() {
 
   return (
     <div aria-hidden="true" data-scene="webgl" style={wrapperStyle}>
-      {webgl && quality ? (
+      {webgl && quality && idle ? (
         <SceneErrorBoundary onError={() => setFailed(true)}>
           <Canvas3D />
         </SceneErrorBoundary>

@@ -28,7 +28,10 @@ export default function Projects() {
     <div className="container" style={{ padding: '80px 24px' }}>
       <Reveal>
 
-        <h1 className="responsive-title">{projectsPage.title}</h1>
+        <h1 className="responsive-title section-title">
+          <span className="section-kanji font-jp" aria-hidden="true">作</span>
+          {projectsPage.title}
+        </h1>
         <p style={{ color: 'var(--text-secondary)', marginBottom: '50px', fontSize: '1.2rem' }}>
           {projectsPage.subtitle}
         </p>
