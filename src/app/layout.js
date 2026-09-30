@@ -3,9 +3,9 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import SocialSidebar from '../components/SocialSidebar';
 import CustomCursor from '../components/CustomCursor';
-import BackgroundParticles from '../components/BackgroundParticles';
 import JourneySync from '../components/journey/JourneySync';
 import SmoothScroll from '../components/journey/SmoothScroll';
+import SceneCanvas from '../components/scene/SceneCanvas';
 import { SettingsProvider } from '../context/SettingsContext';
 import { Analytics } from "@vercel/analytics/react";
 import { Toaster } from 'sonner';
@@ -28,10 +28,8 @@ export default function RootLayout({ children }) {
         <SettingsProvider>
           <JourneySync />
           <SmoothScroll />
+          <SceneCanvas />
           <CustomCursor />
-          
-          <BackgroundParticles />
-          
           <Navbar />
           
           <SocialSidebar />
