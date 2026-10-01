@@ -11,13 +11,21 @@ async function scrollToSection(page, id) {
   }, id);
 }
 
+// Rola e confere; se o layout ainda mudou depois do scroll (pin do emakimono recalculando),
+// rola de novo até a seção ativa bater
+async function expectSection(page, id) {
+  await expect(async () => {
+    await scrollToSection(page, id);
+    await expect(page.locator('html')).toHaveAttribute('data-section', id, { timeout: 1_000 });
+  }).toPass({ timeout: 10_000 });
+}
+
 test('a seção ativa acompanha o scroll', async ({ page }) => {
   await openHome(page);
   const html = page.locator('html');
   await expect(html).toHaveAttribute('data-section', 'hero');
   for (const id of ['about', 'stack', 'experience']) {
-    await scrollToSection(page, id);
-    await expect(html).toHaveAttribute('data-section', id);
+    await expectSection(page, id);
   }
 });
 
@@ -46,7 +54,6 @@ test.describe('com prefers-reduced-motion', () => {
     await openHome(page);
     const html = page.locator('html');
     await expect(html).not.toHaveClass(/(^|\s)lenis(\s|$)/);
-    await scrollToSection(page, 'stack');
-    await expect(html).toHaveAttribute('data-section', 'stack');
+    await expectSection(page, 'stack');
   });
 });

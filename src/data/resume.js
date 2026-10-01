@@ -121,7 +121,14 @@ export const resumeData = {
       projectLabel: "Projeto",
       gallery: "Galeria",
       prevProject: "Projeto anterior",
-      nextProject: "Próximo projeto"
+      nextProject: "Próximo projeto",
+      overview: "Visão geral",
+      status: "Status",
+      statusLive: "No ar",
+      statusCode: "Código aberto",
+      techCount: "Tecnologias",
+      featureCount: "Funcionalidades",
+      scrollCue: "Role para ler"
     },
     easterEgg: { message: "千羽鶴 — mil tsurus de origami para te desejar sorte!" },
     projects: [
@@ -231,7 +238,9 @@ export const resumeData = {
         loading: "Enviando mensagem...",
         success: "Mensagem enviada com sucesso! Ela desce o rio numa lanterna.",
         error: "Erro ao enviar mensagem. Tente novamente.",
-        network: "Erro de conexão. Verifique sua rede."
+        network: "Erro de conexão. Verifique sua rede.",
+        rate: "Muitas mensagens em pouco tempo. Tente de novo em alguns minutos.",
+        unavailable: "O envio está fora do ar agora. Escreva direto para raphaelokuyama123@gmail.com."
       }
     }
   },
@@ -338,7 +347,14 @@ export const resumeData = {
       projectLabel: "Project",
       gallery: "Gallery",
       prevProject: "Previous project",
-      nextProject: "Next project"
+      nextProject: "Next project",
+      overview: "Overview",
+      status: "Status",
+      statusLive: "Live",
+      statusCode: "Open source",
+      techCount: "Technologies",
+      featureCount: "Features",
+      scrollCue: "Scroll to read"
     },
     easterEgg: { message: "千羽鶴 — a thousand paper cranes wishing you good luck!" },
     projects: [
@@ -448,7 +464,9 @@ export const resumeData = {
         loading: "Sending message...",
         success: "Message sent! It floats down the river in a lantern.",
         error: "Failed to send the message. Please try again.",
-        network: "Connection error. Check your network."
+        network: "Connection error. Check your network.",
+        rate: "Too many messages in a short time. Please try again in a few minutes.",
+        unavailable: "Sending is down right now. Please email raphaelokuyama123@gmail.com directly."
       }
     }
   }
