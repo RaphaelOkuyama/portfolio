@@ -3,6 +3,20 @@ import { collectConsoleErrors } from './helpers';
 
 const overlay = (page) => page.locator('[data-ink-transition]');
 
+// Registra, dentro da página, cada estado da tinta e a rota naquele instante: estados rápidos
+// não escapam mesmo quando o click() do Playwright só volta depois da navegação começar
+async function recordInkStates(page) {
+  await page.evaluate(() => {
+    const el = document.querySelector('[data-ink-transition]');
+    window.__inkStates = [];
+    new MutationObserver(() => {
+      window.__inkStates.push({ state: el.getAttribute('data-state'), path: location.pathname });
+    }).observe(el, { attributes: true, attributeFilter: ['data-state'] });
+  });
+}
+
+const inkStates = (page) => page.evaluate(() => window.__inkStates);
+
 async function openHome(page) {
   await page.goto('/');
   await expect(page.locator('[data-loader="enso"]')).toHaveCount(0, { timeout: 10_000 });
@@ -11,14 +25,16 @@ async function openHome(page) {
 test('navegar pela navbar cobre a tela com tinta e descobre na nova página', async ({ page }) => {
   const errors = collectConsoleErrors(page);
   await openHome(page);
+  await recordInkStates(page);
   await page.getByRole('link', { name: 'Certificados' }).first().click();
-  // Primeiro a tinta cobre, ainda na página atual
-  await expect(overlay(page)).toHaveAttribute('data-state', 'cover');
-  await expect(page).toHaveURL(/\/$/);
-  // Depois a rota troca por baixo e a tinta recua
+  // A rota troca por baixo da tinta e ela recua
   await expect(page).toHaveURL(/\/certificates$/);
   await expect(overlay(page)).toHaveAttribute('data-state', 'idle', { timeout: 5_000 });
   await expect(page.locator('.cert-card').first()).toBeVisible();
+  // Primeiro a tinta cobriu ainda na página atual, só depois a rota trocou
+  const states = await inkStates(page);
+  expect(states[0]).toEqual({ state: 'cover', path: '/' });
+  expect(states.map((s) => s.state)).toContain('reveal');
   expect(errors).toEqual([]);
 });
 

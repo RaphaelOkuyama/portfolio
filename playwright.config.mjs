@@ -4,6 +4,9 @@ export default defineConfig({
   testDir: 'tests/e2e',
   timeout: 60_000,
   fullyParallel: false,
+  // Cada worker renderiza WebGL em software: com 8 em paralelo as animações atrasam e os testes de
+  // navegação estouram o tempo. 4 deixa a suíte estável sem ficar lenta
+  workers: process.env.CI ? 2 : 4,
   use: { baseURL: 'http://localhost:3100' },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {

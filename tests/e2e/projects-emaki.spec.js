@@ -69,9 +69,16 @@ test('clicar num painel expande e abre o projeto', async ({ page }) => {
   await openHome(page);
   await scrollProjects(page, 0.02);
   await page.waitForTimeout(800);
+  // Registra a expansão dentro da página: ela pode terminar antes do click() voltar
+  await page.evaluate(() => {
+    window.__expanded = false;
+    new MutationObserver(() => {
+      if (document.querySelector('.emaki-expand')) window.__expanded = true;
+    }).observe(document.body, { childList: true });
+  });
   await page.locator('.emaki-panel').first().click();
-  await expect(page.locator('.emaki-expand')).toHaveCount(1);
   await expect(page).toHaveURL(/\/projects\/imacardios$/);
+  expect(await page.evaluate(() => window.__expanded)).toBe(true);
   await expect(page.getByRole('heading', { level: 1 })).toContainText('IMACARDIOS');
   await expect(page.locator('.emaki-expand')).toHaveCount(0, { timeout: 5_000 });
 });

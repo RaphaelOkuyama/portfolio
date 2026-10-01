@@ -103,6 +103,7 @@ test.describe('Robustez da cena', () => {
     await expect(page.locator('[data-scene="fallback"] svg')).toHaveCount(1, { timeout: 20_000 });
     await expect(loader(page)).toHaveCount(0, { timeout: 20_000 });
     await expect(page.locator('.hero-title')).toBeVisible();
+    await page.unrouteAll({ behavior: 'ignoreErrors' });
   });
 
   test.describe('em celular (qualidade leve)', () => {
@@ -119,6 +120,8 @@ test.describe('Robustez da cena', () => {
       await waitLoader(page);
       await expect(page.locator('[data-scene="webgl"] canvas')).toHaveCount(1, { timeout: 15_000 });
       await page.waitForTimeout(1500);
+      // Chunks ainda chegando quando o teste acaba não podem derrubar o route.fetch
+      await page.unrouteAll({ behavior: 'ignoreErrors' });
       expect(loadedBloom).toBe(false);
     });
   });
