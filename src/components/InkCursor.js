@@ -45,11 +45,22 @@ export default function InkCursor() {
     const setX = gsap.quickSetter(dot, 'x', 'px');
     const setY = gsap.quickSetter(dot, 'y', 'px');
     let points = [];
+    const latest = { x: -100, y: -100 };
+    const canvas = canvasRef.current;
+    const synced = withTrail && Boolean(canvas);
 
+    // Com rastro, o ponto anda no mesmo frame em que o rastro é pintado (dentro do draw), a partir
+    // da mesma coordenada: se andasse a cada evento, em telas de 120/144Hz ou em frames pesados
+    // ele ia na frente e a linha parecia sair de fora do centro. Sem rastro, anda direto no evento
     const onMove = (e) => {
-      setX(e.clientX);
-      setY(e.clientY);
-      if (withTrail) points.push({ x: e.clientX, y: e.clientY, t: performance.now() });
+      latest.x = e.clientX;
+      latest.y = e.clientY;
+      if (synced) {
+        points.push({ x: latest.x, y: latest.y, t: performance.now() });
+      } else {
+        setX(latest.x);
+        setY(latest.y);
+      }
     };
     const onOver = (e) => {
       const hover = isInteractive(e.target);
@@ -64,8 +75,7 @@ export default function InkCursor() {
       () => window.removeEventListener('pointerover', onOver),
     ];
 
-    const canvas = canvasRef.current;
-    if (withTrail && canvas) {
+    if (synced) {
       const ctx = canvas.getContext('2d');
       let ink = readInk();
 
@@ -91,6 +101,8 @@ export default function InkCursor() {
       observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
       const draw = () => {
+        setX(latest.x);
+        setY(latest.y);
         points = pruneTrail(points, performance.now());
         ctx.clearRect(0, 0, size.w, size.h);
         if (points.length < 2) return;

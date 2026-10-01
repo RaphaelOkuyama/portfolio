@@ -2,6 +2,7 @@
 import Reveal from '../../components/Reveal';
 import Link from 'next/link';
 import { useSettings } from '../../context/SettingsContext';
+import KeepHyphenated from '../../components/KeepHyphenated';
 import {
   ArrowRight, Folder, Smartphone, Server, MonitorSmartphone,
   PlaySquare, Music, LayoutDashboard, Rocket, Target, HeartPulse
@@ -52,7 +53,7 @@ export default function Projects() {
                 </div>
                 <div>
                   <h2 style={{ fontSize: '1.5rem', margin: '0 0 5px 0', color: 'var(--text-primary)' }}>
-                    {project.title}
+                    <KeepHyphenated>{project.title}</KeepHyphenated>
                   </h2>
                   <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '1rem' }}>
                     {project.shortDesc}

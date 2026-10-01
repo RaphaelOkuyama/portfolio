@@ -92,8 +92,10 @@ p, li { text-wrap: pretty; }
 }
 
 /* CURSOR (Apenas Desktop) */
+/* Todos os elementos: qualquer um com cursor próprio (label, chips, cursor: pointer) faria a seta do
+   sistema reaparecer junto com o ponto de tinta, com a ponta no centro e o desenho para o lado */
 @media (pointer: fine) and (min-width: 768px) {
-  body, a, button, input, textarea { cursor: none !important; }
+  *, *::before, *::after { cursor: none !important; }
 }
 
 .container {
@@ -1096,7 +1098,7 @@ html.is-loading body {
 }
 
 /* --- 千羽鶴: easter egg (Konami ou 5 carimbadas no hanko do rodapé) --- */
-.footer-hanko { cursor: pointer; user-select: none; }
+.footer-hanko { user-select: none; }
 
 .senbazuru {
   position: fixed;
@@ -1238,16 +1240,27 @@ html.is-loading body {
 }
 
 .case-title {
-  max-width: 14ch;
+  /* Cabe a palavra composta mais longa inteira (Auto-atendimento) */
+  max-width: 17ch;
   margin: 0 0 28px;
   font-family: var(--font-display), 'Yu Mincho', serif;
-  font-size: clamp(2.4rem, 7.4vw, 7.2rem);
+  /* Mínimo menor: em 320px a palavra mais longa (IMACARDIOS:, Auto-atendimento) cabe inteira */
+  font-size: clamp(1.9rem, 7.4vw, 7.2rem);
   font-weight: 800;
   line-height: 0.98;
   letter-spacing: -0.02em;
   color: var(--text-primary);
   overflow-wrap: break-word;
-  hyphens: auto;
+  /* Sem hifenização automática: palavra nunca é partida no meio */
+  hyphens: manual;
+}
+
+/* Palavras do SplitText: inteiras na linha e com folga para acentos e pernas das letras;
+   a margem negativa devolve o espaço e o layout não muda */
+.case-title .case-word { white-space: nowrap; }
+.case-title .case-word-mask {
+  padding: 0.14em 0.04em 0.26em;
+  margin: -0.14em -0.04em -0.26em;
 }
 
 .case-lead {
@@ -1500,9 +1513,10 @@ html.is-loading body {
   position: relative;
   z-index: 1;
   display: block;
-  max-width: 13ch;
+  /* Cabe a palavra composta mais longa inteira (Auto-atendimento) */
+  max-width: 17ch;
   font-family: var(--font-display), 'Yu Mincho', serif;
-  font-size: clamp(2.4rem, 8vw, 7.4rem);
+  font-size: clamp(1.9rem, 8vw, 7.4rem);
   font-weight: 800;
   line-height: 0.98;
   letter-spacing: -0.02em;
@@ -1513,7 +1527,7 @@ html.is-loading body {
   background-clip: text;
   transition: background-size 0.9s cubic-bezier(0.7, 0, 0.2, 1);
   overflow-wrap: break-word;
-  hyphens: auto;
+  hyphens: manual;
 }
 .case-next:hover .case-next-title,
 .case-next:focus-visible .case-next-title { background-size: 100% 100%; }
@@ -1607,3 +1621,6 @@ html.is-loading body {
 @media (prefers-reduced-motion: reduce) {
   .emaki-roller { display: none; }
 }
+
+/* Palavra composta inteira na linha (ver KeepHyphenated) */
+.nowrap { white-space: nowrap; }

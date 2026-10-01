@@ -7,6 +7,7 @@ import { gsap, ScrollTrigger, SplitText, useGSAP } from '../../../lib/gsap';
 import { useSettings } from '../../../context/SettingsContext';
 import { kanjiNumber } from '../../../lib/kanji';
 import ProjectImageCarousel from '../../../components/ProjectImageCarousel';
+import KeepHyphenated from '../../../components/KeepHyphenated';
 
 const pad = (n) => String(n).padStart(2, '0');
 
@@ -81,11 +82,13 @@ export default function ProjectDetails() {
     if (reduced) return () => cleanups.forEach((fn) => fn());
 
     // Entrada do hero: numeral, título letra a letra saindo da máscara, depois o resto
-    const split = SplitText.create('.case-title', { type: 'words,chars', mask: 'words' });
+    // Máscara por palavra com folga (CSS .case-word-mask): sem ela, as pernas (g, p, y) e os
+    // acentos eram cortados rente à caixa da letra
+    const split = SplitText.create('.case-title', { type: 'words,chars', mask: 'words', wordsClass: 'case-word' });
     gsap.timeline({ defaults: { ease: 'power4.out' } })
       .from('.case-kanji', { opacity: 0, scale: 1.15, duration: 1.4, ease: 'power2.out' }, 0)
       .from('.case-eyebrow, .case-back', { opacity: 0, y: 12, duration: 0.6, stagger: 0.08 }, 0.1)
-      .from(split.chars, { yPercent: 115, duration: 1, stagger: 0.018 }, 0.2)
+      .from(split.chars, { yPercent: 140, duration: 1, stagger: 0.018 }, 0.2)
       .from('.case-lead', { opacity: 0, y: 24, duration: 0.8 }, 0.6)
       .from('.case-links > *', { opacity: 0, y: 18, duration: 0.6, stagger: 0.08 }, 0.7)
       .from('.case-meta > div', { opacity: 0, y: 20, duration: 0.6, stagger: 0.07 }, 0.8)
@@ -111,8 +114,9 @@ export default function ProjectDetails() {
 
     // Sem SplitText aqui: o preenchimento usa background-clip: text, que não atravessa os
     // pedaços transformados; o título sobe inteiro, recortado de baixo para cima
-    gsap.from('.case-next-title', {
-      clipPath: 'inset(100% 0 0 0)', y: 60, duration: 1.1, ease: 'power4.out',
+    // Termina com folga negativa e tira o recorte: inset(0) cortaria as pernas das letras
+    gsap.fromTo('.case-next-title', { clipPath: 'inset(100% -5% -30% -5%)', y: 60 }, {
+      clipPath: 'inset(-30% -5% -30% -5%)', y: 0, duration: 1.1, ease: 'power4.out', clearProps: 'clipPath',
       scrollTrigger: { trigger: '.case-next', start: 'top 85%' },
     });
 
@@ -153,7 +157,7 @@ export default function ProjectDetails() {
             </p>
           </div>
 
-          <h1 className="case-title">{project.title}</h1>
+          <h1 className="case-title"><KeepHyphenated>{project.title}</KeepHyphenated></h1>
           <p className="case-lead">{project.shortDesc}</p>
 
           {(project.deployLink || project.repoLink) && (
@@ -256,7 +260,7 @@ export default function ProjectDetails() {
               <span className="case-next-label">
                 {labels.nextProject} <ArrowRight size={18} aria-hidden="true" />
               </span>
-              <span className="case-next-title">{next.title}</span>
+              <span className="case-next-title"><KeepHyphenated>{next.title}</KeepHyphenated></span>
               <span className="case-next-kanji font-jp" aria-hidden="true">{kanjiNumber((index + 1) % projects.length)}</span>
             </Link>
           )}

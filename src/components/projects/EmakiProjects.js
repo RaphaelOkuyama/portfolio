@@ -6,6 +6,7 @@ import { ArrowRight } from 'lucide-react';
 import { gsap, ScrollTrigger, Draggable, useGSAP } from '../../lib/gsap';
 import Section from '../journey/Section';
 import { kanjiNumber } from '../../lib/kanji';
+import KeepHyphenated from '../KeepHyphenated';
 
 
 // Modos do rolo: pin horizontal no desktop, arrastar no celular, grade estática com movimento reduzido
@@ -226,7 +227,7 @@ export default function EmakiProjects({ projects, labels }) {
                       onFocus={(e) => revealPanel(e.currentTarget)}
                     >
                       <span className="emaki-number font-jp" aria-hidden="true">{kanjiNumber(i)}</span>
-                      <h3 className="emaki-title">{project.title}</h3>
+                      <h3 className="emaki-title"><KeepHyphenated>{project.title}</KeepHyphenated></h3>
                       <p className="emaki-desc">{project.shortDesc}</p>
                       <ul className="emaki-stack">
                         {project.stack.slice(0, 4).map((tech) => (
