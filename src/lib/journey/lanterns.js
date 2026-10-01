@@ -27,3 +27,17 @@ export function currentSpeed(base, z, viewZ, { slow = 0.25, from = 6, to = 34 } 
   const t = Math.min(1, Math.max(0, (viewZ - z - from) / (to - from)));
   return base * (slow + (1 - slow) * t);
 }
+
+// Nome que vai no papel da lanterna: só o primeiro nome, letras (qualquer alfabeto), até 10
+export const LABEL_MAX = 10;
+
+export function lanternLabel(name) {
+  const first = String(name ?? '').trim().split(/\s+/)[0] || '';
+  return Array.from(first.replace(/[^\p{L}\p{M}'-]/gu, '')).slice(0, LABEL_MAX).join('');
+}
+
+// Escrita do papel: vertical (tategaki) para nomes curtos, horizontal para os longos
+export function labelLayout(label) {
+  const chars = Array.from(label);
+  return chars.length <= 5 ? { mode: 'vertical', chars } : { mode: 'horizontal', chars };
+}

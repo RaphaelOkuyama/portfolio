@@ -120,6 +120,9 @@ export const LANTERNS = {
   laneX: [-15, 15],
   // z local da câmera no fim do caminho (= -RIVER.offsetZ) e abertura lateral por unidade de distância
   viewZ: 56,
+  // Lanterna solta pelo formulário: distância à frente da câmera e tamanho
+  releaseAhead: 8,
+  releasedScale: 1.6,
   spread: 0.55,
   speed: 0.35,
   // Intensidade da luz: > 1 dispara o bloom (só em qualidade alta)

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { currentSpeed, flicker, laneLayout } from '../../src/lib/journey/lanterns';
+import { currentSpeed, flicker, laneLayout, lanternLabel, labelLayout } from '../../src/lib/journey/lanterns';
 import { mulberry32 } from '../../src/lib/journey/ridge';
 
 describe('flicker', () => {
@@ -47,5 +47,27 @@ describe('currentSpeed', () => {
     const mid = currentSpeed(1, 36, 56);
     expect(mid).toBeGreaterThan(0.25);
     expect(mid).toBeLessThan(1);
+  });
+});
+
+describe('lanternLabel', () => {
+  it('pega só o primeiro nome, sem símbolos, até 10 letras', () => {
+    expect(lanternLabel('  Ana Maria Souza ')).toBe('Ana');
+    expect(lanternLabel('<script>alert(1)</script>')).toBe('scriptaler');
+    expect(lanternLabel('Maximiliano')).toHaveLength(10);
+    expect(lanternLabel("D'Ávila")).toBe("D'Ávila");
+  });
+
+  it('aceita japonês e vazio', () => {
+    expect(lanternLabel('奥山 芳賀')).toBe('奥山');
+    expect(lanternLabel('')).toBe('');
+    expect(lanternLabel(undefined)).toBe('');
+  });
+});
+
+describe('labelLayout', () => {
+  it('vertical até 5 letras, horizontal acima', () => {
+    expect(labelLayout('Ana').mode).toBe('vertical');
+    expect(labelLayout('Raphael').mode).toBe('horizontal');
   });
 });

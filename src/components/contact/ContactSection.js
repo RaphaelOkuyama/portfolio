@@ -5,17 +5,26 @@ import { toast } from 'sonner';
 import { gsap } from '../../lib/gsap';
 import { journeyStore } from '../../store/journey';
 import Section from '../journey/Section';
+import { lanternLabel } from '../../lib/journey/lanterns';
 
 const EMPTY = { name: '', email: '', message: '' };
 
 // 灯籠流し: a mensagem vira uma lanterna de papel que desce o rio
-function releaseLantern(card) {
-  journeyStore.getState().releaseLantern();
+function releaseLantern(card, name) {
+  journeyStore.getState().releaseLantern(name);
+  const label = lanternLabel(name);
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const lantern = document.createElement('div');
   lantern.className = 'paper-lantern';
   lantern.setAttribute('data-lantern-release', '');
   lantern.setAttribute('aria-hidden', 'true');
+  // O nome de quem escreveu vai pintado no papel (como texto, nunca como HTML)
+  if (label) {
+    const ink = document.createElement('span');
+    ink.className = Array.from(label).length > 5 ? 'paper-lantern-name is-long' : 'paper-lantern-name';
+    ink.textContent = label;
+    lantern.appendChild(ink);
+  }
   card.appendChild(lantern);
 
   if (reduced) {
@@ -53,9 +62,10 @@ export default function ContactSection({ contact }) {
         body: JSON.stringify(formData),
       });
       if (res.ok) {
+        const { name } = formData;
         setFormData(EMPTY);
         toast.success(messages.success, { id: loadingToast });
-        releaseLantern(cardRef.current);
+        releaseLantern(cardRef.current, name);
       } else {
         toast.error(messages.error, { id: loadingToast });
       }

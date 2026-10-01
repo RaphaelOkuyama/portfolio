@@ -2,8 +2,9 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import {
-  AdditiveBlending, BoxGeometry, Color, InstancedBufferAttribute, MeshBasicMaterial, Object3D, PlaneGeometry, ShaderMaterial,
+  AdditiveBlending, BoxGeometry, Color, InstancedBufferAttribute, Matrix4, MeshBasicMaterial, Object3D, PlaneGeometry, ShaderMaterial,
 } from 'three';
+import { blankTexture, labelTexture } from './lanternLabel';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { journeyStore, useJourney } from '../../store/journey';
 import { SCENE_ACCENTS } from '../../lib/palette';
@@ -109,6 +110,25 @@ export default function Lanterns({ reflections }) {
   );
   useEffect(() => () => Object.values(materials).forEach((m) => m.dispose()), [materials]);
 
+  // Nome no papel das lanternas soltas: um plano por vaga, colado na face virada para a câmera
+  const labels = useMemo(
+    () => ({
+      geometry: new PlaneGeometry(PAPER.w * 0.86, PAPER.h * 0.9),
+      offset: new Matrix4().makeTranslation(0, PAPER.y + PAPER.h / 2, PAPER.w / 2 + 0.004),
+      materials: Array.from({ length: LANTERNS.maxReleased }, () =>
+        new MeshBasicMaterial({ map: blankTexture(), transparent: true, depthWrite: false, toneMapped: false, fog: false })),
+    }),
+    [],
+  );
+  const labelRefs = useRef([]);
+  useEffect(
+    () => () => {
+      labels.geometry.dispose();
+      labels.materials.forEach((m) => m.dispose());
+    },
+    [labels],
+  );
+
   // Lanternas fixas em trilha pelo rio + as soltas pelo formulário
   const lanterns = useRef(null);
   const rand = useMemo(() => mulberry32(71), []);
@@ -140,7 +160,9 @@ export default function Lanterns({ reflections }) {
     while (releasesSeen.current < journey.lanternReleases) {
       releasesSeen.current += 1;
       if (items.length < capacity) {
-        items.push({ ...spawn(lerp(-1.5, 1.5, rand()), LANTERNS.laneZ[1] + 1.5), released: true });
+        const label = journey.lanternNames[releasesSeen.current - 1] || '';
+        // Nasce na faixa de água visível abaixo do conteúdo, maior que as outras: é a lanterna da pessoa
+        items.push({ ...spawn(lerp(-1.2, 1.2, rand()), LANTERNS.viewZ - LANTERNS.releaseAhead), released: true, label });
       }
     }
 
@@ -172,13 +194,17 @@ export default function Lanterns({ reflections }) {
     h.uIntensity.value = lerp(h.uIntensity.value, LANTERNS.halo[theme], k);
 
     const positions = reflections?.lanterns.value;
+    let slot = 0;
     items.forEach((l, i) => {
       // Entra/sai suave nas pontas da faixa (nasce na margem, some ao longe)
-      const edge = Math.min(1, (l.z - z0) / 4, (z1 + 2 - l.z) / 2);
+      // As soltas nascem dentro da faixa: só somem ao longe
+      const edge = l.released ? Math.min(1, (l.z - z0) / 4) : Math.min(1, (l.z - z0) / 4, (z1 + 2 - l.z) / 2);
       const f = flicker(t, l.phase) * Math.max(0, edge);
       dummy.position.set(l.x + Math.sin(t * 0.5 + l.phase) * 0.15, Math.sin(t * 1.6 + l.phase) * 0.03, l.z);
-      dummy.rotation.set(Math.sin(t * 1.1 + l.phase) * 0.04, l.phase + t * 0.08, Math.sin(t + l.phase) * 0.05);
-      dummy.scale.setScalar(Math.max(0.001, edge));
+      // As soltas com nome mantêm a face escrita virada para a câmera (+z), só balançando
+      const spin = l.label ? Math.sin(t * 0.4 + l.phase) * 0.25 : l.phase + t * 0.08;
+      dummy.rotation.set(Math.sin(t * 1.1 + l.phase) * 0.04, spin, Math.sin(t + l.phase) * 0.05);
+      dummy.scale.setScalar(Math.max(0.001, edge) * (l.released ? LANTERNS.releasedScale : 1));
       dummy.updateMatrix();
       paper.setMatrixAt(i, dummy.matrix);
       frame.setMatrixAt(i, dummy.matrix);
@@ -187,7 +213,20 @@ export default function Lanterns({ reflections }) {
       geometries.glow.array[i] = f;
       // No plano do rio, y local = -z do grupo
       if (positions) positions[i].set(dummy.position.x, -l.z, f);
+
+      const label = l.label && slot < LANTERNS.maxReleased ? labelRefs.current[slot] : null;
+      if (label) {
+        const material = labels.materials[slot];
+        const texture = labelTexture(l.label);
+        if (material.map !== texture) material.map = texture;
+        label.matrix.multiplyMatrices(dummy.matrix, labels.offset);
+        label.visible = true;
+        slot += 1;
+      }
     });
+    for (let s = slot; s < LANTERNS.maxReleased; s++) {
+      if (labelRefs.current[s]) labelRefs.current[s].visible = false;
+    }
     for (const mesh of [paper, frame, halo]) {
       mesh.count = items.length;
       mesh.instanceMatrix.needsUpdate = true;
@@ -204,6 +243,20 @@ export default function Lanterns({ reflections }) {
       <instancedMesh ref={paperRef} args={[geometries.paper, materials.paper, capacity]} frustumCulled={false} />
       <instancedMesh ref={frameRef} args={[geometries.frame, materials.frame, capacity]} frustumCulled={false} />
       <instancedMesh ref={haloRef} args={[geometries.halo, materials.halo, capacity]} frustumCulled={false} renderOrder={2} />
+      {labels.materials.map((material, i) => (
+        <mesh
+          key={i}
+          ref={(m) => {
+            labelRefs.current[i] = m;
+          }}
+          geometry={labels.geometry}
+          material={material}
+          matrixAutoUpdate={false}
+          visible={false}
+          frustumCulled={false}
+          renderOrder={1}
+        />
+      ))}
     </group>
   );
 }

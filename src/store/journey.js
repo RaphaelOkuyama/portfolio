@@ -1,6 +1,7 @@
 import { createStore } from 'zustand/vanilla';
 import { useStore } from 'zustand';
 import { clamp01, seasonMixFromProgress, FROZEN_PROGRESS } from '../lib/journey/season';
+import { lanternLabel } from '../lib/journey/lanterns';
 
 // Progresso que a cena deve usar: o real na jornada, o ponto fixo fora dela
 export function effectiveProgress(state) {
@@ -28,6 +29,8 @@ export function createJourneyStore() {
     activeStone: null,
     // Quantas mensagens do contato já viraram lanterna (a cena solta uma por envio)
     lanternReleases: 0,
+    // Nome escrito no papel de cada lanterna solta (mesma ordem de lanternReleases)
+    lanternNames: [],
     // Página 404 aberta: a cena fecha a névoa (迷子)
     lost: false,
 
@@ -54,7 +57,8 @@ export function createJourneyStore() {
       set({ sectionRanges: { ...get().sectionRanges, [id]: range } });
     },
     setActiveStone: (activeStone) => set({ activeStone }),
-    releaseLantern: () => set({ lanternReleases: get().lanternReleases + 1 }),
+    releaseLantern: (name = '') =>
+      set({ lanternReleases: get().lanternReleases + 1, lanternNames: [...get().lanternNames, lanternLabel(name)] }),
     setLost: (lost) => set({ lost }),
   }));
 }
