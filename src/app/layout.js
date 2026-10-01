@@ -21,23 +21,23 @@ const display = Shippori_Mincho({ subsets: ['latin'], weight: ['600', '800'], di
 
 const SITE_URL = 'https://portfolio-raphael-okuyama.vercel.app';
 const DESCRIPTION =
-  'Raphael Nobuyuki Haga Okuyama (奥山) — Desenvolvedor Full-Stack (React, Next.js, NestJS, TypeScript). Um portfólio imersivo pelas quatro estações da montanha.';
+  'Raphael Nobuyuki Haga Okuyama (奥山), Desenvolvedor Full-Stack (React, Next.js, NestJS, TypeScript). Um portfólio imersivo pelas quatro estações da montanha.';
 
 export const metadata = {
   metadataBase: new URL(SITE_URL),
-  title: { default: 'Raphael Okuyama — Desenvolvedor Full-Stack', template: '%s · Raphael Okuyama' },
+  title: { default: 'Raphael Okuyama | Desenvolvedor Full-Stack', template: '%s · Raphael Okuyama' },
   description: DESCRIPTION,
   authors: [{ name: 'Raphael Nobuyuki Haga Okuyama' }],
   openGraph: {
     type: 'website',
     url: SITE_URL,
-    title: 'Raphael Okuyama — Desenvolvedor Full-Stack',
+    title: 'Raphael Okuyama | Desenvolvedor Full-Stack',
     description: DESCRIPTION,
     siteName: 'Raphael Okuyama',
     locale: 'pt_BR',
     images: [{ url: '/profile.jpg', width: 1200, height: 1200, alt: 'Raphael Okuyama' }],
   },
-  twitter: { card: 'summary_large_image', title: 'Raphael Okuyama — Desenvolvedor Full-Stack', description: DESCRIPTION },
+  twitter: { card: 'summary_large_image', title: 'Raphael Okuyama | Desenvolvedor Full-Stack', description: DESCRIPTION },
 };
 
 export const viewport = {

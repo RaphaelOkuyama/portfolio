@@ -9,7 +9,7 @@ const TOTEM_IMGS = [
   { src: '/projects/totem/tela-03.png', alt: 'Detalhes do produto' },
 ];
 
-// Nome em latim e em japonês (kanji e katakana) — usado no hero
+// Nome em latim e em japonês (kanji e katakana), usado no hero
 export const profile = {
   name: 'Raphael Nobuyuki Haga Okuyama',
   nameKanji: 'ラファエル 信幸 芳賀 奥山',
@@ -19,7 +19,7 @@ export const profile = {
 export const resumeData = {
   pt: {
     nav: { home: "Home", projects: "Projetos", certificates: "Certificados", contact: "Contato" },
-    footer: { rights: "Todos os direitos reservados.", made: "Feito com Next.js, Three.js e GSAP — da primavera ao inverno." },
+    footer: { rights: "Todos os direitos reservados.", made: "Feito com Next.js, Three.js e GSAP, da primavera ao inverno." },
     hero: {
       roles: ['Desenvolvedor Full-Stack', 'APIs & Arquitetura Limpa', 'Integrações & IA'],
       location: 'Itaquera/SP',
@@ -105,8 +105,8 @@ export const resumeData = {
     ],
     projectsPage: { 
       title: "Meus Projetos", 
-      hint: "Role para desenrolar o emakimono — cada painel é um projeto.",
-      hintDrag: "Arraste o emakimono para o lado — cada painel é um projeto.",
+      hint: "Role para desenrolar o emakimono. Cada painel é um projeto.",
+      hintDrag: "Arraste o emakimono para o lado. Cada painel é um projeto.",
       btnAll: "Ver todos os projetos",
       subtitle: "Destaque de alguns projetos desenvolvidos. Para explorar mais repositórios, visite meu perfil no GitHub.",
       btnDetails: "Ver Detalhes",
@@ -130,19 +130,19 @@ export const resumeData = {
       featureCount: "Funcionalidades",
       scrollCue: "Role para ler"
     },
-    easterEgg: { message: "千羽鶴 — mil tsurus de origami para te desejar sorte!" },
+    easterEgg: { message: "千羽鶴: mil tsurus de origami para te desejar sorte!" },
     projects: [
       {
-        id: 11, slug: 'imacardios', title: 'IMACARDIOS — Telemedicina e Telelaudos',
+        id: 11, slug: 'imacardios', title: 'IMACARDIOS: Telemedicina e Telelaudos',
         stack: ['Next.js', 'React', 'NestJS', 'TypeScript', 'Prisma', 'PostgreSQL', 'Swagger', 'Jest', 'Playwright', 'Supertest'],
         shortDesc: 'Plataforma B2B de telecardiologia em produção: 42+ clínicas e 2.000+ laudos por mês.',
-        longDesc: 'Freelance remunerado, desenvolvido em dupla. A IMACARDIOS é uma plataforma B2B de telecardiologia em produção, atendendo redes de saúde no Brasil e na América Latina — hoje com mais de 42 clínicas e mais de 2.000 laudos assinados por mês.\n\nProjetei o isolamento de dados sensíveis (CPF e diagnóstico fora do banco principal) e o isolamento entre clínicas em duas camadas: na aplicação e nas regras do Postgres. O back-end em NestJS + Prisma/PostgreSQL é documentado com Swagger e coberto por testes.',
+        longDesc: 'Freelance remunerado, desenvolvido em dupla. A IMACARDIOS é uma plataforma B2B de telecardiologia em produção, atendendo redes de saúde no Brasil e na América Latina, hoje com mais de 42 clínicas e mais de 2.000 laudos assinados por mês.\n\nProjetei o isolamento de dados sensíveis (CPF e diagnóstico fora do banco principal) e o isolamento entre clínicas em duas camadas: na aplicação e nas regras do Postgres. O back-end em NestJS + Prisma/PostgreSQL é documentado com Swagger e coberto por testes.',
         features: ['Plataforma multi-tenant com isolamento entre clínicas em duas camadas', 'Dados sensíveis (CPF e diagnóstico) fora do banco principal', '2FA obrigatório para médicos e administradores (LGPD)', 'Back-end em NestJS + Prisma/PostgreSQL', 'API documentada com Swagger/OpenAPI', 'Testes com Jest, Playwright e Supertest', 'Em produção no Brasil e na América Latina'],
         repoLink: null, deployLink: 'https://app.imacardios.com',
         images: [], imageMobile: false, image: null
       },
       {
-        id: 1, slug: 'fit-ai-frontend', title: 'FIT.AI — App de Treinos',
+        id: 1, slug: 'fit-ai-frontend', title: 'FIT.AI: App de Treinos',
         stack: ['Next.js 16', 'React 19', 'TypeScript', 'Tailwind CSS v4', 'shadcn/ui', 'Google Gemini', 'Better Auth', 'Orval'],
         shortDesc: 'App mobile-first de treinos com coach de IA em tempo real.',
         longDesc: 'O FIT.AI é um aplicativo mobile-first de gestão de treinos com personal trainer virtual integrado. Desenvolvido com Next.js 16 e React 19, o app oferece um onboarding conversacional com IA (Google Gemini 2.5 Flash), onde o coach coleta seus dados físicos e monta um plano de treino personalizado.\n\nO diferencial técnico está no uso de Server Components para busca de dados, Server Actions para mutações e streaming de respostas do chat em tempo real via @ai-sdk/react.',
@@ -151,7 +151,7 @@ export const resumeData = {
         images: [], imageMobile: true, image: null
       },
       {
-        id: 2, slug: 'fit-ai-api', title: 'FIT.AI — API',
+        id: 2, slug: 'fit-ai-api', title: 'FIT.AI: API',
         stack: ['Node.js', 'TypeScript', 'Fastify', 'Prisma', 'PostgreSQL', 'Google Gemini', 'Better Auth', 'Docker', 'Swagger/OpenAPI'],
         shortDesc: 'API robusta para plataforma de treinos com IA integrada.',
         longDesc: 'Backend completo da plataforma FIT.AI. A API gerencia usuários, planos de treino, exercícios, sessões e estatísticas de progresso. O ponto central é a integração com o Google Gemini para geração de planos de treino personalizados e respostas em streaming do coach virtual.',
@@ -247,7 +247,7 @@ export const resumeData = {
 
   en: {
     nav: { home: "Home", projects: "Projects", certificates: "Certificates", contact: "Contact" },
-    footer: { rights: "All rights reserved.", made: "Built with Next.js, Three.js and GSAP — from spring to winter." },
+    footer: { rights: "All rights reserved.", made: "Built with Next.js, Three.js and GSAP, from spring to winter." },
     hero: {
       roles: ['Full-Stack Developer', 'APIs & Clean Architecture', 'Integrations & AI'],
       location: 'Itaquera/SP',
@@ -331,8 +331,8 @@ export const resumeData = {
     ],
     projectsPage: { 
       title: "My Projects", 
-      hint: "Scroll to unroll the emakimono — each panel is a project.",
-      hintDrag: "Drag the emakimono sideways — each panel is a project.",
+      hint: "Scroll to unroll the emakimono. Each panel is a project.",
+      hintDrag: "Drag the emakimono sideways. Each panel is a project.",
       btnAll: "See all projects",
       subtitle: "Highlight of some developed projects. To explore more repositories, visit my GitHub profile.",
       btnDetails: "View Details",
@@ -356,19 +356,19 @@ export const resumeData = {
       featureCount: "Features",
       scrollCue: "Scroll to read"
     },
-    easterEgg: { message: "千羽鶴 — a thousand paper cranes wishing you good luck!" },
+    easterEgg: { message: "千羽鶴: a thousand paper cranes wishing you good luck!" },
     projects: [
       {
-        id: 11, slug: 'imacardios', title: 'IMACARDIOS — Telemedicine & Remote Reports',
+        id: 11, slug: 'imacardios', title: 'IMACARDIOS: Telemedicine & Remote Reports',
         stack: ['Next.js', 'React', 'NestJS', 'TypeScript', 'Prisma', 'PostgreSQL', 'Swagger', 'Jest', 'Playwright', 'Supertest'],
         shortDesc: 'B2B telecardiology platform in production: 42+ clinics and 2,000+ reports per month.',
-        longDesc: 'Paid freelance project, built in a team of two. IMACARDIOS is a B2B telecardiology platform in production, serving healthcare networks in Brazil and Latin America — now with 42+ clinics and 2,000+ signed reports per month.\n\nI designed the isolation of sensitive data (CPF and diagnosis kept outside the main database) and tenant isolation between clinics in two layers: in the application and in Postgres rules. The NestJS + Prisma/PostgreSQL back end is documented with Swagger and covered by tests.',
+        longDesc: 'Paid freelance project, built in a team of two. IMACARDIOS is a B2B telecardiology platform in production, serving healthcare networks in Brazil and Latin America, now with 42+ clinics and 2,000+ signed reports per month.\n\nI designed the isolation of sensitive data (CPF and diagnosis kept outside the main database) and tenant isolation between clinics in two layers: in the application and in Postgres rules. The NestJS + Prisma/PostgreSQL back end is documented with Swagger and covered by tests.',
         features: ['Multi-tenant platform with two-layer clinic isolation', 'Sensitive data (CPF and diagnosis) kept outside the main database', 'Mandatory 2FA for doctors and admins (LGPD)', 'NestJS + Prisma/PostgreSQL back end', 'API documented with Swagger/OpenAPI', 'Tests with Jest, Playwright and Supertest', 'In production across Brazil and Latin America'],
         repoLink: null, deployLink: 'https://app.imacardios.com',
         images: [], imageMobile: false, image: null
       },
       {
-        id: 1, slug: 'fit-ai-frontend', title: 'FIT.AI — Workout App',
+        id: 1, slug: 'fit-ai-frontend', title: 'FIT.AI: Workout App',
         stack: ['Next.js 16', 'React 19', 'TypeScript', 'Tailwind CSS v4', 'shadcn/ui', 'Google Gemini', 'Better Auth', 'Orval'],
         shortDesc: 'Mobile-first workout app with real-time AI coach.',
         longDesc: 'FIT.AI is a mobile-first workout management app with an integrated virtual personal trainer. Built with Next.js 16 and React 19, the app features a conversational AI onboarding (Google Gemini 2.5 Flash), where the coach collects your physical data and builds a personalized workout plan.',
@@ -377,7 +377,7 @@ export const resumeData = {
         images: [], imageMobile: true, image: null
       },
       {
-        id: 2, slug: 'fit-ai-api', title: 'FIT.AI — API',
+        id: 2, slug: 'fit-ai-api', title: 'FIT.AI: API',
         stack: ['Node.js', 'TypeScript', 'Fastify', 'Prisma', 'PostgreSQL', 'Google Gemini', 'Better Auth', 'Docker', 'Swagger/OpenAPI'],
         shortDesc: 'Robust API for AI-powered workout platform.',
         longDesc: 'Complete backend for the FIT.AI platform. The API manages users, workout plans, exercises, sessions and progress statistics. The core feature is the integration with Google Gemini for generating personalized workout plans and streaming virtual coach responses.',

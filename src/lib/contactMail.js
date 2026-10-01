@@ -53,7 +53,7 @@ export function buildMail({ name, email, message }, inbox) {
   const html = escapeHtml(message).replace(/\n/g, '<br>');
   return {
     // Sempre do próprio endereço (evita spoofing); quem escreveu vai no replyTo
-    from: { name: 'Portfólio — Contato', address: inbox },
+    from: { name: 'Contato do portfólio', address: inbox },
     replyTo: { name, address: email },
     to: inbox,
     subject: `Novo contato do portfólio: ${name}`,

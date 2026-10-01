@@ -124,7 +124,7 @@ test.describe('Página de projeto (作)', () => {
 
   test('o título fica inteiro (SplitText não quebra o texto do heading)', async ({ page }) => {
     await page.goto('/projects/fit-ai-api');
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('FIT.AI — API');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('FIT.AI: API');
   });
 
   test('a linha de leitura enche conforme o scroll', async ({ page }) => {
