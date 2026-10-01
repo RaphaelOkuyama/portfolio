@@ -117,8 +117,13 @@ export const resumeData = {
       aboutProject: "Sobre o Projeto",
       projectImage: "Imagem do Projeto",
       loadingText: "Carregando projeto...",
-      btnBack: "Voltar"
+      btnBack: "Voltar",
+      projectLabel: "Projeto",
+      gallery: "Galeria",
+      prevProject: "Projeto anterior",
+      nextProject: "Próximo projeto"
     },
+    easterEgg: { message: "千羽鶴 — mil tsurus de origami para te desejar sorte!" },
     projects: [
       {
         id: 11, slug: 'imacardios', title: 'IMACARDIOS — Telemedicina e Telelaudos',
@@ -329,8 +334,13 @@ export const resumeData = {
       aboutProject: "About the Project",
       projectImage: "Project Image",
       loadingText: "Loading project...",
-      btnBack: "Back"
+      btnBack: "Back",
+      projectLabel: "Project",
+      gallery: "Gallery",
+      prevProject: "Previous project",
+      nextProject: "Next project"
     },
+    easterEgg: { message: "千羽鶴 — a thousand paper cranes wishing you good luck!" },
     projects: [
       {
         id: 11, slug: 'imacardios', title: 'IMACARDIOS — Telemedicine & Remote Reports',

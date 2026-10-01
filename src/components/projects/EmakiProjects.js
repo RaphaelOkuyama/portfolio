@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
 import { gsap, ScrollTrigger, Draggable, useGSAP } from '../../lib/gsap';
 import Section from '../journey/Section';
+import { kanjiNumber } from '../../lib/kanji';
 
-const KANJI_NUMBERS = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二'];
 
 // Modos do rolo: pin horizontal no desktop, arrastar no celular, grade estática com movimento reduzido
 const DESKTOP = '(min-width: 768px) and (prefers-reduced-motion: no-preference)';
@@ -164,7 +164,7 @@ export default function EmakiProjects({ projects, labels }) {
                     onClick={(e) => onPanelClick(e, href)}
                     onFocus={(e) => revealPanel(e.currentTarget)}
                   >
-                    <span className="emaki-number font-jp" aria-hidden="true">{KANJI_NUMBERS[i] ?? i + 1}</span>
+                    <span className="emaki-number font-jp" aria-hidden="true">{kanjiNumber(i)}</span>
                     <h3 className="emaki-title">{project.title}</h3>
                     <p className="emaki-desc">{project.shortDesc}</p>
                     <ul className="emaki-stack">

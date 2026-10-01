@@ -1,184 +1,131 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useRef } from 'react';
+import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import Reveal from '../../../components/Reveal';
+import { ArrowLeft, ArrowRight, Github, Globe, ExternalLink } from 'lucide-react';
+import { gsap, SplitText, useGSAP } from '../../../lib/gsap';
 import { useSettings } from '../../../context/SettingsContext';
-import { ArrowLeft, Github, Globe, Layers, CheckCircle, ExternalLink, Code2 } from 'lucide-react';
+import { kanjiNumber } from '../../../lib/kanji';
 import ProjectImageCarousel from '../../../components/ProjectImageCarousel';
 
+// 作 Detalhe do projeto: cabeçalho de emakimono (rolos de madeira + numeral em kanji),
+// galeria só quando há imagens, funcionalidades com gotas de tinta e navegação entre projetos
 export default function ProjectDetails() {
-  const params = useParams();
+  const { slug } = useParams();
   const router = useRouter();
   const { currentData } = useSettings();
+  const rootRef = useRef(null);
 
-  const [project, setProject] = useState(null);
-  const [isDesktop, setIsDesktop] = useState(false);
+  const projects = currentData?.projects ?? [];
+  const labels = currentData?.projectsPage ?? {};
+  const index = projects.findIndex((p) => p.slug === slug);
+  const project = projects[index];
+  const prev = index > 0 ? projects[index - 1] : null;
+  const next = index >= 0 && index < projects.length - 1 ? projects[index + 1] : null;
 
-  useEffect(() => {
-    const checkDevice = () => setIsDesktop(window.innerWidth >= 900);
-    checkDevice();
-    window.addEventListener('resize', checkDevice);
-    return () => window.removeEventListener('resize', checkDevice);
-  }, []);
+  useGSAP(() => {
+    if (!project || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
+    const split = SplitText.create('.project-title', { type: 'words,chars', mask: 'words' });
+    const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+    tl.from('.project-scroll', { clipPath: 'inset(0 50% 0 50%)', duration: 0.9, ease: 'power2.inOut' })
+      .from('.project-rod', { scaleY: 0, duration: 0.5, stagger: 0.08 }, 0.1)
+      .from('.project-kanji', { autoAlpha: 0, scale: 1.3, duration: 0.7 }, 0.35)
+      .from(split.chars, { yPercent: 110, duration: 0.6, stagger: 0.012 }, 0.45)
+      .from('.project-reveal', { autoAlpha: 0, y: 24, duration: 0.6, stagger: 0.08 }, 0.7);
+    return () => split.revert();
+  }, { scope: rootRef, dependencies: [slug, Boolean(project)], revertOnUpdate: true });
 
-  useEffect(() => {
-    if (currentData && currentData.projects) {
-      const found = currentData.projects.find((p) => p.slug === params.slug);
-      if (found) setProject(found);
-    }
-  }, [params.slug, currentData]);
+  if (!project) {
+    return (
+      <div className="project-loading">
+        <p>{labels.loadingText || 'Carregando...'}</p>
+      </div>
+    );
+  }
 
-  if (!project) return (
-    <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p>{currentData.projectsPage.loadingText || "Carregando..."}</p>
-    </div>
-  );
-
-  // Verifica se o projeto tem imagens para o carrossel
-  const hasImages = project.images && project.images.length > 0;
+  const position = `${String(index + 1).padStart(2, '0')} / ${String(projects.length).padStart(2, '0')}`;
+  const paragraphs = project.longDesc.split('\n').filter(Boolean);
 
   return (
-    <div className="container" style={{ padding: isDesktop ? '100px 24px' : '80px 20px', maxWidth: '1000px' }}>
-
-      <button
-        onClick={() => router.back()}
-        className="hover-back"
-        style={{
-          background: 'none', border: 'none', color: 'var(--text-secondary)',
-          display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer',
-          marginBottom: '40px', fontSize: '1rem', fontWeight: 'bold'
-        }}
-      >
-        <ArrowLeft size={20} /> {currentData.projectsPage.btnBack || "Voltar"}
+    <div ref={rootRef} className="container project-page">
+      <button type="button" className="project-back hover-back" onClick={() => router.back()}>
+        <ArrowLeft size={18} aria-hidden="true" /> {labels.btnBack || 'Voltar'}
       </button>
 
-      <Reveal>
-
-        <h1 style={{ fontSize: isDesktop ? '3.5rem' : '2.5rem', marginBottom: '20px', lineHeight: 1.1 }}>
-          {project.title}
-        </h1>
-
-        {/* Stack */}
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '40px', flexWrap: 'wrap' }}>
-          {project.stack.map((tech, i) => (
-            <span key={i} style={{
-              padding: '6px 14px', background: 'color-mix(in srgb, var(--accent) 12%, transparent)', border: '1px solid var(--accent)',
-              borderRadius: '20px', color: 'var(--accent)', fontWeight: 'bold', fontSize: '0.85rem'
-            }}>
-              {tech}
-            </span>
-          ))}
-        </div>
-
-        {/*
-          IMAGEM / CARROSSEL
-          - Se project.imageMobile = true → carrossel com mockup de celular (portrait)
-          - Se project.imageMobile = false → carrossel 16/9 normal (desktop)
-          - Se não tiver imagens → placeholder com ícone
-        */}
-        {hasImages ? (
-          // Wrapper centralizado para o carrossel mobile
-          project.imageMobile ? (
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '50px' }}>
-              <ProjectImageCarousel images={project.images} isMobile={true} />
-            </div>
-          ) : (
-            <ProjectImageCarousel images={project.images} isMobile={false} />
-          )
-        ) : (
-          // Placeholder quando não há imagens
-          <div style={{
-            width: '100%', aspectRatio: '16/9', background: 'var(--card-bg)',
-            borderRadius: '20px', marginBottom: '50px', border: '1px solid var(--border)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <div style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
-              <Code2 size={64} style={{ opacity: 0.2, marginBottom: '10px' }} />
-              <p>{currentData.projectsPage.projectImage}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Layout responsivo: Grid no desktop, coluna no mobile */}
-        <div style={{
-          display: isDesktop ? 'grid' : 'flex',
-          flexDirection: 'column',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: isDesktop ? '60px' : '40px'
-        }}>
-
-          {/* Lado esquerdo — descrição e botões */}
-          <div>
-            <h2 style={{ fontSize: '2rem', marginBottom: '20px', color: 'var(--text-primary)' }}>
-              {currentData.projectsPage.aboutProject}
-            </h2>
-            <p style={{ fontSize: '1.1rem', lineHeight: 1.8, color: 'var(--text-secondary)', marginBottom: '40px', whiteSpace: 'pre-line' }}>
-              {project.longDesc}
-            </p>
-
-            {/* Botões */}
-            <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-              {project.repoLink && (
-                <a href={project.repoLink} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', width: isDesktop ? 'auto' : '100%' }}>
-                  <button
-                    className="btn-outline"
-                    style={{
-                      padding: '14px 28px', borderRadius: '50px', border: '1px solid var(--border)',
-                      background: 'var(--card-bg)', color: 'var(--text-primary)', cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', gap: '10px',
-                      fontWeight: 'bold', fontSize: '1rem',
-                      justifyContent: 'center', width: '100%'
-                    }}
-                  >
-                    <Github size={20} /> {currentData.projectsPage.btnCode}
-                  </button>
-                </a>
-              )}
-
+      {/* Cabeçalho: o rolo se abre do centro, entre dois rolos de madeira */}
+      <header className="project-scroll">
+        <span className="project-rod" aria-hidden="true" />
+        <div className="project-scroll-body">
+          <span className="project-kanji font-jp" aria-hidden="true">{kanjiNumber(index)}</span>
+          <p className="project-eyebrow">
+            <span className="font-jp" aria-hidden="true">作</span> {labels.projectLabel} {position}
+          </p>
+          <h1 className="project-title">{project.title}</h1>
+          <p className="project-lead project-reveal">{project.shortDesc}</p>
+          <ul className="project-stack project-reveal" aria-label={labels.techs}>
+            {project.stack.map((tech) => (
+              <li key={tech}>{tech}</li>
+            ))}
+          </ul>
+          {(project.deployLink || project.repoLink) && (
+            <div className="project-links project-reveal">
               {project.deployLink && (
-                <a href={project.deployLink} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', width: isDesktop ? 'auto' : '100%' }}>
-                  <button
-                    className="btn-fill"
-                    style={{
-                      padding: '14px 28px', borderRadius: '50px', border: '1px solid var(--accent)',
-                      background: 'transparent', color: 'var(--accent)', cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', gap: '10px',
-                      fontWeight: 'bold', fontSize: '1rem',
-                      justifyContent: 'center', width: '100%'
-                    }}
-                  >
-                    <Globe size={20} /> {currentData.projectsPage.btnDeploy} <ExternalLink size={16} />
-                  </button>
+                <a href={project.deployLink} target="_blank" rel="noopener noreferrer" className="project-link is-primary">
+                  <Globe size={18} aria-hidden="true" /> {labels.btnDeploy} <ExternalLink size={14} aria-hidden="true" />
+                </a>
+              )}
+              {project.repoLink && (
+                <a href={project.repoLink} target="_blank" rel="noopener noreferrer" className="project-link">
+                  <Github size={18} aria-hidden="true" /> {labels.btnCode}
                 </a>
               )}
             </div>
-          </div>
-
-          {/* Lado direito — funcionalidades */}
-          <div style={{ height: 'fit-content' }}>
-            <div style={{
-              background: 'var(--card-bg)', padding: '30px', borderRadius: '20px',
-              border: '1px solid var(--border)', boxShadow: '0 10px 40px -10px rgba(0,0,0,0.1)'
-            }}>
-              <h3 style={{ fontSize: '1.4rem', marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-primary)' }}>
-                <Layers color="var(--accent)" size={24} />
-                {currentData.projectsPage.features}
-              </h3>
-
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                {project.features && project.features.map((feature, i) => (
-                  <li key={i} style={{ display: 'flex', alignItems: 'start', gap: '12px', color: 'var(--text-secondary)', fontSize: '1rem', lineHeight: 1.5 }}>
-                    <CheckCircle size={18} color="var(--accent)" style={{ marginTop: '3px', flexShrink: 0 }} />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
+          )}
         </div>
+        <span className="project-rod" aria-hidden="true" />
+      </header>
 
-      </Reveal>
+      {project.images?.length > 0 && (
+        <section className="project-gallery project-reveal" aria-label={labels.gallery}>
+          <ProjectImageCarousel images={project.images} isMobile={project.imageMobile} />
+        </section>
+      )}
+
+      <div className="project-body">
+        <section className="project-about project-reveal">
+          <h2>{labels.aboutProject}</h2>
+          {paragraphs.map((text) => (
+            <p key={text.slice(0, 32)}>{text}</p>
+          ))}
+        </section>
+
+        {project.features?.length > 0 && (
+          <section className="project-features project-reveal">
+            <h2>{labels.features}</h2>
+            <ul>
+              {project.features.map((feature) => (
+                <li key={feature}>{feature}</li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </div>
+
+      {/* Navegação no rolo: anterior / próximo */}
+      <nav className="project-nav" aria-label={labels.projectLabel}>
+        {prev ? (
+          <Link href={`/projects/${prev.slug}`} className="project-nav-link">
+            <span className="project-nav-label"><ArrowLeft size={16} aria-hidden="true" /> {labels.prevProject}</span>
+            <span className="project-nav-title">{prev.title}</span>
+          </Link>
+        ) : <span />}
+        {next ? (
+          <Link href={`/projects/${next.slug}`} className="project-nav-link is-next">
+            <span className="project-nav-label">{labels.nextProject} <ArrowRight size={16} aria-hidden="true" /></span>
+            <span className="project-nav-title">{next.title}</span>
+          </Link>
+        ) : <span />}
+      </nav>
     </div>
   );
 }

@@ -887,6 +887,34 @@ p, li { text-wrap: pretty; }
 .paper-lantern::before { top: -3px; }
 .paper-lantern::after { bottom: -3px; }
 
+/* Nome de quem escreveu, pintado no papel: vertical (tategaki) nos curtos */
+.paper-lantern:has(.paper-lantern-name) {
+  width: 58px;
+  height: 80px;
+  margin-left: -29px;
+}
+.paper-lantern-name {
+  position: absolute;
+  inset: 5px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display), 'Yu Mincho', serif;
+  font-weight: 800;
+  font-size: 17px;
+  line-height: 1;
+  color: #2b1a0e;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  letter-spacing: -1px;
+  overflow: hidden;
+}
+.paper-lantern-name.is-long {
+  writing-mode: horizontal-tb;
+  font-size: 11px;
+  letter-spacing: 0;
+}
+
 /* --- FASE 6: carimbo hanko nos certificados (証) --- */
 .cert-hanko {
   position: absolute;
@@ -1065,4 +1093,295 @@ html.is-loading body {
 
 [data-theme='day'] .washi::after {
   background: radial-gradient(ellipse 85% 75% at 50% 45%, transparent 60%, rgb(120 90 55 / 0.14) 100%);
+}
+
+/* --- 作 Página de projeto: rolo de emakimono --- */
+.project-page {
+  max-width: 1040px;
+  padding: 104px 24px 96px;
+}
+
+.project-loading {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.project-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 28px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.project-scroll {
+  position: relative;
+  display: grid;
+  grid-template-columns: 14px 1fr 14px;
+  margin-bottom: 56px;
+  border-radius: 6px;
+  background: var(--paper);
+  box-shadow: 0 30px 60px -30px rgb(0 0 0 / 0.45);
+}
+
+/* Rolos de madeira nas pontas do papel */
+.project-rod {
+  border-radius: 7px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--wood) 70%, #000), var(--wood) 45%, color-mix(in srgb, var(--wood) 80%, #fff 20%));
+  transform-origin: center;
+}
+
+.project-scroll-body {
+  position: relative;
+  overflow: hidden;
+  padding: 48px clamp(24px, 5vw, 64px) 44px;
+}
+
+/* Numeral do projeto em marca d'água, como carimbo de tinta no papel */
+.project-kanji {
+  position: absolute;
+  right: clamp(12px, 4vw, 48px);
+  top: 50%;
+  translate: 0 -50%;
+  font-size: clamp(7rem, 18vw, 13rem);
+  line-height: 1;
+  color: var(--accent);
+  opacity: 0.12;
+  pointer-events: none;
+  user-select: none;
+}
+
+.project-eyebrow {
+  position: relative;
+  margin: 0 0 14px;
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.project-title {
+  position: relative;
+  max-width: 18ch;
+  margin: 0 0 18px;
+  font-family: var(--font-display), 'Yu Mincho', serif;
+  font-size: clamp(2.2rem, 5.5vw, 3.8rem);
+  font-weight: 800;
+  line-height: 1.08;
+  color: var(--text-primary);
+}
+
+.project-lead {
+  position: relative;
+  max-width: 56ch;
+  margin: 0 0 26px;
+  font-size: 1.15rem;
+  line-height: 1.65;
+  color: var(--text-secondary);
+}
+
+.project-stack {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 30px;
+  padding: 0;
+  list-style: none;
+}
+
+.project-stack li {
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.project-links {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.project-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px 22px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-primary);
+  font-weight: 700;
+  text-decoration: none;
+  transition: translate 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+}
+
+.project-link:hover { translate: 0 -2px; border-color: var(--accent); }
+.project-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+.project-link.is-primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.project-gallery { margin-bottom: 56px; }
+
+.project-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 56px;
+  margin-bottom: 72px;
+}
+
+.project-body h2 {
+  margin: 0 0 18px;
+  font-family: var(--font-display), 'Yu Mincho', serif;
+  font-size: 1.6rem;
+  color: var(--text-primary);
+}
+
+.project-about p {
+  margin: 0 0 18px;
+  font-size: 1.05rem;
+  line-height: 1.8;
+  color: var(--text-secondary);
+}
+
+.project-features {
+  align-self: start;
+  padding: 28px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card-bg);
+}
+
+.project-features ul {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Marcador: gota de tinta irregular */
+.project-features li {
+  position: relative;
+  padding-left: 22px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.project-features li::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 0.55em;
+  width: 9px;
+  height: 9px;
+  border-radius: 60% 40% 55% 45% / 50% 60% 40% 50%;
+  background: var(--accent);
+}
+
+.project-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding-top: 32px;
+  border-top: 1px solid var(--border);
+}
+
+.project-nav-link {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 20px 22px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  text-decoration: none;
+  transition: border-color 0.25s ease, translate 0.25s ease;
+}
+
+.project-nav-link:hover { border-color: var(--accent); translate: 0 -2px; }
+.project-nav-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.project-nav-link.is-next { text-align: right; align-items: flex-end; }
+
+.project-nav-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.project-nav-title {
+  font-family: var(--font-display), 'Yu Mincho', serif;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+@media (max-width: 860px) {
+  .project-page { padding: 88px 18px 72px; }
+  .project-body { grid-template-columns: 1fr; gap: 36px; }
+  .project-scroll { grid-template-columns: 10px 1fr 10px; }
+  .project-link { flex: 1 1 100%; justify-content: center; }
+}
+
+@media (max-width: 560px) {
+  /* Sem espaço ao lado do texto: a marca d'água cairia em cima dele */
+  .project-kanji { display: none; }
+  .project-nav { grid-template-columns: 1fr; }
+  .project-nav-link.is-next { text-align: left; align-items: flex-start; }
+}
+
+/* --- 千羽鶴: easter egg (Konami ou 5 carimbadas no hanko do rodapé) --- */
+.footer-hanko { cursor: pointer; user-select: none; }
+
+.senbazuru {
+  position: fixed;
+  inset: 0;
+  z-index: 9996;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.tsuru {
+  position: absolute;
+  top: 0;
+  left: 0;
+  filter: drop-shadow(0 6px 8px rgb(0 0 0 / 0.25));
+  will-change: transform;
+}
+
+.tsuru-wing {
+  transform-box: view-box;
+  transform-origin: 32px 25px;
+  animation: tsuru-flap 0.42s ease-in-out infinite alternate;
+}
+
+.tsuru-wing.is-far { animation-delay: -0.21s; }
+
+@keyframes tsuru-flap {
+  from { transform: scaleY(1); }
+  to { transform: scaleY(-0.55); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tsuru-wing { animation: none; }
 }
