@@ -47,6 +47,7 @@ export default function ContactSection({ contact }) {
   const [formData, setFormData] = useState(EMPTY);
   const [status, setStatus] = useState('idle');
   const cardRef = useRef(null);
+  const honeypotRef = useRef(null);
   const { form, toast: messages } = contact;
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -59,13 +60,19 @@ export default function ContactSection({ contact }) {
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        // O campo isca só vai junto se alguém (um robô) preencheu
+        body: JSON.stringify(honeypotRef.current?.value ? { ...formData, company: honeypotRef.current.value } : formData),
       });
       if (res.ok) {
         const { name } = formData;
         setFormData(EMPTY);
         toast.success(messages.success, { id: loadingToast });
         releaseLantern(cardRef.current, name);
+      } else if (res.status === 429) {
+        toast.error(messages.rate, { id: loadingToast });
+      } else if (res.status === 503) {
+        // Envio fora do ar: o visitante não fica sem caminho, recebe o e-mail direto
+        toast.error(messages.unavailable, { id: loadingToast, duration: 8000 });
       } else {
         toast.error(messages.error, { id: loadingToast });
       }
@@ -114,14 +121,19 @@ export default function ContactSection({ contact }) {
 
         <div ref={cardRef} className="contact-card">
           <form onSubmit={handleSubmit}>
+            {/* Isca para robôs: invisível e fora da navegação por teclado e leitores de tela */}
+            <div className="contact-honeypot" aria-hidden="true">
+              <label htmlFor="contact-company">Empresa</label>
+              <input ref={honeypotRef} id="contact-company" type="text" name="company" tabIndex={-1} autoComplete="off" />
+            </div>
             <label className="contact-label" htmlFor="contact-name">{form.nameLabel}</label>
-            <input id="contact-name" className="contact-input" type="text" name="name" placeholder={form.namePlaceholder} value={formData.name} onChange={handleChange} required />
+            <input id="contact-name" className="contact-input" type="text" name="name" placeholder={form.namePlaceholder} value={formData.name} onChange={handleChange} required maxLength={100} autoComplete="name" />
 
             <label className="contact-label" htmlFor="contact-email">{form.emailLabel}</label>
-            <input id="contact-email" className="contact-input" type="email" name="email" placeholder={form.emailPlaceholder} value={formData.email} onChange={handleChange} required />
+            <input id="contact-email" className="contact-input" type="email" name="email" placeholder={form.emailPlaceholder} value={formData.email} onChange={handleChange} required maxLength={254} autoComplete="email" />
 
             <label className="contact-label" htmlFor="contact-message">{form.messageLabel}</label>
-            <textarea id="contact-message" className="contact-input" name="message" rows="5" placeholder={form.messagePlaceholder} value={formData.message} onChange={handleChange} required style={{ resize: 'none' }} />
+            <textarea id="contact-message" className="contact-input" name="message" rows="5" placeholder={form.messagePlaceholder} value={formData.message} onChange={handleChange} required maxLength={5000} style={{ resize: 'none' }} />
 
             <button type="submit" disabled={loading} className="btn-press contact-submit">
               {loading ? contact.sending : form.btn}

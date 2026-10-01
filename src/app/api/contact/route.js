@@ -1,72 +1,66 @@
 import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
+import {
+  validateContact, isBot, buildMail, normalizeAppPassword, createRateLimiter,
+} from '../../../lib/contactMail';
 
-// Sanitiza strings para evitar header injection no email
-function sanitize(str = '') {
-  return String(str).replace(/[\r\n]/g, ' ').trim().slice(0, 1000);
+const allow = createRateLimiter({ max: 5, windowMs: 10 * 60 * 1000 });
+
+const MESSAGES = {
+  missing: 'Campos obrigatórios ausentes.',
+  email: 'E-mail inválido.',
+  too_long: 'Mensagem longa demais.',
+};
+
+let transporter = null;
+function getTransporter() {
+  if (!transporter) {
+    transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user: process.env.EMAIL_USER, pass: normalizeAppPassword(process.env.EMAIL_PASS) },
+      // Sem resposta do Gmail em 15s, falha em vez de deixar o visitante esperando
+      connectionTimeout: 15_000,
+      greetingTimeout: 15_000,
+      socketTimeout: 20_000,
+    });
+  }
+  return transporter;
 }
 
 export async function POST(req) {
+  let body;
   try {
-    const body = await req.json();
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ message: 'Requisição inválida.' }, { status: 400 });
+  }
 
-    const name    = sanitize(body.name);
-    const email   = sanitize(body.email);
-    const message = sanitize(body.message);
+  // Robô preencheu o campo isca: finge sucesso e não envia nada
+  if (isBot(body)) return NextResponse.json({ message: 'E-mail enviado com sucesso!' }, { status: 200 });
 
-    // Validação básica
-    if (!name || !email || !message) {
-      return NextResponse.json(
-        { message: 'Campos obrigatórios ausentes.' },
-        { status: 400 }
-      );
-    }
+  const result = validateContact(body);
+  if (!result.ok) return NextResponse.json({ message: MESSAGES[result.error], code: result.error }, { status: 400 });
 
-    // Validação simples de email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { message: 'E-mail inválido.' },
-        { status: 400 }
-      );
-    }
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'local';
+  if (!allow(ip)) {
+    return NextResponse.json({ message: 'Muitas mensagens em pouco tempo.', code: 'rate' }, { status: 429 });
+  }
 
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.error('Contato: EMAIL_USER/EMAIL_PASS não configurados');
+    return NextResponse.json({ message: 'Envio indisponível.', code: 'config' }, { status: 503 });
+  }
 
-    const mailOptions = {
-      // CORREÇÃO: 'from' deve ser sempre o seu próprio email para evitar
-      // spoofing. O email do remetente vai no 'replyTo'.
-      from: `"Portfolio Contato" <${process.env.EMAIL_USER}>`,
-      replyTo: `"${name}" <${email}>`,
-      to: process.env.EMAIL_USER,
-      subject: `Novo contato do Portfólio: ${name}`,
-      text: `Nome: ${name}\nEmail: ${email}\nMensagem: ${message}`,
-      html: `
-        <h3>Novo Contato do Site</h3>
-        <p><strong>Nome:</strong> ${name}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Mensagem:</strong></p>
-        <p style="white-space: pre-line;">${message}</p>
-      `,
-    };
-
-    await transporter.sendMail(mailOptions);
-
-    return NextResponse.json(
-      { message: 'E-mail enviado com sucesso!' },
-      { status: 200 }
-    );
+  try {
+    await getTransporter().sendMail(buildMail(result.data, process.env.EMAIL_USER));
+    return NextResponse.json({ message: 'E-mail enviado com sucesso!' }, { status: 200 });
   } catch (error) {
-    console.error('Erro ao enviar email:', error);
+    // EAUTH = senha de app inválida/revogada: problema de configuração, não do visitante
+    console.error('Contato: falha no envio', error.code, error.responseCode);
+    const config = error.code === 'EAUTH';
     return NextResponse.json(
-      { message: 'Erro ao enviar e-mail.' },
-      { status: 500 }
+      { message: 'Erro ao enviar e-mail.', code: config ? 'config' : 'send' },
+      { status: config ? 503 : 502 },
     );
   }
 }
