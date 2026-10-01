@@ -82,6 +82,10 @@ p, li { text-wrap: pretty; }
   max-width: 100%;
   overflow: hidden;
   vertical-align: bottom;
+  /* Folga para acentos e descendentes (y, g, j) que passam do line-height 1.1;
+     a margem negativa devolve o espaço e o layout não muda */
+  padding: 0.12em 0.04em 0.22em;
+  margin: -0.12em -0.04em -0.22em;
   /* Latim em Shippori Mincho; kana/kanji caem nas fontes japonesas do sistema */
   font-family: var(--font-display), 'Hiragino Mincho ProN', 'Yu Mincho', 'YuMincho', 'Noto Serif JP', serif;
   font-weight: 800;
