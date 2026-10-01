@@ -69,14 +69,20 @@ export default function InkCursor() {
       const ctx = canvas.getContext('2d');
       let ink = readInk();
 
+      // Mede o próprio canvas, não a janela: window.innerWidth inclui a barra de rolagem, e o
+      // canvas (fixed, inset 0) termina antes dela. Com a diferença, o desenho era esticado e o
+      // rastro saía deslocado do ponto, cada vez mais à direita da tela
+      let size = { w: 0, h: 0 };
       const resize = () => {
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
-        canvas.width = window.innerWidth * dpr;
-        canvas.height = window.innerHeight * dpr;
+        size = { w: canvas.clientWidth, h: canvas.clientHeight };
+        canvas.width = Math.round(size.w * dpr);
+        canvas.height = Math.round(size.h * dpr);
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       };
       resize();
-      window.addEventListener('resize', resize);
+      const resizeObserver = new ResizeObserver(resize);
+      resizeObserver.observe(canvas);
 
       // A cor da tinta acompanha o tema
       const observer = new MutationObserver(() => {
@@ -86,7 +92,7 @@ export default function InkCursor() {
 
       const draw = () => {
         points = pruneTrail(points, performance.now());
-        ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+        ctx.clearRect(0, 0, size.w, size.h);
         if (points.length < 2) return;
         ctx.strokeStyle = ink;
         ctx.lineCap = 'round';
@@ -104,7 +110,7 @@ export default function InkCursor() {
 
       cleanups.push(
         () => gsap.ticker.remove(draw),
-        () => window.removeEventListener('resize', resize),
+        () => resizeObserver.disconnect(),
         () => observer.disconnect(),
       );
     }

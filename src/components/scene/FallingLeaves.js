@@ -14,6 +14,7 @@ const vertexShader = /* glsl */ `
   uniform float uTime;
   uniform vec2 uPointer;
   uniform float uPointerActive;
+  uniform float uAspect;
   uniform vec3 uVolumeMin;
   uniform vec3 uVolumeSize;
   varying vec2 vUv;
@@ -44,10 +45,14 @@ const vertexShader = /* glsl */ `
 
     vec4 clip = projectionMatrix * modelViewMatrix * vec4(p + local, 1.0);
 
-    // Afasta do cursor em espaço de tela
+    // Afasta do cursor em espaço de tela. As coordenadas normalizadas vão de -1 a 1 nos dois
+    // eixos, então mede em espaço "quadrado" (x vezes a proporção): a zona livre é um círculo
     vec2 away = clip.xy / clip.w - uPointer;
+    away.x *= uAspect;
     float push = uPointerActive * smoothstep(0.25, 0.0, length(away)) * 0.12;
-    clip.xy += normalize(away + 1e-5) * push * clip.w;
+    vec2 shift = normalize(away + 1e-5) * push;
+    shift.x /= uAspect;
+    clip.xy += shift * clip.w;
 
     gl_Position = clip;
   }
@@ -99,6 +104,7 @@ export default function FallingLeaves({ volume, seed = 7, size = [0.22, 0.16], a
       uTime: { value: 0 },
       uPointer: { value: new Vector2() },
       uPointerActive: { value: 0 },
+      uAspect: { value: 1 },
       uVolumeMin: { value: new Vector3() },
       uVolumeSize: { value: new Vector3() },
       uColor: { value: new Color() },
@@ -123,6 +129,7 @@ export default function FallingLeaves({ volume, seed = 7, size = [0.22, 0.16], a
     uniforms.uColor.value.set(SCENE_ACCENTS[theme][accent]);
     uniforms.uPointer.value.set(pointer.x, pointer.y);
     uniforms.uPointerActive.value = pointer.active && !reducedMotion ? 1 : 0;
+    uniforms.uAspect.value = state.size.width / Math.max(1, state.size.height);
     if (!reducedMotion) uniforms.uTime.value += delta;
   });
 
