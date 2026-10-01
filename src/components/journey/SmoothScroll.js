@@ -5,6 +5,7 @@ import Lenis from 'lenis';
 import 'lenis/dist/lenis.css';
 import { gsap, ScrollTrigger } from '../../lib/gsap';
 import { journeyStore, useJourney } from '../../store/journey';
+import { setLenis } from '../../lib/scroll';
 
 function nativeProgress() {
   const max = document.documentElement.scrollHeight - window.innerHeight;
@@ -30,6 +31,7 @@ export default function SmoothScroll() {
 
     const lenis = new Lenis();
     lenisRef.current = lenis;
+    setLenis(lenis);
     lenis.on('scroll', (instance) => {
       ScrollTrigger.update();
       setProgress(instance.progress);
@@ -43,6 +45,7 @@ export default function SmoothScroll() {
       gsap.ticker.remove(tick);
       lenis.destroy();
       lenisRef.current = null;
+      setLenis(null);
     };
   }, [reducedMotion]);
 

@@ -292,21 +292,6 @@ p, li { text-wrap: pretty; }
 }
 
 /* --- FOOTER RESPONSIVO --- */
-.footer {
-  padding: 48px 0 56px;
-  border-top: 1px solid var(--border);
-  color: var(--text-secondary);
-  margin-top: auto;
-  width: 100%;
-  background: color-mix(in srgb, var(--bg-color) 88%, transparent);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-}
-.footer-inner {
-  display: flex;
-  align-items: center;
-  gap: 22px;
-}
 .footer-hanko {
   flex-shrink: 0;
   width: 56px;
@@ -321,32 +306,6 @@ p, li { text-wrap: pretty; }
   font-weight: 700;
   line-height: 1;
   transform: rotate(-6deg);
-}
-.footer-text p { margin: 0; }
-.footer-name {
-  color: var(--text-primary);
-  font-family: var(--font-display), serif;
-  font-weight: 800;
-  font-size: 1.05rem;
-}
-.footer-kanji {
-  margin-left: 8px;
-  color: var(--text-secondary);
-  font-weight: 400;
-  font-size: 0.9rem;
-}
-.footer-made { margin-top: 4px !important; font-size: 0.9rem; }
-.footer-rights { margin-top: 2px !important; font-size: 0.8rem; opacity: 0.8; }
-
-.footer-break {
-  display: inline;
-}
-
-@media (max-width: 425px) {
-  .footer-break {
-    display: block; 
-    margin-top: 5px;
-  }
 }
 /* --- MICROINTERAÇÕES (hover/tap) ---
    Usam translate/scale/rotate individuais para não conflitar com transform inline.
@@ -1624,3 +1583,214 @@ html.is-loading body {
 
 /* Palavra composta inteira na linha (ver KeepHyphenated) */
 .nowrap { white-space: nowrap; }
+
+/* --- 終 Rodapé: a última página do emakimono --- */
+.site-footer {
+  position: relative;
+  width: 100%;
+  margin-top: auto;
+  overflow: hidden;
+  padding: clamp(64px, 9vw, 128px) 0 28px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-color);
+  color: var(--text-secondary);
+}
+
+.sf-top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 32px;
+  padding-bottom: clamp(40px, 6vw, 72px);
+}
+
+.sf-lead {
+  max-width: 16ch;
+  margin: 0;
+  font-family: var(--font-display), 'Yu Mincho', serif;
+  font-size: clamp(2rem, 5vw, 4.4rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.015em;
+  color: var(--text-primary);
+}
+/* Folga das linhas mascaradas: acentos e pernas das letras não são cortados */
+.sf-lead .sf-lead-line { padding-bottom: 0.12em; margin-bottom: -0.12em; }
+
+/* Voltar ao topo: círculo de tinta que gira a seta para cima no hover */
+.sf-top-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-primary);
+  font: inherit;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+}
+.sf-top-icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border: 1px solid color-mix(in srgb, var(--text-primary) 35%, transparent);
+  border-radius: 50%;
+  transition: background 0.35s ease, color 0.35s ease, border-color 0.35s ease;
+}
+.sf-top-icon svg { transition: transform 0.5s cubic-bezier(0.7, 0, 0.2, 1); }
+.sf-top-btn:hover .sf-top-icon,
+.sf-top-btn:focus-visible .sf-top-icon {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.sf-top-btn:hover .sf-top-icon svg { transform: translateY(-3px); }
+.sf-top-btn:focus-visible { outline: none; }
+.sf-top-btn:focus-visible .sf-top-icon { outline: 2px solid var(--accent); outline-offset: 4px; }
+
+.sf-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 32px;
+  padding: 36px 0 clamp(48px, 7vw, 88px);
+  border-top: 1px solid var(--border);
+}
+
+.sf-heading {
+  margin: 0 0 18px;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.sf-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Sublinhado de tinta que corre da esquerda no hover */
+.sf-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding-bottom: 2px;
+  color: var(--text-primary);
+  font-size: 1.05rem;
+  text-decoration: none;
+  background: linear-gradient(var(--accent), var(--accent)) left bottom / 0% 1px no-repeat;
+  transition: background-size 0.45s cubic-bezier(0.7, 0, 0.2, 1), color 0.3s ease;
+}
+.sf-link:hover,
+.sf-link:focus-visible { background-size: 100% 1px; color: var(--accent); }
+.sf-link:focus-visible { outline: none; }
+
+.sf-clocks li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 260px;
+}
+.sf-city { color: var(--text-secondary); }
+.sf-time {
+  font-family: var(--font-display), 'Yu Mincho', serif;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Assinatura OKUYAMA de ponta a ponta, em contorno; cada letra se enche de tinta no hover */
+.sf-wordmark {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2vw;
+  line-height: 0.8;
+  user-select: none;
+}
+.sf-wordmark-text {
+  display: flex;
+  font-family: var(--font-display), 'Yu Mincho', serif;
+  /* Tamanho real vem do ajuste em JS (useFitWordmark); este é o ponto de partida sem JS */
+  font-size: 12vw;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+  /* Sem encolher: a largura medida tem de ser a das letras, não a de uma caixa espremida */
+  flex: none;
+  /* Sem transição: com movimento reduzido a regra global dá duração mínima a tudo, e o
+     tamanho medido no ajuste seria o antigo, ainda "a caminho" do novo */
+  transition-property: none;
+}
+.sf-wordmark-mask {
+  display: inline-block;
+  overflow: clip;
+  padding-top: 0.06em;
+  /* Herdam o tamanho do texto: sem transição, senão ficam atrasadas no ajuste (ver acima) */
+  transition-property: none;
+}
+.sf-wordmark-letter {
+  display: inline-block;
+  color: transparent;
+  -webkit-text-stroke: 1.5px color-mix(in srgb, var(--text-primary) 55%, transparent);
+  transition: color 0.45s ease, -webkit-text-stroke-color 0.45s ease, translate 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+@media (hover: hover) {
+  .sf-wordmark-letter:hover {
+    color: var(--text-primary);
+    -webkit-text-stroke-color: var(--text-primary);
+    translate: 0 -0.04em;
+  }
+}
+.sf-wordmark-kanji {
+  flex-shrink: 0;
+  writing-mode: vertical-rl;
+  font-size: clamp(1.6rem, 3.6vw, 3.4rem);
+  line-height: 1;
+  color: var(--hanko);
+  padding-bottom: 0.2em;
+}
+
+.sf-bottom {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+.sf-bottom p { margin: 0; }
+.sf-bottom .footer-hanko { width: 44px; height: 44px; font-size: 0.8rem; border-width: 2px; }
+.sf-name { color: var(--text-primary); font-weight: 600; }
+.sf-name .font-jp { margin-left: 6px; color: var(--text-secondary); font-weight: 400; }
+.sf-rights { margin-left: auto !important; }
+
+@media (max-width: 860px) {
+  .sf-top { flex-direction: column; align-items: flex-start; }
+  .sf-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sf-grid > :last-child { grid-column: 1 / -1; }
+  .sf-rights { margin-left: 0 !important; width: 100%; }
+}
+
+@media (max-width: 480px) {
+  .sf-grid { grid-template-columns: 1fr; }
+  .sf-wordmark-kanji { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sf-link, .sf-top-icon, .sf-top-icon svg, .sf-wordmark-letter { transition: none; }
+}
