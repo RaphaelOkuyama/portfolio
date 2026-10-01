@@ -736,7 +736,9 @@ p, li { text-wrap: pretty; }
 
 /* --- Contato (縁) --- */
 .contact-section {
-  padding: 100px 0 140px;
+  /* Embaixo, um respiro proporcional à tela: o rio com as lanternas aparece inteiro entre o
+     formulário e o rodapé, como o fim da paisagem */
+  padding: 100px 0 clamp(260px, 55vh, 560px);
 }
 .contact-copy {
   padding: 28px 30px;

@@ -104,8 +104,10 @@ export const SNOW = {
 export const RIVER = {
   // Distância abaixo do fim da curva e tamanho (largura x comprimento): some na névoa ao fundo
   drop: 1.6,
-  size: [44, 110],
-  // A margem de perto fica logo à frente do fim da câmera
+  // Comprido o bastante para a margem de perto ficar atrás da câmera: com o respiro embaixo do
+  // contato, a parte de baixo da tela mostra a água logo à frente, nunca o céu por baixo do rio
+  size: [44, 152],
+  // Centro do rio adiante do fim da câmera (as faixas das lanternas são relativas a ele)
   offsetZ: -56,
   fallbackStart: 0.88,
   // Reflexo do céu cresce com a distância (ângulo rasante)

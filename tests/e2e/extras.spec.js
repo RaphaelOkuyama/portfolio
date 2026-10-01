@@ -245,8 +245,16 @@ test.describe('Easter egg 千羽鶴', () => {
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     const hanko = page.locator('[data-hanko]');
     await expect(hanko).toBeInViewport();
-    // Espera o scroll suave (Lenis) assentar antes de mirar no carimbo
-    await page.waitForTimeout(1500);
+    // Espera o scroll suave (Lenis) assentar: o carimbo para de se mexer entre duas leituras
+    let last = null;
+    await expect
+      .poll(async () => {
+        const top = Math.round((await hanko.boundingBox()).y);
+        const settled = top === last;
+        last = top;
+        return settled;
+      }, { timeout: 10_000, intervals: [250] })
+      .toBe(true);
     const box = await hanko.boundingBox();
     const click = () => page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
     for (let i = 0; i < 4; i++) await click();
