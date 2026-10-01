@@ -117,6 +117,10 @@ test.describe('em celular', () => {
     const sectionHeight = await page.locator('#projects').evaluate((el) => el.offsetHeight);
     // Sem pin: a seção tem só a altura do conteúdo
     expect(sectionHeight).toBeLessThan(page.viewportSize().height * 1.6);
+    // Espera o rolo terminar de abrir: a parte ainda recortada não recebe o toque
+    await expect
+      .poll(() => page.locator('.emaki-viewport').evaluate((el) => getComputedStyle(el).clipPath), { timeout: 6_000 })
+      .toBe('none');
 
     const box = await page.locator('.emaki-track').boundingBox();
     const before = await trackX(page);
@@ -141,4 +145,81 @@ test.describe('com prefers-reduced-motion', () => {
     await expect(page).toHaveURL(/\/projects\/imacardios$/);
     await expect(page.locator('.emaki-expand')).toHaveCount(0);
   });
+});
+
+// Largura visível do rolo: o clip-path recorta a direita enquanto o papel está enrolado
+const openWidth = (page) =>
+  page.locator('.emaki-viewport').evaluate((el) => {
+    const clip = getComputedStyle(el).clipPath;
+    const m = clip.match(/inset\([^)]*?(-?[\d.]+)px[^)]*?(-?[\d.]+)px/);
+    if (!m || clip === 'none') return el.clientWidth;
+    return el.clientWidth - parseFloat(m[2]);
+  });
+
+test.describe('Emakimono desenrolando', () => {
+  test('o papel abre da esquerda para a direita conforme a seção sobe', async ({ page }) => {
+    await openHome(page);
+    const pinStart = await page.evaluate(() => document.querySelector('.emaki-pin').getBoundingClientRect().top + window.scrollY - 72);
+
+    // Bem antes: quase todo enrolado, com o cilindro perto do rolo de madeira
+    await page.evaluate((y) => window.scrollTo(0, y), pinStart - 700);
+    await page.waitForTimeout(900);
+    const closed = await openWidth(page);
+    const width = await page.locator('.emaki-viewport').evaluate((el) => el.clientWidth);
+    expect(closed).toBeLessThan(width * 0.35);
+
+    // No meio do caminho: parcialmente aberto, e o cilindro acompanha a borda
+    await page.evaluate((y) => window.scrollTo(0, y), pinStart - 330);
+    await expect.poll(() => openWidth(page), { timeout: 5_000 }).toBeGreaterThan(closed + 100);
+    const roller = await page.locator('.emaki-roller').boundingBox();
+    const edge = await openWidth(page);
+    expect(Math.abs(roller.x - edge)).toBeLessThan(40);
+
+    // Quando a seção fixa, o rolo está todo aberto
+    await page.evaluate((y) => window.scrollTo(0, y), pinStart + 5);
+    await expect
+      .poll(() => page.locator('.emaki-viewport').evaluate((el) => getComputedStyle(el).clipPath), { timeout: 5_000 })
+      .toBe('none');
+  });
+
+  test('o cilindro some quando o fim do rolo chega', async ({ page }) => {
+    await openHome(page);
+    await scrollProjects(page, 1);
+    await expect
+      .poll(() => page.locator('.emaki-roller').evaluate((el) => Number(getComputedStyle(el).opacity)), { timeout: 5_000 })
+      .toBeLessThan(0.05);
+  });
+
+  test.describe('em celular', () => {
+    const { defaultBrowserType, ...pixel } = devices['Pixel 7'];
+    test.use(pixel);
+
+    test('abre sozinho quando aparece e o cilindro sai de cena', async ({ page }) => {
+      await openHome(page);
+      await page.evaluate(() => document.getElementById('projects').scrollIntoView());
+      await expect
+        .poll(() => page.locator('.emaki-viewport').evaluate((el) => getComputedStyle(el).clipPath), { timeout: 6_000 })
+        .toBe('none');
+      await expect(page.locator('.emaki-roller')).toBeHidden({ timeout: 3_000 });
+    });
+  });
+
+  test.describe('com prefers-reduced-motion', () => {
+    test.use({ reducedMotion: 'reduce' });
+
+    test('sem rolo: grade aberta e sem cilindro', async ({ page }) => {
+      await openHome(page);
+      await expect(page.locator('.emaki-roller')).toBeHidden();
+      expect(await page.locator('.emaki-viewport').evaluate((el) => getComputedStyle(el).clipPath)).toBe('none');
+    });
+  });
+});
+
+test('nenhum texto da página usa travessão (—)', async ({ page }) => {
+  for (const path of ['/', '/projects', '/projects/imacardios', '/projects/fit-ai-api', '/certificates']) {
+    await page.goto(path);
+    await expect(page.locator('[data-loader="enso"]')).toHaveCount(0, { timeout: 10_000 });
+    const text = await page.evaluate(() => `${document.title}\n${document.body.innerText}`);
+    expect(text, path).not.toContain('—');
+  }
 });

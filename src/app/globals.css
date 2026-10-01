@@ -1559,3 +1559,51 @@ html.is-loading body {
   .case-cue svg { animation: none; }
   .case-feature::before, .case-next-title, .case-next-kanji { transition: none; }
 }
+
+/* --- 作 Emakimono desenrolando: palco + cilindro de papel enrolado no jiku (軸) --- */
+.emaki-stage {
+  position: relative;
+}
+
+.emaki-roller {
+  position: absolute;
+  /* Alinha com a borda esquerda do rolo, que ocupa a largura toda da tela */
+  left: calc(50% - 50vw);
+  top: 2px;
+  bottom: 12px;
+  width: 30px;
+  z-index: 2;
+  border-radius: 15px / 10px;
+  /* Papel enrolado: faixas claras e escuras dão volume ao cilindro */
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--paper) 62%, #000) 0%,
+    var(--paper) 30%,
+    color-mix(in srgb, var(--paper) 80%, #fff) 48%,
+    var(--paper) 66%,
+    color-mix(in srgb, var(--paper) 55%, #000) 100%
+  );
+  /* Sombra caindo sobre o papel já aberto, à esquerda */
+  box-shadow: -14px 0 22px -12px rgb(0 0 0 / 0.55);
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* Pontas de madeira do jiku, passando do papel em cima e embaixo */
+.emaki-roller::before,
+.emaki-roller::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  width: 40px;
+  height: 14px;
+  translate: -50% 0;
+  border-radius: 7px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--wood) 70%, #000), var(--wood) 45%, color-mix(in srgb, var(--wood) 80%, #fff 20%));
+}
+.emaki-roller::before { top: -10px; }
+.emaki-roller::after { bottom: -10px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .emaki-roller { display: none; }
+}
