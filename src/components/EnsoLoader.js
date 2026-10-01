@@ -3,9 +3,10 @@ import { useRef } from 'react';
 import { gsap, useGSAP } from '../lib/gsap';
 import { journeyStore, useJourney } from '../store/journey';
 import { loaderProgress } from '../lib/loader';
+import { ensoShapes } from '../lib/enso';
 
-// Traço de pincel quase fechado (ensō), começando embaixo à esquerda
-const ENSO_PATH = 'M 62 150 C 30 118 34 58 86 38 C 138 18 186 52 184 104 C 182 150 140 180 98 172';
+// Ensō de pincel: corpo de tinta + cerdas, revelados por uma máscara que segue o traço
+const SHAPES = ensoShapes();
 
 // Só redesenha quando o progresso anda pelo menos 1%
 const MIN_STEP = 0.01;
@@ -70,8 +71,35 @@ export default function EnsoLoader() {
       <noscript>
         <style>{'[data-loader="enso"]{display:none}'}</style>
       </noscript>
-      <svg viewBox="0 0 220 220" width="180" height="180">
-        <path ref={pathRef} d={ENSO_PATH} style={{ visibility: 'hidden' }} fill="none" stroke="var(--ink)" strokeWidth="12" strokeLinecap="round" />
+      <svg viewBox="0 0 220 220" width="200" height="200">
+        <defs>
+          <mask id="enso-brush" maskUnits="userSpaceOnUse" x="0" y="0" width="220" height="220">
+            {/* DrawSVG anima este guia: onde ele passa, a tinta aparece */}
+            <path
+              ref={pathRef}
+              d={SHAPES.guide}
+              style={{ visibility: 'hidden' }}
+              fill="none"
+              stroke="#fff"
+              strokeWidth={SHAPES.guideWidth}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </mask>
+        </defs>
+        <g mask="url(#enso-brush)" data-enso-brush="">
+          <path d={SHAPES.core} fill="var(--ink)" />
+          <g fill="none" stroke="var(--ink)" strokeLinecap="round" strokeLinejoin="round">
+            {SHAPES.bristles.map((b, i) => (
+              <path key={i} d={b.d} strokeWidth={b.width} strokeOpacity={b.opacity} />
+            ))}
+          </g>
+          <g fill="none" stroke="var(--bg-color)" strokeLinecap="round">
+            {SHAPES.scratches.map((s, i) => (
+              <path key={i} d={s.d} strokeWidth={s.width} strokeOpacity={s.opacity} />
+            ))}
+          </g>
+        </g>
         <text x="110" y="122" textAnchor="middle" fontSize="34" fill="var(--ink)" className="font-jp">
           奥山
         </text>
