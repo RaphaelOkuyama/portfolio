@@ -2,7 +2,7 @@
 import { useRef } from 'react';
 import { gsap, useGSAP } from '../lib/gsap';
 import { journeyStore, useJourney } from '../store/journey';
-import { loaderProgress } from '../lib/loader';
+import { loaderProgress, isReturningVisit, markVisited } from '../lib/loader';
 import { ensoShapes } from '../lib/enso';
 
 // Ensō de pincel: corpo de tinta + cerdas, revelados por uma máscara que segue o traço
@@ -18,6 +18,11 @@ export default function EnsoLoader() {
 
   useGSAP(() => {
     if (loaderDone) return undefined;
+    // Visita de volta: o CSS já escondeu o overlay no primeiro paint; libera a página na hora
+    if (isReturningVisit()) {
+      journeyStore.getState().setLoaderDone();
+      return undefined;
+    }
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const path = pathRef.current;
     const start = performance.now();
@@ -46,7 +51,12 @@ export default function EnsoLoader() {
       finished = true;
       gsap.ticker.remove(tick);
       gsap
-        .timeline({ onComplete: () => journeyStore.getState().setLoaderDone() })
+        .timeline({
+          onComplete: () => {
+            markVisited();
+            journeyStore.getState().setLoaderDone();
+          },
+        })
         .to(path, { drawSVG: '100%', duration: reduced ? 0 : 0.35, ease: 'power2.out', overwrite: true })
         .to(rootRef.current, { opacity: 0, duration: reduced ? 0 : 0.6, ease: 'power2.inOut' });
     };

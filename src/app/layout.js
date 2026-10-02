@@ -12,16 +12,20 @@ import InkTransition from '../components/InkTransition';
 import Senbazuru from '../components/Senbazuru';
 import { SettingsProvider } from '../context/SettingsContext';
 import { THEME_BOOT_SCRIPT } from '../lib/themeBoot';
+import { SITE_URL, personJsonLd, jsonLdScript } from '../lib/site';
 import { Analytics } from "@vercel/analytics/react";
 import { Toaster } from 'sonner';
 
-// Texto em Inter; títulos em Shippori Mincho (serifa japonesa, só o subset latino)
+// Texto em Inter; títulos em Shippori Mincho (serifa japonesa)
 const sans = Inter({ subsets: ['latin'], display: 'swap', variable: '--font-sans' });
-const display = Shippori_Mincho({ subsets: ['latin'], weight: ['600', '800'], display: 'swap', variable: '--font-display' });
+// Sem preload: a mincho vem fatiada em ~110 arquivos por unicode-range e o preload puxava
+// ~55 deles (3 MB) antes do JS. Sem ele o navegador baixa só as fatias dos caracteres em uso
+const display = Shippori_Mincho({
+  subsets: ['latin'], weight: ['600', '800'], display: 'swap', variable: '--font-display', preload: false,
+});
 
-const SITE_URL = 'https://portfolio-raphael-okuyama.vercel.app';
 const DESCRIPTION =
-  'Raphael Nobuyuki Haga Okuyama (奥山), Desenvolvedor Full-Stack (React, Next.js, NestJS, TypeScript). Um portfólio imersivo pelas quatro estações da montanha.';
+  'Raphael Okuyama, desenvolvedor full-stack (Next.js, NestJS, TypeScript). Software em produção para 42+ clínicas. Disponível para CLT, PJ e freelance.';
 
 export const metadata = {
   metadataBase: new URL(SITE_URL),
@@ -35,7 +39,7 @@ export const metadata = {
     description: DESCRIPTION,
     siteName: 'Raphael Okuyama',
     locale: 'pt_BR',
-    images: [{ url: '/profile.jpg', width: 1200, height: 1200, alt: 'Raphael Okuyama' }],
+    // A imagem vem de app/opengraph-image.js (cartão 1200x630 com 奥山 e as montanhas)
   },
   twitter: { card: 'summary_large_image', title: 'Raphael Okuyama | Desenvolvedor Full-Stack', description: DESCRIPTION },
 };
@@ -55,6 +59,8 @@ export default function RootLayout({ children }) {
     <html lang="pt-BR" className={`${sans.variable} ${display.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+        {/* Dados estruturados de Pessoa para o Google */}
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(personJsonLd()) }} />
       </head>
       <body>
         <SettingsProvider>

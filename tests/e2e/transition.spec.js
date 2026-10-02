@@ -30,7 +30,7 @@ test('navegar pela navbar cobre a tela com tinta e descobre na nova página', as
   // A rota troca por baixo da tinta e ela recua
   await expect(page).toHaveURL(/\/certificates$/);
   await expect(overlay(page)).toHaveAttribute('data-state', 'idle', { timeout: 5_000 });
-  await expect(page.locator('.cert-card').first()).toBeVisible();
+  await expect(page.locator('.cert-item').first()).toBeVisible();
   // Primeiro a tinta cobriu ainda na página atual, só depois a rota trocou
   const states = await inkStates(page);
   expect(states[0]).toEqual({ state: 'cover', path: '/' });
@@ -57,7 +57,7 @@ test('âncora na mesma página não aciona a tinta', async ({ page }) => {
   await expect(overlay(page)).toHaveAttribute('data-state', 'idle');
 });
 
-test('painéis do emakimono mantêm a própria expansão, sem a tinta', async ({ page }) => {
+test('painéis do emakimono usam a própria transição, sem a tinta', async ({ page }) => {
   await openHome(page);
   await page.evaluate(() => {
     const s = document.getElementById('projects');
@@ -65,7 +65,7 @@ test('painéis do emakimono mantêm a própria expansão, sem a tinta', async ({
   });
   await page.waitForTimeout(800);
   await page.locator('.emaki-panel').first().click();
-  await expect(page.locator('.emaki-expand')).toHaveCount(1);
+  await expect(page.locator('.emaki-morph')).toHaveCount(1);
   await expect(overlay(page)).toHaveAttribute('data-state', 'idle');
   await expect(page).toHaveURL(/\/projects\/imacardios$/);
 });

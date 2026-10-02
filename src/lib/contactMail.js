@@ -39,6 +39,21 @@ export function validateContact(body) {
   return { ok: true, data: { name, email, message } };
 }
 
+// Erros por campo para o formulário (mesmas regras de validateContact): { campo: código }
+export function fieldErrors(values) {
+  const name = oneLine(values?.name);
+  const email = oneLine(values?.email);
+  const message = multiLine(values?.message);
+  const errors = {};
+  if (!name) errors.name = 'required';
+  else if (name.length > LIMITS.name) errors.name = 'too_long';
+  if (!email) errors.email = 'required';
+  else if (!EMAIL_RE.test(email) || email.length > LIMITS.email) errors.email = 'invalid';
+  if (!message) errors.message = 'required';
+  else if (message.length > LIMITS.message) errors.message = 'too_long';
+  return errors;
+}
+
 // Campo isca escondido: gente não preenche, robô sim
 export function isBot(body) {
   return Boolean(oneLine(body?.company));

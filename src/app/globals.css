@@ -105,48 +105,264 @@ p, li { text-wrap: pretty; }
   width: 100%;
 }
 
-/* --- PROJETOS --- */
-.projects-grid {
-  display: grid;
-  gap: 30px;
+/* --- 作 Projetos (/projects): filtro por tipo e cartões em papel washi com o numeral em kanji --- */
+.pj-page { padding: 80px 24px 120px; }
+.pj-subtitle {
+  margin: -12px 0 26px;
+  font-size: 1.05rem;
+  color: var(--text-secondary);
 }
-
-.project-card {
-  background: var(--card-bg);
-  padding: 30px;
-  border-radius: 16px;
-  border: 1px solid var(--border);
+.pj-subtitle a { color: var(--accent); font-weight: 700; }
+/* Mesmos filtros em pílula dos certificados */
+.pj-filters {
   display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 30px;
+}
+.pj-filters button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-color) 80%, transparent);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background-color 0.2s;
+}
+.pj-filters button:hover { color: var(--text-primary); border-color: color-mix(in srgb, var(--accent) 50%, var(--border)); }
+.pj-filters button[aria-pressed='true'] {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg-color));
+}
+.pj-filter-count { font-size: 0.75rem; opacity: 0.8; }
+.pj-board[data-filter='fullstack'] .pj-card:not([data-types~='fullstack']),
+.pj-board[data-filter='front'] .pj-card:not([data-types~='front']),
+.pj-board[data-filter='back'] .pj-card:not([data-types~='back']),
+.pj-board[data-filter='desktop'] .pj-card:not([data-types~='desktop']) { display: none; }
+
+.pj-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+}
+.pj-card {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 26px 28px 24px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background:
+    repeating-linear-gradient(95deg, transparent 0 22px, color-mix(in srgb, var(--ink) 3%, transparent) 22px 23px),
+    var(--paper);
+  transition: translate 0.3s ease, border-color 0.3s;
+}
+.pj-card:has(.pj-stretch:hover),
+.pj-card:has(.pj-stretch:focus-visible) {
+  translate: 0 -4px;
+  border-color: var(--accent);
+}
+/* Numeral em kanji vazado ao fundo, como no topo da página de cada projeto */
+.pj-kanji {
+  position: absolute;
+  right: 14px;
+  top: -6px;
+  font-size: 6.5rem;
+  line-height: 1;
+  color: transparent;
+  -webkit-text-stroke: 1.2px color-mix(in srgb, var(--accent) 45%, transparent);
+  opacity: 0.6;
+  pointer-events: none;
+  user-select: none;
+}
+.pj-top {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+}
+.pj-num {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--text-secondary);
+}
+.pj-status {
+  padding: 2px 10px;
+  border: 1px dashed var(--border);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+.pj-status.is-live {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--accent) 60%, transparent);
+  color: var(--accent);
+}
+.pj-status.is-pair { border-style: solid; }
+.pj-title {
+  /* Sem position: o ::after do link precisa medir o cartão (.pj-card), não o título */
+  margin: 0;
+  padding-right: 70px;
+  font-size: 1.4rem;
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+.pj-stretch { color: inherit; text-decoration: none; }
+/* O link do título cobre o cartão inteiro */
+.pj-stretch::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+.pj-stretch:focus-visible { outline: none; }
+.pj-card:has(.pj-stretch:focus-visible) { outline: 2px solid var(--accent); outline-offset: 3px; }
+.pj-desc {
+  position: relative;
+  margin: 0;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+.pj-tags {
+  list-style: none;
+  margin: auto 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pj-tags li {
+  font-size: 0.75rem;
+  padding: 2px 9px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-secondary);
+}
+.pj-actions {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
-  transition: 0.3s;
+  gap: 10px;
+  margin: 4px 0 0;
 }
+.pj-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.pj-external {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  gap: 8px;
+}
+.pj-external a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 11px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-color);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: color 0.2s, border-color 0.2s;
+}
+.pj-external a:hover,
+.pj-external a:focus-visible { color: var(--accent); border-color: var(--accent); }
 
-.project-info {
+/* Destaque: ocupa a linha inteira, com os números do produto */
+.pj-card.is-featured {
+  grid-column: 1 / -1;
+  padding: 32px 34px 28px;
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+.is-featured .pj-kanji { font-size: 10rem; top: -18px; }
+.is-featured .pj-title { font-size: clamp(1.6rem, 2.6vw, 2.2rem); max-width: 22ch; }
+.is-featured .pj-desc { max-width: 60ch; font-size: 1.05rem; }
+.pj-stats {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 40px;
+  margin: 6px 0 4px;
+}
+.pj-stats div { display: flex; flex-direction: column; gap: 4px; }
+.pj-stats dd {
+  order: -1;
+  margin: 0;
+  font-family: var(--font-display), serif;
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--accent);
+}
+.pj-stats dt { font-size: 0.82rem; color: var(--text-secondary); }
+
+/* Produto em duas partes: cada parte é um link para a própria página */
+.pj-parts {
+  position: relative;
+  z-index: 2;
+  list-style: none;
+  margin: 2px 0 4px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.pj-parts li {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 8px;
+}
+.pj-part-link {
   flex: 1;
-}
-
-@media (max-width: 768px) {
-  .project-card { flex-direction: column; align-items: flex-start; }
-  .project-info { flex-direction: column; align-items: flex-start; width: 100%; }
-}
-
-/* --- CERTIFICADOS --- */
-.certificates-grid {
+  min-width: 0;
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 40px;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bg-color) 70%, transparent);
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: border-color 0.2s;
 }
+.pj-part-link strong { color: var(--accent); font-size: 0.9rem; }
+.pj-part-link span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+.pj-part-link:hover,
+.pj-part-link:focus-visible { border-color: var(--accent); }
 
-@media (min-width: 640px) {
-  .certificates-grid {
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 60px;
-  }
+@media (max-width: 800px) {
+  .pj-grid { grid-template-columns: 1fr; gap: 16px; }
+  .pj-card, .pj-card.is-featured { padding: 22px 20px 20px; }
+  .pj-kanji { font-size: 5rem; }
+  .is-featured .pj-kanji { font-size: 7rem; }
+  .pj-part-link span { white-space: normal; }
 }
 
 /* --- NAVBAR UTILS --- */
@@ -171,33 +387,212 @@ p, li { text-wrap: pretty; }
   .hero-title { white-space: nowrap; }
 }
 
+/* 山 人 技 作 歩 縁: trilho de seções da home (mapa da subida) */
+.section-rail {
+  position: fixed;
+  left: 22px;
+  top: 50%;
+  z-index: 90;
+  translate: 0 -50%;
+}
+.section-rail { transition: opacity 0.3s; }
+.section-rail[data-dim] { opacity: 0.3; }
+.section-rail[data-dim]:hover,
+.section-rail[data-dim]:focus-within { opacity: 1; }
+.section-rail ol {
+  position: relative;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+/* Linha de tinta ligando os marcos */
+.section-rail ol::before {
+  content: '';
+  position: absolute;
+  left: 17px;
+  top: 14px;
+  bottom: 14px;
+  width: 1px;
+  background: color-mix(in srgb, var(--text-primary) 22%, transparent);
+}
+.section-rail-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+.section-rail-kanji {
+  width: 35px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--bg-color) 85%, transparent);
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  transition: background-color 0.25s, color 0.25s, border-color 0.25s, scale 0.25s;
+}
+.section-rail-link[aria-current] .section-rail-kanji {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+  scale: 1.12;
+}
+.section-rail-link:hover .section-rail-kanji,
+.section-rail-link:focus-visible .section-rail-kanji { border-color: var(--accent); color: var(--accent); }
+.section-rail-link[aria-current]:hover .section-rail-kanji { color: var(--on-accent); }
+.section-rail-link:focus-visible { outline: none; }
+.section-rail-link:focus-visible .section-rail-kanji { outline: 2px solid var(--accent); outline-offset: 3px; }
+/* Nome da seção: aparece ao passar o mouse ou focar. Fora do fluxo: invisível, ele não pode
+   ocupar espaço no link (bloqueava cliques nos painéis do emakimono por baixo) */
+.section-rail-label {
+  position: absolute;
+  left: 46px;
+  top: 50%;
+  margin-top: -13px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--bg-color) 92%, transparent);
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  translate: -6px 0;
+  pointer-events: none;
+  transition: opacity 0.2s, translate 0.2s;
+}
+.section-rail-link:hover .section-rail-label,
+.section-rail-link:focus-visible .section-rail-label { opacity: 1; translate: 0 0; }
+/* Celular: só a seção atual, num selo discreto */
+.section-chip {
+  display: none;
+}
+@media (max-width: 1100px) {
+  .section-rail { display: none; }
+  .section-chip {
+    position: fixed;
+    left: 14px;
+    bottom: calc(env(safe-area-inset-bottom) + 14px);
+    z-index: 90;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    padding: 5px 12px 5px 8px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--bg-color) 88%, transparent);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    font-weight: 600;
+    pointer-events: none;
+    opacity: 0;
+    animation: section-chip-flash 2.2s ease forwards;
+  }
+  .section-chip .font-jp { color: var(--accent); font-size: 0.95rem; }
+}
+@keyframes section-chip-flash {
+  0% { opacity: 0; }
+  12%, 75% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Hero minimalista: assinatura japonesa, nome, funções numa linha, frase, CTA e disponibilidade */
+/* Halo do fundo atrás do texto pequeno: legível sobre o torii e as pétalas sem caixa nem pílula */
+.hero-name-jp, .hero-roles, .hero-available {
+  text-shadow: 0 0 6px var(--bg-color), 0 0 14px var(--bg-color), 0 1px 2px var(--bg-color);
+}
+.hero-name-jp {
+  margin: 0 0 14px;
+  font-size: clamp(0.85rem, 1.3vw, 1.05rem);
+  letter-spacing: 0.35em;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.hero-roles {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 18px auto 0;
+  font-size: clamp(0.8rem, 1.2vw, 0.95rem);
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--text-primary) 78%, var(--text-secondary));
+}
+.hero-role + .hero-role::before { content: '·'; margin: 0 0.8em; color: var(--accent); }
+.hero-summary {
+  max-width: 50ch;
+  text-wrap: balance;
+  margin: 26px auto 0;
+  text-align: center;
+  font-size: clamp(1rem, 1.5vw, 1.15rem);
+  line-height: 1.55;
+  color: var(--text-primary);
+  text-shadow: 0 1px 12px color-mix(in srgb, var(--bg-color) 80%, transparent);
+}
+.hero-available {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 18px auto 0;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+.hero-available-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4cc38a;
+  box-shadow: 0 0 0 3px color-mix(in srgb, #4cc38a 22%, transparent);
+}
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 30px;
+}
+.hero-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 22px;
+  border: 1px solid color-mix(in srgb, var(--text-primary) 30%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-color) 55%, transparent);
+  color: var(--text-primary);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 0.2s, border-color 0.2s, translate 0.2s;
+}
+.hero-cta.is-primary { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+.hero-cta:hover { translate: 0 -2px; }
+.hero-cta:not(.is-primary):hover { border-color: var(--text-primary); }
+@media (max-width: 560px) {
+  .hero-name-jp { letter-spacing: 0.2em; }
+  /* Empilhadas no celular: o "·" no começo da linha quebrada fica solto */
+  .hero-roles { flex-direction: column; gap: 4px; letter-spacing: 0.1em; }
+  .hero-role + .hero-role::before { content: none; }
+  .hero-summary { margin-top: 20px; }
+  .hero-actions { margin-top: 24px; }
+  .hero-cta { padding: 10px 18px; font-size: 0.95rem; }
+}
+
 .responsive-title {
   font-size: clamp(2rem, 5vw, 3rem);
   line-height: 1.1;
   margin-bottom: 10px;
-}
-
-/* --- EXPERIÊNCIA --- */
-.experience-container {
-  display: flex;
-  flex-direction: column;
-  gap: 40px;
-}
-@media (min-width: 768px) { .experience-container { gap: 80px; } }
-
-.exp-col {
-  flex: 1; width: 100%; text-align: left;
-  padding-left: 20px; border-left: 2px solid var(--border); margin-left: 10px;
-}
-@media (min-width: 768px) {
-  .exp-col { border-left: none; margin-left: 0; }
-  .exp-left { text-align: right; padding-right: 40px; padding-left: 0; }
-  .exp-right { text-align: left; padding-left: 40px; padding-right: 0; }
-}
-
-.timeline-line, .timeline-dot { display: none; }
-@media (min-width: 768px) {
-  .timeline-line, .timeline-dot { display: block; }
 }
 
 /* --- UTILS --- */
@@ -307,16 +702,17 @@ p, li { text-wrap: pretty; }
   line-height: 1;
   transform: rotate(-6deg);
 }
+/* À noite o shu do carimbo pequeno clareia para manter contraste 4.5:1 sobre o índigo */
+[data-theme='night'] .footer-hanko { --hanko: #e8665a; }
 /* --- MICROINTERAÇÕES (hover/tap) ---
    Usam translate/scale/rotate individuais para não conflitar com transform inline.
    !important nas cores porque os componentes definem estilos inline. */
 .hover-lift, .hover-nudge, .hover-back, .btn-fill, .btn-outline, .btn-press,
-.icon-pop, .glow-btn, .photo-tilt, .cert-card {
+.icon-pop, .glow-btn, .photo-tilt {
   transition: translate 0.3s ease, scale 0.2s ease, rotate 0.3s ease,
     color 0.3s, background-color 0.3s, border-color 0.3s, box-shadow 0.3s !important;
 }
 .hover-lift:hover { translate: 0 -5px; border-color: var(--accent) !important; }
-.cert-card:hover { translate: 0 -5px; border-color: var(--accent) !important; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.2); }
 .hover-nudge:hover { translate: 5px 0; border-color: var(--accent) !important; }
 .hover-back:hover { translate: -5px 0; color: var(--accent) !important; }
 .btn-fill:hover { scale: 1.05; background-color: var(--accent) !important; color: var(--on-accent) !important; border-color: var(--accent) !important; }
@@ -330,19 +726,6 @@ p, li { text-wrap: pretty; }
 .photo-tilt:hover { scale: 1.05; rotate: 2deg; }
 .photo-tilt .photo-overlay { opacity: 0; transition: opacity 0.3s; }
 .photo-tilt:hover .photo-overlay { opacity: 0.2; }
-
-/* Chips de cargo do hero: desfocados até hover/toque */
-.role-chip p { transition: scale 0.3s, letter-spacing 0.3s; letter-spacing: 0.02em; }
-/* Pílula translúcida: os cargos continuam legíveis sobre o torii e as pétalas */
-.role-chip {
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--bg-color) 72%, transparent);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-}
-.role-chip .role-corners { opacity: 0; transition: opacity 0.2s; }
-.role-chip:hover p, .role-chip:active p { scale: 1.04; letter-spacing: 0.04em; }
-.role-chip:hover .role-corners, .role-chip:active .role-corners { opacity: 1; }
 
 /* Indicador ativo da navbar */
 .nav-underline { transform-origin: left; animation: nav-underline-in 0.3s ease-out; }
@@ -368,12 +751,111 @@ p, li { text-wrap: pretty; }
   opacity: 0.85;
 }
 
-/* --- Sobre: texto em linhas (SplitText) --- */
+/* --- Sobre (人): texto à esquerda, kakejiku e sobrenomes à direita --- */
+.about-section {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  padding: 40px 0 90px;
+}
+.about-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.65fr);
+  gap: 56px;
+  align-items: center;
+}
+.about-lead {
+  margin: -8px 0 18px;
+  font-family: var(--font-display), 'Yu Mincho', serif;
+  font-size: clamp(1.3rem, 2.2vw, 1.65rem);
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text-primary);
+}
+/* Texto em linhas (SplitText) */
 .about-text {
-  font-size: 1.1rem;
-  line-height: 1.7;
+  font-size: 1.05rem;
+  line-height: 1.75;
   color: var(--text-secondary);
-  margin-bottom: 30px;
+}
+.about-text p { margin: 0 0 14px; }
+.about-text p:last-child { margin-bottom: 0; }
+
+.about-actions {
+  margin-top: 26px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 26px;
+}
+.about-resume { position: relative; display: inline-block; }
+.about-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 30px;
+  border-radius: 50px;
+  border: 2px solid var(--text-secondary);
+  color: var(--text-primary);
+  text-decoration: none;
+  font-weight: bold;
+  cursor: pointer;
+}
+.about-contact {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+/* Foto + sobrenomes */
+.about-portrait {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 26px;
+}
+.about-names {
+  display: flex;
+  justify-content: center;
+  gap: 26px;
+  padding: 14px 20px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--bg-color) 90%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.about-name {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+/* Kanji em escrita vertical (縦書き), como numa assinatura */
+.about-name-kanji {
+  writing-mode: vertical-rl;
+  font-size: 1.7rem;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  color: var(--text-primary);
+}
+.about-name-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 17ch;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: var(--text-secondary);
+}
+.about-name-text strong {
+  font-size: 0.95rem;
+  color: var(--accent);
+  letter-spacing: 0.04em;
 }
 
 /* Kakejiku (掛軸): rolo pendurado com a foto */
@@ -433,127 +915,263 @@ p, li { text-wrap: pretty; }
   opacity: 0;
 }
 
-/* --- Stack: jardim zen (pedras = categorias) --- */
+/* --- Stack: jardim zen (pedras = áreas) --- */
+.zen-section {
+  /* Embaixo, uma clareira: é ali que o jardim 3D aparece enquanto se lê a seção */
+  padding: 80px 0 clamp(40px, 34vh, 340px);
+}
 .zen-hint {
   color: var(--text-secondary);
-  margin: -10px 0 35px;
+  margin: -10px 0 40px;
   font-size: 1.05rem;
+  max-width: 62ch;
 }
 .zen-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-  gap: 40px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 48px;
   align-items: start;
 }
 .zen-stones {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
+  gap: 30px 22px;
+  padding: 14px;
 }
+
+/* Pedra: botão sem caixa; volume, sombra na areia e anéis ficam nas camadas */
 .zen-stone {
+  position: relative;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-primary);
+  font: inherit;
+  cursor: pointer;
+  isolation: isolate;
+}
+/* Anéis de areia rastelada em volta da pedra escolhida (como no jardim 3D) */
+.zen-stone::before {
+  content: '';
+  position: absolute;
+  inset: -16px -14px;
+  z-index: -2;
+  border-radius: 50%;
+  background: repeating-radial-gradient(ellipse at center, transparent 0 7px, color-mix(in srgb, var(--accent) 40%, transparent) 7px 8px);
+  -webkit-mask: radial-gradient(ellipse at center, #000 45%, transparent 72%);
+  mask: radial-gradient(ellipse at center, #000 45%, transparent 72%);
+  opacity: 0;
+  scale: 0.8;
+  transition: opacity 0.45s ease, scale 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+/* Sombra assentada na areia */
+.zen-stone::after {
+  content: '';
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  bottom: -10px;
+  height: 20px;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgb(0 0 0 / 0.38), transparent 70%);
+  transition: scale 0.3s ease, opacity 0.3s ease;
+}
+.zen-stone-face {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  min-height: 110px;
-  padding: 14px 10px;
+  gap: 6px;
+  min-height: 124px;
+  padding: 16px 12px;
   border: 1px solid var(--border);
-  background: var(--card-bg);
-  color: var(--text-primary);
-  font: inherit;
-  font-size: 0.9rem;
-  font-weight: 600;
-  text-align: center;
-  cursor: pointer;
-  transition: translate 0.3s ease, border-color 0.3s, background-color 0.3s, color 0.3s;
+  border-radius: var(--stone-shape);
+  rotate: var(--stone-tilt);
+  background: radial-gradient(120% 95% at 30% 20%,
+    color-mix(in srgb, var(--paper) 80%, #fff 10%) 0%,
+    var(--card-bg) 55%,
+    color-mix(in srgb, var(--card-bg) 75%, #000) 100%);
+  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.06), inset 0 -12px 18px rgb(0 0 0 / 0.22);
+  transition: translate 0.3s ease, border-color 0.3s, box-shadow 0.3s;
 }
-.zen-stone:hover,
-.zen-stone:focus-visible {
-  translate: 0 -4px;
-  border-color: var(--accent);
-}
-.zen-stone:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
-}
-.zen-stone[data-active='true'] {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--on-accent);
-}
+/* O texto não acompanha a inclinação da pedra */
+.zen-stone-face > * { rotate: calc(var(--stone-tilt) * -1); }
 .zen-stone-icon {
   display: inline-flex;
   color: var(--accent);
 }
-.zen-stone[data-active='true'] .zen-stone-icon {
-  color: var(--on-accent);
+.zen-stone-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
+}
+.zen-stone-count {
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  color: var(--text-secondary);
+}
+.zen-stone:hover .zen-stone-face,
+.zen-stone:focus-visible .zen-stone-face {
+  translate: 0 -4px;
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
+}
+.zen-stone:hover::after { scale: 0.9; opacity: 0.8; }
+.zen-stone:focus-visible { outline: none; }
+.zen-stone:focus-visible .zen-stone-face {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+.zen-stone[data-active='true']::before { opacity: 1; scale: 1; }
+.zen-stone[data-active='true'] .zen-stone-face {
+  border-color: var(--accent);
+  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.08), inset 0 -12px 18px rgb(0 0 0 / 0.22),
+    0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent),
+    0 10px 30px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.zen-stone[data-active='true'] .zen-stone-name { color: var(--accent); }
+
+/* A altura da caixa anima entre as áreas (ZenStack): sem pulo e sem vazio */
+.zen-panels {
+  align-self: start;
+  overflow: hidden;
+  border-radius: 18px;
 }
 .zen-panel {
-  background: var(--card-bg);
+  position: relative;
+  padding: 28px 30px 22px;
+  background: color-mix(in srgb, var(--card-bg) 92%, transparent);
   border: 1px solid var(--border);
   border-radius: 18px;
-  padding: 28px;
+}
+.zen-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.zen-panel-kanji {
+  font-size: 3.4rem;
+  line-height: 1;
+  color: transparent;
+  -webkit-text-stroke: 1.2px var(--accent);
 }
 .zen-panel-title {
+  margin: 0;
+  font-size: 1.45rem;
+  color: var(--text-primary);
+}
+.zen-panel-count {
+  margin: 4px 0 0;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.zen-panel-rule {
+  display: block;
+  height: 2px;
+  margin: 18px 0 10px;
+  background: linear-gradient(90deg, var(--accent), transparent 80%);
+  transform-origin: left;
+}
+.zen-tools {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 22px;
+}
+.zen-tool {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin: 0 0 20px;
-  font-size: 1.4rem;
-  color: var(--text-primary);
+  padding: 9px 0;
+  border-bottom: 1px dashed color-mix(in srgb, var(--text-primary) 12%, transparent);
 }
-.zen-panel-title span {
+.zen-tool-icon {
+  flex: 0 0 30px;
+  height: 30px;
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-color);
+  color: var(--text-primary);
+  font-size: 15px;
+}
+.zen-tool-initial {
+  font-family: var(--font-display), serif;
+  font-weight: 800;
   color: var(--accent);
 }
-.zen-chips {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-.zen-chip {
-  font-size: 0.9rem;
-  padding: 6px 13px;
-  background: var(--bg-color);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  color: var(--text-secondary);
+.zen-tool-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 @media (max-width: 900px) {
-  .zen-layout { grid-template-columns: 1fr; }
+  .zen-section { padding-bottom: 40px; }
+  .zen-layout { grid-template-columns: 1fr; gap: 28px; }
 }
 @media (max-width: 560px) {
-  /* No celular as pedras viram lista tocável */
-  .zen-stones { grid-template-columns: 1fr; gap: 10px; }
-  .zen-stone {
+  /* Celular: acordeão. As pedras viram linhas e o painel abre logo abaixo da escolhida */
+  .zen-layout { display: flex; flex-direction: column; gap: 10px; }
+  .zen-stones,
+  .zen-panels { display: contents; }
+  .zen-stone { order: var(--order); width: 100%; }
+  .zen-stone::before,
+  .zen-stone::after { display: none; }
+  .zen-stone-face {
+    width: 100%;
     flex-direction: row;
     justify-content: flex-start;
+    gap: 14px;
     min-height: 0;
     padding: 14px 18px;
-    border-radius: 14px !important;
+    border-radius: 14px;
+    rotate: 0deg;
   }
+  .zen-stone-face > * { rotate: 0deg; }
+  .zen-stone-count { margin-left: auto; }
+  .zen-panel { order: var(--order); width: 100%; padding: 20px 18px 16px; }
+  .zen-panel-kanji { font-size: 2.6rem; }
+  .zen-tools { grid-template-columns: 1fr; }
   .section-title { font-size: 2rem; }
 }
 
 .about-copy {
-  padding: 28px 30px;
+  padding: 32px 34px;
   border-radius: 20px;
-  background: color-mix(in srgb, var(--bg-color) 82%, transparent);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  /* Quase opaco: o torii e a cena passam por trás sem atrapalhar a leitura */
+  background: color-mix(in srgb, var(--bg-color) 90%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+@media (max-width: 900px) {
+  .about-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr); gap: 32px; }
+}
+@media (max-width: 767px) {
+  /* Celular: o rosto antes do texto */
+  .about-section { padding-top: 10px; }
+  .about-grid { grid-template-columns: 1fr; gap: 28px; }
+  .about-portrait { order: -1; }
+  .about-portrait .kakejiku { max-width: 230px; }
+  .about-copy { background: color-mix(in srgb, var(--bg-color) 95%, transparent); }
 }
 @media (max-width: 560px) {
-  .about-copy { padding: 22px 18px; }
+  .about-copy { padding: 24px 18px; }
+  .about-names { gap: 18px; }
 }
 
 /* --- FASE 4: Projetos em emakimono (絵巻物) --- */
 .emaki-section {
-  padding: 60px 0 40px;
+  /* Pouco respiro em cima: o pin já centraliza o rolo na tela e o Stack termina com folga */
+  padding: 16px 0 40px;
 }
 .emaki-pin {
   min-height: calc(100vh - 72px);
@@ -656,22 +1274,25 @@ p, li { text-wrap: pretty; }
   background: var(--wood);
   flex-shrink: 0;
 }
-.emaki-footer {
-  display: flex;
-  justify-content: flex-end;
+/* Último painel: o convite para a página com todos os projetos */
+.emaki-panel.is-all {
+  justify-content: center;
+  background:
+    repeating-linear-gradient(95deg, transparent 0 22px, color-mix(in srgb, var(--ink) 3%, transparent) 22px 23px),
+    color-mix(in srgb, var(--accent) 8%, var(--paper));
 }
-.emaki-all {
-  color: var(--accent);
-  font-weight: 700;
-}
-/* Painel que se expande até cobrir a tela antes de abrir o projeto */
-.emaki-expand {
+.emaki-panel.is-all .emaki-number { font-size: 3rem; color: var(--accent); }
+.emaki-panel.is-all .emaki-cta { color: var(--accent); }
+/* Painel em voo até o topo da página do projeto (lib/panelMorph.js) */
+.emaki-morph {
   position: fixed;
+  inset: 0;
   z-index: 9000;
-  background: var(--paper);
-  border-radius: 6px;
   pointer-events: none;
 }
+.emaki-morph-paper { border-radius: 6px; overflow: hidden; }
+.emaki-morph-kanji,
+.emaki-morph-title { will-change: transform, opacity; }
 
 /* Celular: rolo arrastável, sem pin */
 @media (max-width: 767px) {
@@ -694,18 +1315,18 @@ p, li { text-wrap: pretty; }
   .emaki-panel { width: auto; min-height: 0; border: 1px solid var(--border); border-radius: 14px; }
 }
 
-/* --- FASE 5: Experiência em pincelada sumi-e (墨絵) --- */
-.section-title-center {
-  justify-content: center;
-  border-left: none;
-  padding-left: 0;
-  margin-bottom: 80px;
+/* --- 歩 Experiência: pincelada sumi-e na lateral e um cartão por marco --- */
+.exp-section {
+  padding: 100px 0 130px;
+}
+.exp-timeline {
+  position: relative;
+  max-width: 920px;
 }
 .sumi-brush {
   position: absolute;
-  left: 50%;
+  left: 0;
   top: 0;
-  transform: translateX(-50%);
   overflow: visible;
   pointer-events: none;
 }
@@ -723,15 +1344,179 @@ p, li { text-wrap: pretty; }
   stroke-width: 7;
   opacity: 0.9;
 }
-/* Gota de tinta nos marcos: borda irregular e miolo mais escuro */
+.exp-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 34px;
+}
+.exp-item { position: relative; }
+/* Gota de tinta no marco: borda irregular e miolo mais escuro, sobre a pincelada */
 .ink-drop {
-  position: relative;
-  z-index: 10;
-  flex-shrink: 0;
+  position: absolute;
+  z-index: 2;
+  /* Centro sobre o eixo da pincelada (x = 20): 64 de recuo da lista, 15 de meia gota */
+  left: -59px;
+  top: 26px;
   width: 30px;
   height: 30px;
   border-radius: 48% 52% 44% 56% / 55% 45% 55% 45%;
   background: radial-gradient(circle at 45% 45%, var(--ink) 0 45%, color-mix(in srgb, var(--ink) 55%, transparent) 70%, transparent 100%);
+}
+/* Formação: anel vazado em vez da gota cheia */
+.ink-drop.is-ring {
+  background: var(--bg-color);
+  border: 3px solid var(--ink);
+}
+
+.exp-card {
+  position: relative;
+  padding: 24px 28px 22px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--card-bg) 92%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.is-education .exp-card {
+  border-style: dashed;
+  background: color-mix(in srgb, var(--bg-color) 88%, transparent);
+}
+.exp-head { margin-bottom: 12px; }
+.exp-period {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.exp-duration {
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.exp-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 10px;
+}
+.exp-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  border-radius: 999px;
+  color: var(--accent);
+}
+.exp-badge.is-parallel {
+  border-style: dashed;
+  border-color: var(--border);
+  color: var(--text-secondary);
+}
+.exp-company {
+  margin: 0;
+  font-size: 1.55rem;
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+.exp-role {
+  margin: 4px 0 0;
+  font-weight: 700;
+  color: var(--accent);
+}
+.exp-summary {
+  margin: 0 0 14px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+.exp-highlights {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.exp-highlights li {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+/* Conquista sem número: um traço de tinta no lugar do valor */
+.exp-highlights li:not(.has-value)::before {
+  content: '';
+  flex: 0 0 18px;
+  height: 2px;
+  margin-left: 2px;
+  transform: translateY(-4px);
+  background: var(--accent);
+  border-radius: 2px;
+}
+.exp-value {
+  flex: 0 0 auto;
+  min-width: 4.2ch;
+  font-family: var(--font-display), serif;
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--accent);
+}
+.exp-tags {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.exp-tags li {
+  font-size: 0.78rem;
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-secondary);
+}
+.exp-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 16px;
+  color: var(--accent);
+  font-weight: 700;
+  text-decoration: none;
+}
+/* Carimbo 学 (estudo) no canto do cartão da formação */
+.exp-hanko {
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--hanko);
+  border-radius: 8px;
+  color: var(--hanko);
+  font-size: 1.3rem;
+  transform: rotate(-6deg);
+}
+[data-theme='night'] .exp-hanko { --hanko: #e8665a; }
+.is-education .exp-head { padding-right: 60px; }
+
+@media (max-width: 560px) {
+  .exp-section { padding: 70px 0 100px; }
+  .exp-list { padding-left: 40px; gap: 22px; }
+  .sumi-brush { left: -10px; }
+  .ink-drop { left: -42px; top: 22px; width: 24px; height: 24px; }
+  .exp-card { padding: 20px 18px 18px; }
+  .exp-company { font-size: 1.3rem; }
+  .exp-value { font-size: 1.15rem; }
 }
 
 /* --- Contato (縁) --- */
@@ -740,47 +1525,178 @@ p, li { text-wrap: pretty; }
      formulário e o rodapé, como o fim da paisagem */
   padding: 100px 0 clamp(260px, 55vh, 560px);
 }
-.contact-copy {
+/* Apresentação e canais à esquerda, a carta à direita; no celular a carta vem logo depois do título */
+.contact-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  grid-template-areas:
+    'intro letter'
+    'direct letter';
+  grid-template-rows: auto 1fr;
+  gap: 28px 56px;
+  align-items: start;
+}
+.contact-intro {
+  grid-area: intro;
   padding: 28px 30px;
   border-radius: 20px;
-  background: color-mix(in srgb, var(--bg-color) 82%, transparent);
+  background: color-mix(in srgb, var(--bg-color) 86%, transparent);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
 .contact-subtitle {
   color: var(--text-secondary);
-  margin-bottom: 30px;
+  margin: 0 0 22px;
   font-size: 1.1rem;
   line-height: 1.6;
 }
-.contact-channels {
-  margin: 0 0 18px;
-  color: var(--accent);
+.contact-availability {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
 }
-.contact-link {
+.contact-availability-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--text-primary) 78%, var(--text-secondary));
+}
+.contact-availability ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.contact-availability li {
+  padding: 4px 14px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  color: var(--accent);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+.contact-location {
   display: flex;
   align-items: center;
-  gap: 15px;
-  padding: 15px;
-  margin-bottom: 15px;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 12px;
+  gap: 6px;
+  margin: 16px 0 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+/* Canais diretos: lista leve num cartão translúcido (as lanternas do rio passam por trás) */
+.contact-direct {
+  grid-area: direct;
+  padding: 20px 30px 14px;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--bg-color) 86%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.contact-link-row:last-child { border-bottom: none; }
+.contact-channels {
+  margin: 0 0 10px;
+  font-size: 1rem;
+  color: var(--accent);
+}
+.contact-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.contact-link-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px dashed color-mix(in srgb, var(--text-primary) 14%, transparent);
+}
+.contact-link {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
   color: var(--text-primary);
-  overflow: hidden;
+  text-decoration: none;
 }
 .contact-link svg { color: var(--accent); flex-shrink: 0; }
 .contact-link strong { display: block; font-size: 0.9rem; }
-.contact-link span { color: var(--text-secondary); font-size: 0.9rem; }
-.contact-card {
+.contact-link span span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+}
+.contact-copy-btn {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+.contact-copy-btn:hover,
+.contact-copy-btn:focus-visible {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* A carta (手紙): papel washi pautado, com a marca vertical na margem direita */
+.contact-letter {
+  grid-area: letter;
   position: relative;
   width: 100%;
-  padding: clamp(20px, 5vw, 40px);
-  background: var(--card-bg);
+  padding: 34px 76px 30px 34px;
+  background:
+    repeating-linear-gradient(180deg, transparent 0 33px, color-mix(in srgb, var(--ink) 5%, transparent) 33px 34px),
+    var(--paper);
   border: 1px solid var(--border);
-  border-radius: 20px;
+  border-radius: 6px;
+  box-shadow: 0 24px 50px rgb(0 0 0 / 0.22);
   transform-origin: 50% 0;
 }
+.contact-letter-mark {
+  position: absolute;
+  top: 30px;
+  right: 22px;
+  writing-mode: vertical-rl;
+  font-size: 1.5rem;
+  letter-spacing: 0.3em;
+  color: color-mix(in srgb, var(--text-primary) 45%, transparent);
+  padding-left: 14px;
+  border-left: 1px solid var(--border);
+}
+/* Carimbo 縁 que marca a carta antes de ela virar lanterna */
+.contact-seal {
+  position: absolute;
+  right: 16px;
+  bottom: 22px;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid var(--hanko);
+  border-radius: 8px;
+  color: var(--hanko);
+  font-size: 1.5rem;
+  pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
+}
+.contact-field { position: relative; margin-bottom: 6px; }
 .contact-label {
   display: block;
   margin-bottom: 8px;
@@ -789,8 +1705,7 @@ p, li { text-wrap: pretty; }
 }
 .contact-input {
   width: 100%;
-  padding: 15px;
-  margin-bottom: 18px;
+  padding: 14px 15px;
   background: var(--bg-color);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -798,15 +1713,43 @@ p, li { text-wrap: pretty; }
   font: inherit;
   font-size: 1rem;
   outline: none;
+  transition: border-color 0.2s;
 }
+textarea.contact-input { resize: vertical; min-height: 130px; }
 .contact-input:focus-visible {
   border-color: var(--accent);
   outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent);
 }
+.contact-field[data-invalid] .contact-input { border-color: var(--hanko); }
+.contact-error {
+  min-height: 1.3em;
+  margin: 5px 0 6px;
+  font-size: 0.82rem;
+  color: var(--hanko);
+}
+[data-theme='night'] .contact-error,
+[data-theme='night'] .contact-field[data-invalid] .contact-input { --hanko: #e8665a; }
+.contact-counter {
+  position: absolute;
+  right: 4px;
+  bottom: 6px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.contact-counter[data-near] { color: var(--hanko); }
+.contact-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 0 14px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+.contact-hint .font-jp { color: var(--accent); }
 .contact-submit {
   width: 100%;
   padding: 15px;
-  margin-top: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -821,6 +1764,57 @@ p, li { text-wrap: pretty; }
   cursor: pointer;
 }
 .contact-submit:disabled { opacity: 0.7; cursor: progress; }
+
+/* Depois do envio: agradecimento no lugar do formulário */
+.contact-sent {
+  min-height: 340px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 12px;
+  outline: none;
+}
+.contact-sent-lantern {
+  font-size: 2.4rem;
+  line-height: 1;
+  color: var(--accent);
+}
+.contact-sent h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  line-height: 1.3;
+  color: var(--text-primary);
+}
+.contact-sent p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.contact-again {
+  margin-top: 8px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@media (max-width: 900px) {
+  .contact-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas: 'intro' 'letter' 'direct';
+    grid-template-rows: none;
+  }
+}
+@media (max-width: 560px) {
+  .contact-intro,
+  .contact-direct { padding: 22px 18px; }
+  .contact-letter { padding: 26px 52px 24px 18px; }
+  .contact-letter-mark { right: 12px; font-size: 1.2rem; padding-left: 10px; }
+}
 
 /* Lanterna de papel (tōrō nagashi) que nasce do formulário enviado */
 .paper-lantern {
@@ -878,13 +1872,87 @@ p, li { text-wrap: pretty; }
   letter-spacing: 0;
 }
 
-/* --- FASE 6: carimbo hanko nos certificados (証) --- */
+/* --- 証 Certificados: filtros por área, um bloco por área e lista compacta --- */
+.cert-page { padding: 80px 24px 120px; }
+.responsive-title.section-title {
+  border-left: none;
+  padding-left: 0;
+  font-size: clamp(2rem, 5vw, 3rem);
+}
+.cert-summary {
+  margin: -12px 0 26px;
+  font-size: 1.05rem;
+  color: var(--text-secondary);
+}
+.cert-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 30px;
+}
+.cert-filters button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-color) 80%, transparent);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background-color 0.2s;
+}
+.cert-filters button:hover { color: var(--text-primary); border-color: color-mix(in srgb, var(--accent) 50%, var(--border)); }
+.cert-filters button[aria-pressed='true'] {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg-color));
+}
+.cert-filter-count { font-size: 0.75rem; opacity: 0.8; }
+/* O filtro só troca data-filter: o CSS esconde as outras áreas */
+.cert-board[data-filter='full'] .cert-group:not([data-area='full']),
+.cert-board[data-filter='front'] .cert-group:not([data-area='front']),
+.cert-board[data-filter='back'] .cert-group:not([data-area='back']),
+.cert-board[data-filter='base'] .cert-group:not([data-area='base']) { display: none; }
+
+.cert-group {
+  margin-bottom: 28px;
+  padding: 24px 28px 16px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--bg-color) 86%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.cert-group-title {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 8px;
+  padding-right: 56px;
+  font-size: 1.35rem;
+  color: var(--text-primary);
+}
+.cert-group-count {
+  padding: 1px 9px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  font-family: var(--font-sans), sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+/* Um carimbo 証 por área (não um por certificado) */
 .cert-hanko {
   position: absolute;
-  top: 14px;
-  right: 14px;
-  width: 38px;
-  height: 38px;
+  top: -6px;
+  right: 0;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -897,14 +1965,93 @@ p, li { text-wrap: pretty; }
   transform: rotate(-8deg);
   pointer-events: none;
 }
-.responsive-title.section-title {
-  border-left: none;
-  padding-left: 0;
-  font-size: clamp(2rem, 5vw, 3rem);
+[data-theme='night'] .cert-hanko { --hanko: #e8665a; }
+.cert-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 32px;
 }
-/* Espaço para o carimbo não cobrir o título do certificado */
-.cert-card > div:first-of-type {
-  padding-right: 36px;
+.cert-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px dashed color-mix(in srgb, var(--text-primary) 12%, transparent);
+}
+.cert-icon {
+  flex: 0 0 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card-bg);
+  color: var(--text-primary);
+}
+.cert-body { flex: 1; min-width: 0; }
+.cert-name {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.3;
+  color: var(--text-primary);
+}
+.cert-inst {
+  margin: 2px 0 0;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+.cert-modules {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.cert-modules a,
+.cert-view {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  font-weight: 700;
+  text-decoration: none;
+  transition: color 0.2s, border-color 0.2s;
+}
+.cert-modules a {
+  min-width: 34px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  color: var(--accent);
+}
+.cert-view {
+  flex-shrink: 0;
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+}
+.cert-modules a:hover,
+.cert-modules a:focus-visible,
+.cert-view:hover,
+.cert-view:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+@media (max-width: 760px) {
+  .cert-list { grid-template-columns: 1fr; }
+  .cert-group { padding: 20px 16px 10px; }
+}
+@media (max-width: 420px) {
+  /* Celular estreito: o botão fica só com o ícone (o nome completo está no aria-label) */
+  .cert-view-text { display: none; }
+  .cert-view { padding: 8px; }
 }
 
 /* --- 404 迷子 --- */
@@ -979,6 +2126,11 @@ html.is-loading body {
   overflow: hidden;
 }
 
+/* Visita de volta: o ensō não aparece (data-visited vem do script de boot no <head>) */
+html[data-visited] [data-loader="enso"] { display: none; }
+html[data-visited].is-loading,
+html[data-visited].is-loading body { overflow: visible; }
+
 /* --- Transição entre páginas: tinta sumi cobrindo a tela --- */
 .ink-transition {
   position: fixed;
@@ -1029,6 +2181,17 @@ html.is-loading body {
 /* Tablet: a barra social fixa cobria o conteúdo (regra no fim para vencer a de >= 768px) */
 @media (max-width: 1099px) {
   .social-sidebar { display: none !important; }
+}
+
+/* Fundo pintado (sem WebGL): a névoa entre as cristas deriva devagar */
+.backdrop-mist { animation: backdrop-drift 38s ease-in-out infinite alternate; }
+.backdrop-mist.is-slow { animation-duration: 54s; animation-direction: alternate-reverse; }
+@keyframes backdrop-drift {
+  from { transform: translateX(-60px); }
+  to { transform: translateX(60px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .backdrop-mist { animation: none; }
 }
 
 /* Papel washi sobre a cena: fibra estática (sem granulado animado) + vinheta pintada */
@@ -1796,3 +2959,7 @@ html.is-loading body {
 @media (prefers-reduced-motion: reduce) {
   .sf-link, .sf-top-icon, .sf-top-icon svg, .sf-wordmark-letter { transition: none; }
 }
+
+/* Texto bilíngue vindo do servidor (components/Lang.js): mostra só o idioma do <html lang> */
+html:lang(en) [data-lang="pt"],
+html:not(:lang(en)) [data-lang="en"] { display: none !important; }

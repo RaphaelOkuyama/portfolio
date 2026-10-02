@@ -1,7 +1,9 @@
 'use client';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { gsap, useGSAP } from '../../lib/gsap';
 import { journeyStore } from '../../store/journey';
+import { toolKey } from '../../lib/stack/tools';
+import { TOOL_ICONS } from './toolIcons';
 import Section from '../journey/Section';
 
 // Formas irregulares de pedra, alternadas entre os botões
@@ -9,12 +11,29 @@ const STONE_SHAPES = [
   '46% 54% 50% 50% / 55% 45% 55% 45%',
   '58% 42% 38% 62% / 52% 60% 40% 48%',
   '40% 60% 55% 45% / 45% 55% 45% 55%',
+  '52% 48% 60% 40% / 40% 58% 42% 60%',
+  '44% 56% 42% 58% / 58% 42% 58% 42%',
+  '60% 40% 48% 52% / 48% 52% 46% 54%',
 ];
+// Cada pedra assenta num ângulo próprio na areia
+const STONE_TILT = [-3, 2, -1.5, 2.5, -2, 1];
+const pad = (n) => String(n).padStart(2, '0');
 
-// 技 Stack: cada pedra do jardim zen é uma categoria; escolher uma abre as ferramentas
+function ToolRow({ name }) {
+  const Icon = TOOL_ICONS[toolKey(name)];
+  return (
+    <li className="zen-tool">
+      <span className="zen-tool-icon" aria-hidden="true">
+        {Icon ? <Icon /> : <span className="zen-tool-initial">{name[0]}</span>}
+      </span>
+      <span className="zen-tool-name">{name}</span>
+    </li>
+  );
+}
+
+// 技 Stack: cada pedra do jardim zen é uma área; escolher uma abre as ferramentas
 export default function ZenStack({ techData, icons }) {
   const [active, setActive] = useState(0);
-  const panelRef = useRef(null);
   const rootRef = useRef(null);
   const baseId = useId();
   const categories = techData.categories;
@@ -26,22 +45,45 @@ export default function ZenStack({ techData, icons }) {
     return () => highlight(null);
   }, [active]);
 
-  // Painel entra ao trocar de pedra
+  // A caixa dos painéis desliza da altura antiga para a nova: não pula e não sobra vazio
+  const panelsRef = useRef(null);
+  const lastHeight = useRef(0);
+  useLayoutEffect(() => {
+    const box = panelsRef.current;
+    if (!box) return undefined;
+    const next = box.offsetHeight;
+    const prev = lastHeight.current;
+    lastHeight.current = next;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // No celular é acordeão (display: contents): não há caixa para animar
+    if (!prev || prev === next || reduced || getComputedStyle(box).display === 'contents') return undefined;
+    const tween = gsap.fromTo(box, { height: prev }, {
+      height: next, duration: 0.45, ease: 'power3.inOut', clearProps: 'height',
+    });
+    return () => tween.kill();
+  }, [active]);
+
+  // Painel entra ao trocar de pedra: o kanji assenta, a linha de tinta corre e as ferramentas sobem
   useGSAP(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    gsap.from(panelRef.current.querySelectorAll('.zen-chip'), {
-      opacity: 0, y: 8, duration: 0.35, stagger: 0.03, ease: 'power2.out',
-    });
+    const panel = rootRef.current.querySelector('.zen-panel[data-active="true"]');
+    if (!panel) return;
+    gsap.timeline({ defaults: { ease: 'power2.out' } })
+      .from(panel.querySelector('.zen-panel-kanji'), { opacity: 0, scale: 1.25, duration: 0.6 }, 0)
+      .from(panel.querySelector('.zen-panel-rule'), { scaleX: 0, duration: 0.6, ease: 'power3.inOut' }, 0.05)
+      .from(panel.querySelectorAll('.zen-tool'), { opacity: 0, y: 10, duration: 0.35, stagger: 0.025 }, 0.15);
   }, { scope: rootRef, dependencies: [active], revertOnUpdate: true });
 
   return (
-    <Section id="stack" ref={rootRef} style={{ padding: '80px 0' }}>
+    <Section id="stack" ref={rootRef} className="zen-section">
       <h2 className="section-title">
         <span className="section-kanji font-jp" aria-hidden="true">技</span>
         {techData.title}
       </h2>
       <p className="zen-hint">{techData.hint}</p>
 
+      {/* No celular .zen-stones e .zen-panels somem do layout (display: contents) e cada painel
+          entra logo abaixo da sua pedra, como acordeão */}
       <div className="zen-layout">
         <div className="zen-stones" role="tablist" aria-label={techData.title} aria-orientation="horizontal">
           {categories.map((cat, i) => (
@@ -55,16 +97,12 @@ export default function ZenStack({ techData, icons }) {
               tabIndex={active === i ? 0 : -1}
               className="zen-stone"
               data-active={active === i}
-              style={{ borderRadius: STONE_SHAPES[i % STONE_SHAPES.length] }}
-              onClick={() => {
-                setActive(i);
-                // No celular o painel fica abaixo da lista: leva o leitor até ele
-                if (window.matchMedia('(max-width: 900px)').matches) {
-                  requestAnimationFrame(() =>
-                    document.getElementById(`${baseId}-panel-${i}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }),
-                  );
-                }
+              style={{
+                '--stone-shape': STONE_SHAPES[i % STONE_SHAPES.length],
+                '--stone-tilt': `${STONE_TILT[i % STONE_TILT.length]}deg`,
+                '--order': i * 2,
               }}
+              onClick={() => setActive(i)}
               onMouseEnter={() => highlight(i)}
               onMouseLeave={() => highlight(active)}
               onFocus={() => highlight(i)}
@@ -78,29 +116,40 @@ export default function ZenStack({ techData, icons }) {
                 document.getElementById(`${baseId}-tab-${next}`)?.focus();
               }}
             >
-              <span className="zen-stone-icon" aria-hidden="true">{icons[i]}</span>
-              <span>{cat.name}</span>
+              <span className="zen-stone-face">
+                <span className="zen-stone-icon" aria-hidden="true">{icons[i]}</span>
+                <span className="zen-stone-name">{cat.name}</span>
+                <span className="zen-stone-count" aria-hidden="true">{pad(cat.items.length)}</span>
+              </span>
             </button>
           ))}
         </div>
 
-        <div ref={panelRef} className="zen-panels">
+        <div ref={panelsRef} className="zen-panels">
           {categories.map((cat, i) => (
             <div
               key={cat.name}
               role="tabpanel"
               id={`${baseId}-panel-${i}`}
               aria-labelledby={`${baseId}-tab-${i}`}
-              hidden={active !== i}
               className="zen-panel"
+              data-active={active === i}
+              hidden={active !== i}
+              style={{ '--order': i * 2 + 1 }}
             >
-              <h3 className="zen-panel-title">
-                <span aria-hidden="true">{icons[i]}</span>
-                {cat.name}
-              </h3>
-              <ul className="zen-chips">
+              <div className="zen-panel-head">
+                <span className="zen-panel-kanji font-jp" aria-hidden="true">{cat.kanji}</span>
+                <div>
+                  <h3 className="zen-panel-title">{cat.name}</h3>
+                  <p className="zen-panel-count">
+                    {pad(cat.items.length)} {techData.toolsCount}
+                  </p>
+                </div>
+              </div>
+              <span className="zen-panel-rule" aria-hidden="true" />
+              <ul className="zen-tools">
                 {cat.items.map((item) => (
-                  <li key={item} className="zen-chip">{item}</li>
+                  <ToolRow key={item} name={item} />
                 ))}
               </ul>
             </div>

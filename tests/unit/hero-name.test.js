@@ -3,11 +3,10 @@ import { buildNameSequence, SCRAMBLE_CHARS, NAME_HOLD_SECONDS, NAME_SCRAMBLE_SEC
 import { profile } from '../../src/data/resume';
 
 describe('buildNameSequence', () => {
-  it('cicla katakana → kanji e volta ao latino', () => {
+  it('cicla hiragana → katakana, sem passar pelo latino', () => {
     expect(buildNameSequence(profile)).toEqual([
+      'らふぁえる のぶゆき はが おくやま',
       'ラファエル ノブユキ ハガ オクヤマ',
-      'ラファエル 信幸 芳賀 奥山',
-      'Raphael Nobuyuki Haga Okuyama',
     ]);
   });
 });

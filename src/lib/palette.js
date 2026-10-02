@@ -55,7 +55,7 @@ export const SEASONS = {
 export const SCENE_ACCENTS = {
   night: {
     petal: '#d99bb0', torii: '#8f2a23', toriiTop: '#0b0d14', celestial: '#f3ead2',
-    sand: '#343a52', stone: '#12141d', firefly: '#f6e27a', momiji: '#b5452c',
+    sand: '#9a9caa', stone: '#252a3c', firefly: '#f6e27a', momiji: '#b5452c',
     snow: '#dfe6f2', water: '#070b16', lantern: '#ffc46b',
   },
   day: {

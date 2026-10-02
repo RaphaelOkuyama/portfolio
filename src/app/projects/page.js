@@ -1,101 +1,164 @@
-'use client';
-import Reveal from '../../components/Reveal';
 import Link from 'next/link';
-import { useSettings } from '../../context/SettingsContext';
+import { ArrowRight, ArrowUpRight, Github } from 'lucide-react';
+import { resumeData } from '../../data/resume';
+import { buildProjectList, typeCounts, TYPE_ORDER } from '../../lib/projects';
+import { kanjiNumber } from '../../lib/kanji';
+import { SOCIAL } from '../../lib/site';
 import KeepHyphenated from '../../components/KeepHyphenated';
-import {
-  ArrowRight, Folder, Smartphone, Server, MonitorSmartphone,
-  PlaySquare, Music, LayoutDashboard, Rocket, Target, HeartPulse
-} from 'lucide-react';
+import Lang from '../../components/Lang';
+import ProjectBoard from '../../components/projects/ProjectBoard';
 
-export default function Projects() {
-  const { currentData } = useSettings();
-  const { projectsPage, projects } = currentData;
+export const metadata = {
+  title: 'Projetos',
+  description: 'Projetos de Raphael Okuyama: da plataforma de telecardiologia em produção a landing pages, APIs e apps.',
+};
 
-  const getProjectIcon = (slug) => {
-    if (slug.includes('imacardios')) return <HeartPulse size={32} />;
-    if (slug.includes('fit-ai-frontend')) return <Smartphone size={32} />;
-    if (slug.includes('fit-ai-api') || slug.includes('backend') || slug.includes('api')) return <Server size={32} />;
-    if (slug.includes('totem')) return <MonitorSmartphone size={32} />;
-    if (slug.includes('devflix-frontend')) return <PlaySquare size={32} />;
-    if (slug.includes('player')) return <Music size={32} />;
-    if (slug.includes('kanban')) return <LayoutDashboard size={32} />;
-    if (slug.includes('star-wars')) return <Rocket size={32} />;
-    if (slug.includes('leadmagnet')) return <Target size={32} />;
-    return <Folder size={32} />;
-  };
+const pad = (n) => String(n + 1).padStart(2, '0');
 
+// Links externos do projeto: ficam acima do link que cobre o cartão inteiro
+function ExternalLinks({ project, labels, compact = false }) {
+  if (!project.deployLink && !project.repoLink) return null;
   return (
-    <div className="container" style={{ padding: '80px 24px' }}>
-      <Reveal>
+    <span className="pj-external">
+      {project.deployLink && (
+        <a href={project.deployLink} target="_blank" rel="noopener noreferrer" aria-label={`${labels.btnDeploy}: ${project.title}`}>
+          {!compact && labels.btnDeploy} <ArrowUpRight size={15} aria-hidden="true" />
+        </a>
+      )}
+      {project.repoLink && (
+        <a href={project.repoLink} target="_blank" rel="noopener noreferrer" aria-label={`${labels.btnCode}: ${project.title}`}>
+          <Github size={15} aria-hidden="true" /> {!compact && 'GitHub'}
+        </a>
+      )}
+    </span>
+  );
+}
 
-        <h1 className="responsive-title section-title">
-          <span className="section-kanji font-jp" aria-hidden="true">作</span>
-          {projectsPage.title}
-        </h1>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: '50px', fontSize: '1.2rem' }}>
-          {projectsPage.subtitle}
-        </p>
+function Status({ project, labels }) {
+  const live = Boolean(project.deployLink);
+  return <span className={live ? 'pj-status is-live' : 'pj-status'}>{live ? labels.statusLive : labels.statusCode}</span>;
+}
 
-        <Reveal className="projects-grid" from={{ opacity: 0, x: -20 }} stagger={0.05}>
-          {projects.map((project) => (
-            <div
-              key={project.id}
-              className="project-card hover-nudge"
-            >
-              <div className="project-info">
-                <div style={{
-                  background: 'color-mix(in srgb, var(--accent) 12%, transparent)', padding: '15px',
-                  borderRadius: '12px', color: 'var(--accent)',
-                  flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center'
-                }}>
-                  {getProjectIcon(project.slug)}
-                </div>
-                <div>
-                  <h2 style={{ fontSize: '1.5rem', margin: '0 0 5px 0', color: 'var(--text-primary)' }}>
-                    <KeepHyphenated>{project.title}</KeepHyphenated>
-                  </h2>
-                  <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '1rem' }}>
-                    {project.shortDesc}
-                  </p>
+function Tags({ stack }) {
+  return (
+    <ul className="pj-tags">
+      {stack.slice(0, 4).map((tech) => <li key={tech}>{tech}</li>)}
+    </ul>
+  );
+}
 
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
-                    {project.stack.slice(0, 3).map((tech, i) => (
-                      <span key={i} style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', background: 'var(--bg-color)', padding: '2px 8px', borderRadius: '4px', border: '1px solid var(--border)' }}>
-                        {tech}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <Link href={`/projects/${project.slug}`} style={{ textDecoration: 'none', width: 'fit-content' }}>
-                <button
-                  className="btn-fill"
-                  style={{
-                    padding: '12px 24px',
-                    background: 'transparent',
-                    border: '1px solid var(--accent)',
-                    color: 'var(--accent)',
-                    borderRadius: '50px',
-                    cursor: 'pointer',
-                    fontSize: '1rem',
-                    fontWeight: 'bold',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  {projectsPage.btnDetails} <ArrowRight size={18} />
-                </button>
-              </Link>
-
+function SingleCard({ project, index, labels, featured = false }) {
+  return (
+    <article className={featured ? 'pj-card is-featured' : 'pj-card'} data-types={project.type}>
+      <span className="pj-kanji font-jp" aria-hidden="true">{kanjiNumber(index)}</span>
+      <p className="pj-top">
+        <span className="pj-num">{pad(index)}</span>
+        {featured ? <span className="pj-status is-live">{labels.featuredLabel}</span> : <Status project={project} labels={labels} />}
+      </p>
+      <h2 className="pj-title">
+        {/* O ::after deste link cobre o cartão: clicar em qualquer parte abre o projeto */}
+        <Link href={`/projects/${project.slug}`} className="pj-stretch">
+          <KeepHyphenated>{project.title}</KeepHyphenated>
+        </Link>
+      </h2>
+      <p className="pj-desc">{project.shortDesc}</p>
+      {featured && (
+        <dl className="pj-stats">
+          {labels.featuredStats.map((stat) => (
+            <div key={stat.label}>
+              <dt>{stat.label}</dt>
+              <dd>{stat.value}</dd>
             </div>
           ))}
-        </Reveal>
+        </dl>
+      )}
+      <Tags stack={project.stack} />
+      <p className="pj-actions">
+        <span className="pj-more" aria-hidden="true">{labels.btnDetails} <ArrowRight size={16} /></span>
+        <ExternalLinks project={project} labels={labels} />
+      </p>
+    </article>
+  );
+}
 
-      </Reveal>
+// Produto em duas partes (ex.: app + API): um cartão, cada parte com a própria página
+function GroupCard({ card, labels }) {
+  const group = labels.groups[card.key];
+  const first = card.parts[0];
+  const stack = [...new Set(card.parts.flatMap((p) => p.project.stack))];
+  return (
+    <article className="pj-card is-group" data-types={card.types.join(' ')}>
+      <span className="pj-kanji font-jp" aria-hidden="true">{kanjiNumber(first.index)}</span>
+      <p className="pj-top">
+        <span className="pj-num">{card.parts.map((p) => pad(p.index)).join(' · ')}</span>
+        <span className="pj-status is-pair">{card.parts.map((p) => p.project.part).join(' + ')}</span>
+      </p>
+      <h2 className="pj-title"><KeepHyphenated>{group.title}</KeepHyphenated></h2>
+      <p className="pj-desc">{group.desc}</p>
+      <ul className="pj-parts" aria-label={labels.partsLabel}>
+        {card.parts.map(({ project }) => (
+          <li key={project.slug}>
+            <Link href={`/projects/${project.slug}`} className="pj-part-link">
+              <strong>{project.part}</strong>
+              <span>{project.shortDesc}</span>
+              <ArrowRight size={16} aria-hidden="true" />
+            </Link>
+            <ExternalLinks project={project} labels={labels} compact />
+          </li>
+        ))}
+      </ul>
+      <Tags stack={stack} />
+    </article>
+  );
+}
+
+function ProjectGrid({ lang }) {
+  const { projects, projectsPage: labels } = resumeData[lang];
+  const list = buildProjectList(projects);
+  return (
+    <div data-lang={lang} className="pj-grid">
+      {list.featured && <SingleCard {...list.featured} labels={labels} featured />}
+      {list.cards.map((card) => (card.kind === 'group'
+        ? <GroupCard key={card.key} card={card} labels={labels} />
+        : <SingleCard key={card.key} project={card.project} index={card.index} labels={labels} />))}
+    </div>
+  );
+}
+
+// 作 Projetos: Server Component nos dois idiomas; só o filtro por tipo roda no navegador
+export default function ProjectsPage() {
+  const { pt, en } = resumeData;
+  const counts = typeCounts(buildProjectList(pt.projects));
+  const filters = TYPE_ORDER.filter((t) => counts[t] > 0).map((type) => ({
+    type,
+    count: counts[type],
+    pt: pt.projectsPage.types[type],
+    en: en.projectsPage.types[type],
+  }));
+  const total = buildProjectList(pt.projects).cards.length + 1;
+
+  return (
+    <div className="container pj-page">
+      <h1 className="responsive-title section-title">
+        <span className="section-kanji font-jp" aria-hidden="true">作</span>
+        <Lang pt={pt.projectsPage.title} en={en.projectsPage.title} />
+      </h1>
+      <p className="pj-subtitle">
+        <Lang pt={pt.projectsPage.subtitle} en={en.projectsPage.subtitle} />{' '}
+        <a href={SOCIAL.github} target="_blank" rel="noopener noreferrer">
+          <Lang pt={pt.projectsPage.githubLink} en={en.projectsPage.githubLink} />
+        </a>.
+      </p>
+
+      <ProjectBoard
+        filters={filters}
+        total={total}
+        all={{ pt: pt.projectsPage.filterAll, en: en.projectsPage.filterAll }}
+        filterLabel={{ pt: pt.projectsPage.filterLabel, en: en.projectsPage.filterLabel }}
+      >
+        <ProjectGrid lang="pt" />
+        <ProjectGrid lang="en" />
+      </ProjectBoard>
     </div>
   );
 }

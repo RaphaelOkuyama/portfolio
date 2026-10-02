@@ -16,8 +16,14 @@ export const CAMERA_PATH = [
 export const FOG_RANGE = [10, 70];
 
 // Camadas de montanha espalhadas ao longo do caminho, com vale central para a câmera passar.
-// Param antes do fim do caminho (o rio fica livre); atrás dele, uma cordilheira distante
-const PATH_LAYERS = Array.from({ length: 7 }, (_, i) => ({
+// Param antes do rio (margem de perto em z = -52): uma 7ª camada em z = -62 cortava a água
+// com uma faixa de terra (água, terra, água). Atrás do rio, uma cordilheira distante
+const GARDEN_CLEARING = {
+  layers: [1, 2], // z = -7 e z = -18
+  valley: { valleyDepth: 1, valleyWidth: 30, baseHeight: -0.6 },
+};
+
+const PATH_LAYERS = Array.from({ length: 6 }, (_, i) => ({
   seed: 101 + i * 37,
   x: 0,
   z: 4 - i * 11,
@@ -26,9 +32,13 @@ const PATH_LAYERS = Array.from({ length: 7 }, (_, i) => ({
   baseHeight: -1 + (i % 3) * 0.6,
   amplitude: 7 + (i % 3) * 2.5,
   valleyCenter: 0,
-  valleyDepth: 0.8,
+  // Vale quase até a base: com 0.8 sobrava uma lombada no meio que cortava o jardim do Stack
+  valleyDepth: 0.95,
   valleyWidth: 18,
   bottom: -30,
+  // As camadas que abraçam o jardim zen abrem uma clareira: vale mais largo e com o fundo
+  // abaixo do chão, para nenhuma encosta passar na frente da areia (tests/unit/garden-occlusion)
+  ...(GARDEN_CLEARING.layers.includes(i) ? GARDEN_CLEARING.valley : {}),
 }));
 
 const FAR_RANGE = [
@@ -60,26 +70,53 @@ export const TORII = {
 export const CELESTIAL = { position: [-14, 22, -90], radius: 4 };
 
 
-// Jardim zen (枯山水) visto de cima durante o "Stack": areia rastelada + 9 pedras
-export const GARDEN = {
-  size: [22, 9],
-  segments: { high: [176, 72], low: [1, 1] },
-  groundDrop: 2.6,
-  // Onde o jardim fica em relação à faixa do Stack (0 = começo, 1 = fim; > 1 = adiante).
-  // Fica à frente da câmera para ser visto de cima enquanto o Stack está na tela
-  anchor: 1.35,
-  fallbackRange: [0.3, 0.55],
-  stones: [
-    { x: -7, z: -1, r: 0.9 },
-    { x: -5.8, z: 0.6, r: 0.55 },
-    { x: -6.3, z: -2.2, r: 0.45 },
-    { x: 0.5, z: 1.2, r: 1.0 },
-    { x: 1.8, z: -0.4, r: 0.6 },
-    { x: -0.6, z: -1.4, r: 0.5 },
-    { x: 6.5, z: 0.3, r: 0.85 },
-    { x: 7.6, z: -1.5, r: 0.5 },
-    { x: 5.4, z: -1.9, r: 0.6 },
+// Chão do vale (地): terreno sob o caminho, do começo até a margem do rio (z = -52).
+// O torii pousa nele em z ~ 12 (base a 7 abaixo da câmera) e o jardim zen fica no trecho
+// plano em z ~ -6 a -18; perto do rio ele desce abaixo da água para a margem não aparecer
+export const GROUND = {
+  profile: [
+    [46, -1.15],
+    [12, -1.13],
+    [0, -0.55],
+    [-6, 0.75],
+    [-21, 0.8],
+    [-30, 0.35],
+    [-44, 0.05],
+    [-50, -0.45],
+    [-56, -0.5],
   ],
+  // Faixa plana no meio do vale e subida em concha nas laterais
+  flatHalf: 10,
+  bowl: 0.02,
+  bowlMax: 5,
+  size: [120, 102],
+  center: [0, -5],
+  segments: [96, 120],
+};
+
+// Jardim zen (枯山水) visto de cima durante o "Stack": areia rastelada + 6 pedras
+export const GARDEN = {
+  // Área de areia rastelada pintada no chão do vale (largura x profundidade) e a moldura
+  // de pedra em volta dela
+  size: [16, 9],
+  border: 0.35,
+  // Posição fixa no mundo, no meio da clareira das camadas z = -7 e z = -18. Antes seguia a
+  // faixa medida do Stack e no celular (seção bem mais alta) ia parar em z = -32, fora da clareira
+  z: -14.5,
+  fallbackRange: [0.3, 0.55],
+  // Uma pedra por área do Stack (mesma ordem); afundam um pouco na areia
+  stones: [
+    { x: -4.6, z: -0.5, r: 1.05 },
+    { x: -2.7, z: 1.4, r: 0.65 },
+    { x: -0.9, z: -1.5, r: 0.8 },
+    { x: 1.0, z: 0.9, r: 1.15 },
+    { x: 2.9, z: -1.2, r: 0.72 },
+    { x: 4.7, z: 0.9, r: 0.9 },
+  ],
+  sink: 0.15,
+  // A pedra escolhida acende os anéis de areia em volta dela com a cor de acento
+  activeRingGlow: 0.4,
+  activeStoneTint: 0.15,
   fireflyVolume: { x: [-11, 11], y: [0.3, 3], z: [-4.5, 4.5] },
 };
 

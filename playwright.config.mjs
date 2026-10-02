@@ -7,7 +7,8 @@ export default defineConfig({
   // Cada worker renderiza WebGL em software: com 8 em paralelo as animações atrasam e os testes de
   // navegação estouram o tempo. 4 deixa a suíte estável sem ficar lenta
   workers: process.env.CI ? 2 : 4,
-  use: { baseURL: 'http://localhost:3100' },
+  // O site abre no idioma do navegador: a suíte roda em português
+  use: { baseURL: 'http://localhost:3100', locale: 'pt-BR' },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
     command: 'npm run build && npm run start -- -p 3100',

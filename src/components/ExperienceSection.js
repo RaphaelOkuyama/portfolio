@@ -1,24 +1,69 @@
 'use client';
-
-import { useRef, useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
 import { gsap, useGSAP } from '../lib/gsap';
-import ScrollReveal from './ScrollReveal';
 import { sumiPath } from '../lib/journey/sumi';
+import { useSettings } from '../context/SettingsContext';
+import {
+  currentMonth, formatMonth, formatPeriod, formatDuration, monthsBetween, orderTimeline,
+} from '../lib/experience';
 import Section from './journey/Section';
 
-export default function ExperienceSection({ experience, title }) {
-  const refExperience = useRef(null);
-  const [isDesktop, setIsDesktop] = useState(false);
+function ExperienceCard({ exp, labels, lang, today }) {
+  const months = monthsBetween(exp.start, exp.end ?? today);
+  return (
+    <article className="exp-card">
+      <header className="exp-head">
+        <p className="exp-period">
+          {formatPeriod(exp.start, exp.end, lang, labels.current)}
+          {/* A duração depende do mês de hoje: o servidor e o navegador podem divergir na virada */}
+          <span className="exp-duration" suppressHydrationWarning> · {formatDuration(months, lang)}</span>
+        </p>
+        {(exp.type || exp.parallel) && (
+          <p className="exp-badges">
+            {exp.type && <span className="exp-badge">{exp.type}</span>}
+            {exp.parallel && <span className="exp-badge is-parallel">{labels.parallel}</span>}
+          </p>
+        )}
+        <h3 className="exp-company">{exp.company}</h3>
+        <p className="exp-role">{exp.role}</p>
+      </header>
 
-  useEffect(() => {
-    const checkDevice = () => setIsDesktop(window.innerWidth >= 768);
-    checkDevice();
-    window.addEventListener('resize', checkDevice);
-    return () => window.removeEventListener('resize', checkDevice);
-  }, []);
-  
-  // Altura da timeline para desenhar a pincelada no tamanho real (sem distorcer o traço)
+      <p className="exp-summary">{exp.summary}</p>
+      <ul className="exp-highlights">
+        {exp.highlights.map((h) => (
+          <li key={h.text} className={h.value ? 'has-value' : undefined}>
+            {h.value && <strong className="exp-value">{h.value}</strong>}
+            <span>{h.text}</span>
+          </li>
+        ))}
+      </ul>
+
+      <ul className="exp-tags" aria-label={labels.tags}>
+        {exp.tags.map((tag) => <li key={tag}>{tag}</li>)}
+      </ul>
+
+      {exp.link && (
+        <Link href={exp.link} className="exp-link hover-nudge">
+          {labels.viewProject} <ArrowRight size={16} aria-hidden="true" />
+        </Link>
+      )}
+    </article>
+  );
+}
+
+// 歩 Experiência: a pincelada sumi-e desce pela lateral e cada marco ganha uma gota de tinta.
+// Do mais recente para o mais antigo, terminando na formação
+export default function ExperienceSection({ experience, education, labels, title }) {
+  const rootRef = useRef(null);
   const timelineRef = useRef(null);
+  const { language } = useSettings();
+  const today = currentMonth();
+  const entries = useMemo(() => orderTimeline(experience, today), [experience, today]);
+  const entriesKey = entries.map((e) => e.id).join('|');
+
+  // Altura da linha do tempo para desenhar a pincelada no tamanho real (sem distorcer o traço)
   const [brushHeight, setBrushHeight] = useState(0);
   useEffect(() => {
     const el = timelineRef.current;
@@ -28,116 +73,72 @@ export default function ExperienceSection({ experience, title }) {
     return () => observer.disconnect();
   }, []);
 
-  // 歩: a pincelada sumi-e se desenha com o scroll; em cada marco uma gota de tinta se espalha
   useGSAP(() => {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (brushHeight > 0 && !reduced) {
+    if (reduced) return;
+    if (brushHeight > 0) {
       gsap.fromTo('.sumi-stroke', { drawSVG: '0%' }, {
         drawSVG: '100%',
         ease: 'none',
         scrollTrigger: { trigger: timelineRef.current, start: 'top 65%', end: 'bottom 55%', scrub: 0.5 },
       });
-      gsap.utils.toArray('.ink-drop').forEach((drop) => {
-        gsap.fromTo(drop, { scale: 0, opacity: 0 }, {
-          scale: 1, opacity: 1, duration: 0.7, ease: 'expo.out',
-          scrollTrigger: { trigger: drop, start: 'top 60%', toggleActions: 'play none none reverse' },
-        });
-      });
     }
-    gsap.utils.toArray('.exp-anim').forEach((el) => {
-      gsap.from(el, {
-        opacity: 0,
-        x: el.dataset.side === 'right' ? 20 : -20,
-        duration: 0.5,
-        clearProps: 'transform,opacity',
-        scrollTrigger: { trigger: el, start: 'top bottom', once: true },
-      });
+    // Gota de tinta se espalha quando o marco chega; o cartão entra logo atrás
+    gsap.utils.toArray('.exp-item').forEach((item) => {
+      gsap.timeline({ scrollTrigger: { trigger: item, start: 'top 75%', toggleActions: 'play none none reverse' } })
+        .fromTo(item.querySelector('.ink-drop'), { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.7, ease: 'expo.out' }, 0)
+        .from(item.querySelector('.exp-card'), { opacity: 0, x: 24, duration: 0.6, ease: 'power3.out' }, 0.05);
     });
-  }, { scope: refExperience, dependencies: [isDesktop, experience, brushHeight], revertOnUpdate: true });
+  // Os mesmos marcos nos dois idiomas: trocar o idioma não refaz as animações (só o texto muda)
+  }, { scope: rootRef, dependencies: [entriesKey, brushHeight], revertOnUpdate: true });
 
   return (
-    <Section id="experience" style={{ padding: '100px 0', paddingBottom: '150px' }} ref={refExperience}>
-      <ScrollReveal>
-        <h2 className="section-title section-title-center">
-          <span className="section-kanji font-jp" aria-hidden="true">歩</span>
-          {title}
-        </h2>
-        
-        <div ref={timelineRef} style={{ position: 'relative', maxWidth: '1000px', margin: '0 auto' }}>
-          
-          {/* PINCELADA CENTRAL (sumi-e): rastro claro + traço de tinta desenhado pelo scroll */}
-          {brushHeight > 0 && (
-            <svg
-              className="timeline-line sumi-brush"
-              aria-hidden="true"
-              width="40"
-              height={brushHeight}
-              viewBox={`0 0 40 ${brushHeight}`}
-            >
-              <path className="sumi-track" d={sumiPath(brushHeight)} />
-              <path className="sumi-stroke" d={sumiPath(brushHeight)} />
-            </svg>
-          )}
+    <Section id="experience" ref={rootRef} className="exp-section">
+      <h2 className="section-title">
+        <span className="section-kanji font-jp" aria-hidden="true">歩</span>
+        {title}
+      </h2>
 
-          <div className="experience-container">
-            {experience.map((exp, index) => {
-              const isEven = index % 2 === 0;
+      <div ref={timelineRef} className="exp-timeline">
+        {brushHeight > 0 && (
+          <svg
+            className="sumi-brush"
+            aria-hidden="true"
+            width="40"
+            height={brushHeight}
+            viewBox={`0 0 40 ${brushHeight}`}
+          >
+            <path className="sumi-track" d={sumiPath(brushHeight)} />
+            <path className="sumi-stroke" d={sumiPath(brushHeight)} />
+          </svg>
+        )}
 
-              return (
-                <div key={exp.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', flexDirection: isDesktop ? 'row' : 'column' }}>
-                  
-                  {/* ESQUERDA - Sempre alinhada à direita no desktop */}
-                  <div className={`exp-col ${isDesktop ? 'exp-left' : ''}`} style={{ textAlign: isDesktop ? 'right' : 'left' }}>
-                    <div className="exp-anim" data-side="left">
-                      {(!isDesktop || isEven) ? (
-                        // PAR: INFO (Com padding extra para alinhar com o texto do card)
-                        <div style={{ paddingRight: isDesktop ? '20px' : '0' }}> 
-                          <h3 style={{ fontSize: '1.5rem', margin: 0, color: 'var(--text-primary)' }}>{exp.company}</h3>
-                          <h4 style={{ fontSize: '1.1rem', color: 'var(--accent)', margin: '5px 0' }}>{exp.role}</h4>
-                          <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 'bold' }}>{exp.year}</span>
-                          {!isDesktop && (
-                             <p style={{ marginTop: '15px', fontSize: '1rem', lineHeight: 1.6, color: 'var(--text-secondary)' }}>{exp.desc}</p>
-                          )}
-                        </div>
-                      ) : (
-                        // ÍMPAR: CARD (Texto dentro já tem padding de 20px do próprio card)
-                        <p style={{ fontSize: '1.1rem', lineHeight: 1.6, color: 'var(--text-secondary)', background: 'var(--card-bg)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)', textAlign: 'left' }}>
-                          {exp.desc}
-                        </p>
-                      )}
-                    </div>
-                  </div>
+        <ol className="exp-list">
+          {entries.map((exp) => (
+            <li key={exp.id} className="exp-item">
+              <span className="ink-drop" aria-hidden="true" />
+              <ExperienceCard exp={exp} labels={labels} lang={language} today={today} />
+            </li>
+          ))}
 
-                  {/* PONTO CENTRAL */}
-                  <span className="timeline-dot ink-drop" aria-hidden="true" />
-
-                  {/* DIREITA - Sempre alinhada à esquerda no desktop */}
-                  {isDesktop && (
-                    <div className="exp-col exp-right" style={{ textAlign: 'left' }}>
-                      <div className="exp-anim" data-side="right">
-                        {isEven ? (
-                          // PAR: CARD
-                          <p style={{ fontSize: '1.1rem', lineHeight: 1.6, color: 'var(--text-secondary)', background: 'var(--card-bg)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)', textAlign: 'left' }}>
-                            {exp.desc}
-                          </p>
-                        ) : (
-                          // ÍMPAR: INFO (Com padding extra para alinhar com o texto do card)
-                          <div style={{ paddingLeft: '20px' }}>
-                            <h3 style={{ fontSize: '1.8rem', margin: 0, color: 'var(--text-primary)' }}>{exp.company}</h3>
-                            <h4 style={{ fontSize: '1.2rem', color: 'var(--accent)', margin: '5px 0' }}>{exp.role}</h4>
-                            <span style={{ fontSize: '1rem', color: 'var(--text-secondary)', fontWeight: 'bold' }}>{exp.year}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </ScrollReveal>
+          {/* Formação: marco com outro traço (anel vazado e carimbo 学) */}
+          <li className="exp-item is-education">
+            <span className="ink-drop is-ring" aria-hidden="true" />
+            <article className="exp-card">
+              <span className="exp-hanko font-jp" aria-hidden="true">学</span>
+              <header className="exp-head">
+                <p className="exp-period">
+                  {labels.expected}: {formatMonth(education.end, language)}
+                </p>
+                <p className="exp-badges"><span className="exp-badge">{labels.education}</span></p>
+                <h3 className="exp-company">{education.institution}</h3>
+                <p className="exp-role">{education.course}</p>
+              </header>
+              <p className="exp-summary">{education.summary}</p>
+            </article>
+          </li>
+        </ol>
+      </div>
     </Section>
   );
 }

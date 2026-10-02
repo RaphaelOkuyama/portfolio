@@ -84,7 +84,8 @@ export default function Footer() {
       ease: 'power4.out',
       scrollTrigger: { trigger: '.sf-wordmark', start: 'top 92%' },
     });
-    const lead = SplitText.create('.sf-lead', { type: 'lines', mask: 'lines', linesClass: 'sf-lead-line' });
+    // aria: 'none': aria-label é proibido em <p>; as linhas continuam legíveis como texto
+    const lead = SplitText.create('.sf-lead', { type: 'lines', mask: 'lines', linesClass: 'sf-lead-line', aria: 'none' });
     gsap.from(lead.lines, {
       yPercent: 110,
       duration: 0.9,

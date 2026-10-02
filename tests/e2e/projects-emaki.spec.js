@@ -22,9 +22,14 @@ const trackX = (page) =>
 test('o emakimono lista os projetos com o IMACARDIOS primeiro', async ({ page }) => {
   await openHome(page);
   const panels = page.locator('.emaki-panel');
-  await expect(panels).toHaveCount(11);
+  // Seis projetos e, no fim do rolo, o convite para a página com todos
+  await expect(panels).toHaveCount(7);
   await expect(panels.first()).toContainText('IMACARDIOS');
   await expect(panels.first()).toHaveAttribute('href', '/projects/imacardios');
+  await expect(panels.last()).toHaveAttribute('href', '/projects');
+  await expect(panels.last()).toContainText('Todos os 15 projetos');
+  // O numeral é o da lista completa (Este Portfólio é o 八, oitavo projeto)
+  await expect(page.locator('.emaki-panel[data-project="portfolio-okuyama"] .emaki-number')).toHaveText('八');
 });
 
 test('o scroll vertical desenrola o rolo na horizontal com a seção fixada', async ({ page }) => {
@@ -54,7 +59,7 @@ test('o conteúdo dos painéis surge ao entrar e o último fica completo no fim'
 test('focar um painel fora da tela rola o rolo até ele', async ({ page }) => {
   await openHome(page);
   await scrollProjects(page, 0);
-  const target = page.locator('.emaki-panel').nth(7);
+  const target = page.locator('.emaki-panel').nth(5);
   await target.focus();
   await expect
     .poll(async () => {
@@ -65,7 +70,7 @@ test('focar um painel fora da tela rola o rolo até ele', async ({ page }) => {
     .toBe(true);
 });
 
-test('clicar num painel expande e abre o projeto', async ({ page }) => {
+test('clicar num painel faz ele virar o topo do projeto', async ({ page }) => {
   await openHome(page);
   await scrollProjects(page, 0.02);
   await page.waitForTimeout(800);
@@ -73,14 +78,14 @@ test('clicar num painel expande e abre o projeto', async ({ page }) => {
   await page.evaluate(() => {
     window.__expanded = false;
     new MutationObserver(() => {
-      if (document.querySelector('.emaki-expand')) window.__expanded = true;
+      if (document.querySelector('.emaki-morph')) window.__expanded = true;
     }).observe(document.body, { childList: true });
   });
   await page.locator('.emaki-panel').first().click();
   await expect(page).toHaveURL(/\/projects\/imacardios$/);
   expect(await page.evaluate(() => window.__expanded)).toBe(true);
   await expect(page.getByRole('heading', { level: 1 })).toContainText('IMACARDIOS');
-  await expect(page.locator('.emaki-expand')).toHaveCount(0, { timeout: 5_000 });
+  await expect(page.locator('.emaki-morph')).toHaveCount(0, { timeout: 5_000 });
 });
 
 test('o link "Ver todos os projetos" leva para a lista', async ({ page }) => {
@@ -143,7 +148,7 @@ test.describe('com prefers-reduced-motion', () => {
     await first.scrollIntoViewIfNeeded();
     await first.click();
     await expect(page).toHaveURL(/\/projects\/imacardios$/);
-    await expect(page.locator('.emaki-expand')).toHaveCount(0);
+    await expect(page.locator('.emaki-morph')).toHaveCount(0);
   });
 });
 
@@ -222,4 +227,52 @@ test('nenhum texto da página usa travessão (—)', async ({ page }) => {
     const text = await page.evaluate(() => `${document.title}\n${document.body.innerText}`);
     expect(text, path).not.toContain('—');
   }
+});
+
+test.describe('Página /projects (作)', () => {
+  const grid = (page) => page.locator('.pj-board > [data-lang="pt"]');
+
+  test('destaque da IMACARDIOS, grupos de duas partes e os projetos novos', async ({ page }) => {
+    await page.goto('/projects');
+    const featured = grid(page).locator('.pj-card.is-featured');
+    await expect(featured).toContainText('IMACARDIOS');
+    await expect(featured.locator('.pj-stats dd')).toHaveText(['42+', '2.000+']);
+    const fit = grid(page).locator('.pj-card.is-group', { hasText: 'FIT.AI' });
+    await expect(fit.locator('.pj-part-link')).toHaveCount(2);
+    for (const title of ['Saeko Artes', 'ARCA', 'GLOW LASER', 'Este Portfólio']) {
+      await expect(grid(page)).toContainText(title);
+    }
+    // Sem <button> dentro de link (HTML inválido)
+    await expect(page.locator('a button')).toHaveCount(0);
+    await expect(page.locator('.pj-subtitle a')).toHaveAttribute('href', 'https://github.com/RaphaelOkuyama');
+  });
+
+  test('o cartão inteiro abre o projeto e os links externos continuam clicáveis', async ({ page }) => {
+    await page.goto('/projects');
+    await expect(page.locator('[data-loader="enso"]')).toHaveCount(0, { timeout: 10_000 });
+    const card = grid(page).locator('.pj-card', { hasText: 'Totem de Autoatendimento' });
+    await expect(card.getByRole('link', { name: /Ver site/ })).toHaveAttribute('href', 'https://totem-autoatendimento.vercel.app');
+    // Clique na área da descrição: quem recebe é a camada do link que cobre o cartão
+    await card.scrollIntoViewIfNeeded();
+    const box = await card.locator('.pj-desc').boundingBox();
+    await page.mouse.click(box.x + 20, box.y + box.height / 2);
+    await expect(page).toHaveURL(/\/projects\/totem-autoatendimento$/);
+  });
+
+  test('o filtro por tipo esconde os outros cartões', async ({ page }) => {
+    await page.goto('/projects');
+    await page.getByRole('button', { name: /^Desktop/ }).click();
+    const visible = grid(page).locator('.pj-card:visible');
+    await expect(visible).toHaveCount(1);
+    await expect(visible).toContainText('Music Player Desktop');
+    await page.getByRole('button', { name: /^Back-end/ }).click();
+    // Grupos com uma parte de API entram no filtro de back-end
+    await expect(grid(page).locator('.pj-card:visible', { hasText: 'FIT.AI' })).toHaveCount(1);
+  });
+
+  test('as páginas dos projetos novos existem', async ({ request }) => {
+    for (const slug of ['saeko-artes', 'arca-construtora', 'glow-laser', 'portfolio-okuyama']) {
+      expect((await request.get(`/projects/${slug}`)).status()).toBe(200);
+    }
+  });
 });

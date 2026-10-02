@@ -59,13 +59,17 @@ test.describe('Nome dos projetos', () => {
       .toBe('');
   });
 
+  // "Autoatendimento" não tem hífen; o título em inglês ("Self-Service Kiosk") tem
+  test.describe('em inglês', () => {
+    test.use({ locale: 'en-US' });
+
   test('palavra composta não quebra no hífen em nenhuma lista', async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 640 });
     for (const [path, selector] of [['/projects', 'main h2'], ['/', '.emaki-title'], ['/projects/totem-autoatendimento', '.case-title']]) {
       await page.goto(path);
       await waitLoader(page);
-      const word = page.locator(selector).filter({ hasText: 'Totem' }).locator('.nowrap');
-      await expect(word, path).toHaveText('Auto-atendimento');
+      const word = page.locator(selector).filter({ hasText: 'Kiosk' }).locator('.nowrap');
+      await expect(word, path).toHaveText('Self-Service');
       // Espera a entrada do título assentar: durante a animação as letras estão em alturas diferentes
       await expect
         .poll(() => word.evaluate((el) => {
@@ -79,6 +83,7 @@ test.describe('Nome dos projetos', () => {
         }), { message: path, timeout: 5_000 })
         .toBe(1);
     }
+  });
   });
 });
 

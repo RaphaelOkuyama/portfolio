@@ -72,3 +72,24 @@ describe('utilitários', () => {
     expect(allow('ip', 1500)).toBe(true);
   });
 });
+
+describe('fieldErrors', () => {
+  it('aponta cada campo vazio', async () => {
+    const { fieldErrors } = await import('../../src/lib/contactMail');
+    expect(fieldErrors({})).toEqual({ name: 'required', email: 'required', message: 'required' });
+    expect(fieldErrors({ name: '  ', email: 'a@b.co', message: '\n' })).toEqual({ name: 'required', message: 'required' });
+  });
+
+  it('e-mail inválido e mensagem longa demais', async () => {
+    const { fieldErrors, LIMITS } = await import('../../src/lib/contactMail');
+    expect(fieldErrors({ name: 'Ana', email: 'abc', message: 'oi' })).toEqual({ email: 'invalid' });
+    expect(fieldErrors({ name: 'Ana', email: 'a@b.co', message: 'x'.repeat(LIMITS.message + 1) })).toEqual({ message: 'too_long' });
+  });
+
+  it('concorda com validateContact: sem erros por campo, o envio é válido', async () => {
+    const { fieldErrors, validateContact } = await import('../../src/lib/contactMail');
+    const ok = { name: 'Ana', email: 'ana@exemplo.com', message: 'Olá!' };
+    expect(fieldErrors(ok)).toEqual({});
+    expect(validateContact(ok).ok).toBe(true);
+  });
+});

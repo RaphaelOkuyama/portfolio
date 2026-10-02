@@ -9,6 +9,7 @@ import Petals from './Petals';
 import Torii from './Torii';
 import Celestial from './Celestial';
 import ZenGarden from './ZenGarden';
+import Ground from './Ground';
 import Momiji from './Momiji';
 import Snow from './Snow';
 import River from './River';
@@ -46,6 +47,7 @@ export default function World() {
       <Celestial />
       <Birds />
       <MountainLayers />
+      <Ground />
       <Kasumi />
       <Torii />
       <ZenGarden />

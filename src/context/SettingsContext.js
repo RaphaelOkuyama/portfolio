@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { resumeData } from '../data/resume';
 import { normalizeTheme } from '../lib/palette';
+import { LANG_KEY } from '../lib/themeBoot';
 
 const SettingsContext = createContext();
 
@@ -25,10 +26,24 @@ export function SettingsProvider({ children }) {
     applyTheme(next);
   };
 
-  // Alternar Idioma
+  // Alternar idioma: a escolha fica salva para a próxima visita
   const toggleLanguage = () => {
-    setLanguage((prev) => (prev === 'pt' ? 'en' : 'pt'));
+    setLanguage((prev) => {
+      const next = prev === 'pt' ? 'en' : 'pt';
+      try {
+        localStorage.setItem(LANG_KEY, next);
+      } catch {
+        // Storage bloqueado: o idioma só não persiste
+      }
+      return next;
+    });
   };
+
+  // Idioma decidido pelo script do <head> (salvo ou o do navegador)
+  useEffect(() => {
+    const initial = document.documentElement.getAttribute('data-language');
+    if (initial === 'en' || initial === 'pt') setLanguage(initial);
+  }, []);
 
   // Carregar preferência salva (aceita valores antigos 'dark'/'light')
   useEffect(() => {
@@ -46,6 +61,7 @@ export function SettingsProvider({ children }) {
   // Leitores de tela e tradutores seguem o idioma escolhido
   useEffect(() => {
     document.documentElement.lang = language === 'pt' ? 'pt-BR' : 'en';
+    document.documentElement.setAttribute('data-language', language);
   }, [language]);
 
   // Dados atuais baseados no idioma

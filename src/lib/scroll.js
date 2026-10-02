@@ -15,6 +15,19 @@ export function scrollToTop() {
   window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
 }
 
+// Rola até uma seção da página (trilho de kanji): suave com Lenis, direto com movimento reduzido
+export function scrollToId(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const y = el.getBoundingClientRect().top + window.scrollY;
+  if (lenis) {
+    lenis.scrollTo(y, { duration: 1.4 });
+    return;
+  }
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  window.scrollTo({ top: y, behavior: reduced ? 'auto' : 'smooth' });
+}
+
 // Hora local de uma cidade (HH:MM), para os relógios do rodapé
 export function cityTime(timeZone, date = new Date(), locale = 'pt-BR') {
   return new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit', hour12: false, timeZone }).format(date);

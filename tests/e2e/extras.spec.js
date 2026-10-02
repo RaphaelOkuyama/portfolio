@@ -44,9 +44,9 @@ test.describe('Lanterna com o nome (灯籠流し)', () => {
     await openHome(page);
     await scrollToContact(page);
     await page.getByLabel('Nome').fill('Ana Souza');
-    await page.getByLabel('Email').fill('ana@example.com');
+    await page.getByLabel('E-mail', { exact: true }).fill('ana@example.com');
     await page.getByLabel('Mensagem').fill('Olá!');
-    await page.getByRole('button', { name: 'Enviar Mensagem' }).click();
+    await page.getByRole('button', { name: 'Enviar mensagem' }).click();
 
     const name = page.locator('[data-lantern-release] .paper-lantern-name');
     await expect(name).toHaveText('Ana');
@@ -60,14 +60,14 @@ test.describe('Lanterna com o nome (灯籠流し)', () => {
     await openHome(page);
     await scrollToContact(page);
     await page.getByLabel('Nome').fill('<img src=x onerror=alert(1)>');
-    await page.getByLabel('Email').fill('x@example.com');
+    await page.getByLabel('E-mail', { exact: true }).fill('x@example.com');
     await page.getByLabel('Mensagem').fill('teste');
     let dialog = false;
     page.on('dialog', (d) => {
       dialog = true;
       return d.dismiss();
     });
-    await page.getByRole('button', { name: 'Enviar Mensagem' }).click();
+    await page.getByRole('button', { name: 'Enviar mensagem' }).click();
     await expect(page.locator('[data-lantern-release]')).toHaveCount(1);
     await expect(page.locator('[data-lantern-release] img')).toHaveCount(0);
     expect(dialog).toBe(false);
@@ -78,19 +78,19 @@ test.describe('Página de projeto (作)', () => {
   test('hero com ficha, links, stack em marquee e navegação para o próximo', async ({ page }) => {
     const errors = collectConsoleErrors(page);
     await page.goto('/projects/totem-autoatendimento');
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Totem de Auto-atendimento');
-    await expect(page.locator('.project-eyebrow')).toContainText('04 / 11');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Totem de Autoatendimento');
+    await expect(page.locator('.project-eyebrow')).toContainText('05 / 15');
 
     // Ficha: status e contagens vêm dos dados do projeto
     const meta = page.locator('.case-meta');
     await expect(meta).toContainText('No ar');
     await expect(meta).toContainText('07');
 
-    await expect(page.getByRole('link', { name: /Acessar Projeto/ })).toHaveAttribute('target', '_blank');
+    await expect(page.getByRole('link', { name: /Ver site/ })).toHaveAttribute('target', '_blank');
     await expect(page.getByRole('link', { name: /Ver no GitHub/ })).toHaveAttribute('rel', /noopener/);
 
     // Stack: lista acessível com cada tecnologia uma vez; a faixa visual fica fora da árvore
-    const stack = page.getByRole('region', { name: 'Tecnologias Usadas' });
+    const stack = page.getByRole('region', { name: 'Tecnologias' });
     await expect(stack.getByRole('listitem')).toHaveCount(7);
     await expect(page.locator('.case-marquee-track')).toHaveAttribute('aria-hidden', 'true');
 
@@ -102,8 +102,8 @@ test.describe('Página de projeto (作)', () => {
     const nav = page.getByRole('navigation', { name: 'Projeto' });
     await expect(nav.getByRole('link', { name: /Projeto anterior/ })).toHaveAttribute('href', '/projects/fit-ai-api');
     await nav.getByRole('link', { name: /Próximo projeto/ }).click();
-    await expect(page).toHaveURL(/\/projects\/devflix-frontend$/);
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('DevFlix');
+    await expect(page).toHaveURL(/\/projects\/arca-construtora$/);
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('ARCA');
     expect(errors).toEqual([]);
   });
 
@@ -112,7 +112,7 @@ test.describe('Página de projeto (作)', () => {
     await expect(page.getByRole('heading', { level: 1 })).toContainText('IMACARDIOS');
     await expect(page.locator('.project-gallery')).toHaveCount(0);
     await expect(page.getByRole('link', { name: /Projeto anterior/ })).toHaveCount(0);
-    await expect(page.getByRole('link', { name: /Próximo projeto/ })).toHaveAttribute('href', '/projects/fit-ai-frontend');
+    await expect(page.getByRole('link', { name: /Próximo projeto/ })).toHaveAttribute('href', '/projects/saeko-artes');
     // Sem repositório público: só o botão de acesso
     await expect(page.getByRole('link', { name: /Ver no GitHub/ })).toHaveCount(0);
   });
@@ -174,9 +174,9 @@ test.describe('Formulário de contato (縁)', () => {
     await openHome(page);
     await scrollToContact(page);
     await page.getByLabel('Nome').fill('Ana');
-    await page.getByLabel('Email').fill('ana@example.com');
+    await page.getByLabel('E-mail', { exact: true }).fill('ana@example.com');
     await page.getByLabel('Mensagem').fill('Linha 1\nLinha 2');
-    await page.getByRole('button', { name: 'Enviar Mensagem' }).click();
+    await page.getByRole('button', { name: 'Enviar mensagem' }).click();
     await expect.poll(() => payload).not.toBeNull();
     expect(payload).toEqual({ name: 'Ana', email: 'ana@example.com', message: 'Linha 1\nLinha 2' });
   });
@@ -194,9 +194,9 @@ test.describe('Formulário de contato (縁)', () => {
     await openHome(page);
     await scrollToContact(page);
     await page.getByLabel('Nome').fill('Ana');
-    await page.getByLabel('Email').fill('ana@example.com');
+    await page.getByLabel('E-mail', { exact: true }).fill('ana@example.com');
     await page.getByLabel('Mensagem').fill('oi');
-    await page.getByRole('button', { name: 'Enviar Mensagem' }).click();
+    await page.getByRole('button', { name: 'Enviar mensagem' }).click();
     await expect(page.getByText(/Muitas mensagens em pouco tempo/)).toBeVisible();
     await expect(page.locator('[data-lantern-release]')).toHaveCount(0);
   });
@@ -206,9 +206,9 @@ test.describe('Formulário de contato (縁)', () => {
     await openHome(page);
     await scrollToContact(page);
     await page.getByLabel('Nome').fill('Ana');
-    await page.getByLabel('Email').fill('ana@example.com');
+    await page.getByLabel('E-mail', { exact: true }).fill('ana@example.com');
     await page.getByLabel('Mensagem').fill('oi');
-    await page.getByRole('button', { name: 'Enviar Mensagem' }).click();
+    await page.getByRole('button', { name: 'Enviar mensagem' }).click();
     await expect(page.getByText(/raphaelokuyama123@gmail\.com diretamente|Escreva direto para raphaelokuyama123@gmail\.com/)).toBeVisible();
     // A mensagem não se perde: continua no formulário
     await expect(page.getByLabel('Mensagem')).toHaveValue('oi');

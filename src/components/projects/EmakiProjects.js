@@ -7,6 +7,8 @@ import { gsap, ScrollTrigger, Draggable, useGSAP } from '../../lib/gsap';
 import Section from '../journey/Section';
 import { kanjiNumber } from '../../lib/kanji';
 import KeepHyphenated from '../KeepHyphenated';
+import { startMorph } from '../../lib/panelMorph';
+import { homeProjects } from '../../lib/projects';
 
 
 // Modos do rolo: pin horizontal no desktop, arrastar no celular, grade estática com movimento reduzido
@@ -15,27 +17,6 @@ const MOBILE = '(max-width: 767px) and (prefers-reduced-motion: no-preference)';
 
 function isPlainClick(e) {
   return e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
-}
-
-// Painel "abre" até cobrir a tela e só então navega para o detalhe do projeto
-function expandAndNavigate(panel, href, router) {
-  const rect = panel.getBoundingClientRect();
-  const overlay = document.createElement('div');
-  overlay.className = 'emaki-expand';
-  overlay.setAttribute('aria-hidden', 'true');
-  Object.assign(overlay.style, {
-    top: `${rect.top}px`, left: `${rect.left}px`, width: `${rect.width}px`, height: `${rect.height}px`,
-  });
-  document.body.appendChild(overlay);
-
-  gsap.to(overlay, {
-    top: 0, left: 0, width: window.innerWidth, height: window.innerHeight, borderRadius: 0,
-    duration: 0.55, ease: 'power3.inOut',
-    onComplete: () => {
-      router.push(href);
-      gsap.to(overlay, { opacity: 0, delay: 0.25, duration: 0.4, onComplete: () => overlay.remove() });
-    },
-  });
 }
 
 // 作 Projetos: emakimono (絵巻物) — o scroll vertical desenrola o rolo na horizontal
@@ -47,6 +28,7 @@ export default function EmakiProjects({ projects, labels }) {
   const scrollTweenRef = useRef(null);
   const rollerRef = useRef(null);
   const router = useRouter();
+  const projectsKey = projects.map((p) => p.slug).join('|');
 
   useGSAP(() => {
     const mm = gsap.matchMedia();
@@ -168,7 +150,9 @@ export default function EmakiProjects({ projects, labels }) {
     });
 
     return () => mm.revert();
-  }, { scope: rootRef, dependencies: [projects], revertOnUpdate: true });
+  // Depende só de QUAIS projetos aparecem, não dos textos: trocar o idioma entrega uma lista nova
+  // com os mesmos projetos, e refazer o pin derrubava a rolagem e congelava o texto dos painéis
+  }, { scope: rootRef, dependencies: [projectsKey], revertOnUpdate: true });
 
   // Teclado: ao focar um painel fora da tela, rola até ele
   const revealPanel = (panel) => {
@@ -188,11 +172,12 @@ export default function EmakiProjects({ projects, labels }) {
     ScrollTrigger.update();
   };
 
-  const onPanelClick = (e, href) => {
+  // O painel cresce até cobrir a tela e vira o topo da página do projeto (lib/panelMorph)
+  const onPanelClick = (e, slug) => {
     if (!isPlainClick(e)) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     e.preventDefault();
-    expandAndNavigate(e.currentTarget, href, router);
+    startMorph({ panel: e.currentTarget, slug, onCovered: () => router.push(`/projects/${slug}`) });
   };
 
   return (
@@ -214,7 +199,7 @@ export default function EmakiProjects({ projects, labels }) {
           <div ref={viewportRef} className="emaki-viewport">
             <ol ref={trackRef} className="emaki-track" aria-label={labels.title}>
               <li className="emaki-rod" aria-hidden="true" />
-              {projects.map((project, i) => {
+              {homeProjects(projects).map(({ project, index: i }) => {
                 const href = `/projects/${project.slug}`;
                 return (
                   <li key={project.id} className="emaki-item">
@@ -223,7 +208,7 @@ export default function EmakiProjects({ projects, labels }) {
                       className="emaki-panel"
                       data-project={project.slug}
                       data-no-transition=""
-                      onClick={(e) => onPanelClick(e, href)}
+                      onClick={(e) => onPanelClick(e, project.slug)}
                       onFocus={(e) => revealPanel(e.currentTarget)}
                     >
                       <span className="emaki-number font-jp" aria-hidden="true">{kanjiNumber(i)}</span>
@@ -241,6 +226,17 @@ export default function EmakiProjects({ projects, labels }) {
                   </li>
                 );
               })}
+              {/* Fim do rolo: o convite para a página com todos os projetos */}
+              <li className="emaki-item">
+                <Link href="/projects" className="emaki-panel is-all" onFocus={(e) => revealPanel(e.currentTarget)}>
+                  <span className="emaki-number font-jp" aria-hidden="true">全</span>
+                  <h3 className="emaki-title">{labels.allTitle.replace('{n}', projects.length)}</h3>
+                  <p className="emaki-desc">{labels.allDesc}</p>
+                  <span className="emaki-cta">
+                    {labels.btnAll} <ArrowRight size={18} aria-hidden="true" />
+                  </span>
+                </Link>
+              </li>
               <li className="emaki-rod" aria-hidden="true" />
             </ol>
           </div>
@@ -248,9 +244,6 @@ export default function EmakiProjects({ projects, labels }) {
           <div ref={rollerRef} className="emaki-roller" aria-hidden="true" />
         </div>
 
-        <div className="emaki-footer">
-          <Link href="/projects" className="emaki-all">{labels.btnAll}</Link>
-        </div>
       </div>
     </Section>
   );
