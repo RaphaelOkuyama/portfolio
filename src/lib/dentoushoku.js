@@ -26,3 +26,15 @@ export function seasonInk(theme, mix) {
   const i = Math.min(Math.floor(m), inks.length - 2);
   return { ...inks[Math.round(m)], hex: lerpHex(inks[i].hex, inks[i + 1].hex, m - i) };
 }
+
+// Cor do texto por cima de um preenchimento na cor da estação: escuro nos tons claros (白藍,
+// 桃色), claro nos fundos. Luminância relativa (WCAG), corte onde os dois contrastes se igualam
+export function inkOn(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  const lin = (c) => {
+    const s = c / 255;
+    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  };
+  const l = 0.2126 * lin(n >> 16) + 0.7152 * lin((n >> 8) & 255) + 0.0722 * lin(n & 255);
+  return l > 0.179 ? '#1b1405' : '#ffffff';
+}

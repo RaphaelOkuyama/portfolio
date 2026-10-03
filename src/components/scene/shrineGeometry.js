@@ -347,3 +347,50 @@ export function kodamaGeometry() {
   });
 }
 
+
+// Espada deitada ao longo de x, centrada em x = 0 e apoiada (com o fio para cima) nos braços do
+// suporte em ±`rest`: a 反り (curvatura) ergue o meio. Bainha laqueada, tsuba, cabo com ito
+function swordParts({ length, y, radius, rest, z }, out) {
+  const half = length / 2;
+  const sori = 0.045 * length;
+  const at = (x) => new Vector3(x, y + radius + sori * ((rest / half) ** 2 - (x / half) ** 2), z);
+  const along = (from, to, n = 8) => new CatmullRomCurve3(Array.from({ length: n + 1 }, (_, i) => at(from + ((to - from) * i) / n)));
+  const tip = -half;
+  const tsuba = tip + 0.7 * length;
+  const end = half;
+  out.saya.push(paint(new TubeGeometry(along(tip, tsuba), 10, radius, 6, false)));
+  out.wrap.push(paint(new TubeGeometry(along(tsuba + 0.015, end - 0.02, 4), 4, radius * 0.92, 6, false)));
+  const cap = (x, r, h) => {
+    const p = at(x);
+    return cyl(r, r, h, 8, { x: p.x, y: p.y, z: p.z, rotZ: Math.PI / 2 });
+  };
+  // 鐺 (kojiri) na ponta da bainha, 鍔 (tsuba) e 頭 (kashira) no fim do cabo
+  out.metal.push(cap(tip + 0.01, radius * 1.05, 0.03), cap(tsuba + 0.006, radius * 2.3, 0.022), cap(end - 0.012, radius * 1.02, 0.03));
+}
+
+// 刀掛け com o 大小: suporte de laca preta com dois andares, a katana em cima e a wakizashi
+// embaixo, sobre uma laje de pedra. Frente em +z, espadas ao longo de x
+export function katanaGeometry() {
+  return cached('katana', () => {
+    const rest = 0.4;
+    const lacquer = [box(1.4, 0.07, 0.42, { y: 0.035 })];
+    for (const x of [-rest, rest]) {
+      lacquer.push(box(0.08, 0.98, 0.09, { x, y: 0.52, z: -0.1 }));
+      // Braços com um gancho na ponta (a espada não rola para a frente)
+      for (const y of [0.5, 0.86]) {
+        lacquer.push(box(0.08, 0.055, 0.26, { x, y, z: 0.02 }));
+        lacquer.push(box(0.08, 0.08, 0.04, { x, y: y + 0.06, z: 0.13 }));
+      }
+    }
+    const swords = { saya: [], wrap: [], metal: [] };
+    swordParts({ length: 1.25, y: 0.89, radius: 0.034, rest, z: 0.04 }, swords);
+    swordParts({ length: 0.88, y: 0.53, radius: 0.03, rest, z: 0.04 }, swords);
+    return {
+      stone: assemble([box(1.9, 0.4, 0.8, { y: -0.18 })]),
+      lacquer: assemble(lacquer),
+      saya: assemble(swords.saya),
+      wrap: assemble(swords.wrap),
+      metal: assemble(swords.metal),
+    };
+  });
+}

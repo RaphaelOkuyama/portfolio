@@ -454,12 +454,14 @@ p, li { text-wrap: pretty; }
 .section-rail-link[aria-current] .section-rail-kanji {
   background: var(--season, var(--accent));
   border-color: var(--season, var(--accent));
-  color: var(--on-accent);
+  color: var(--season-on, var(--on-accent));
   scale: 1.12;
 }
+/* A furigana acompanha o kanji no marco aceso (cinza sobre a cor da estação sumia) */
+.section-rail-link[aria-current] .furigana rt { color: inherit; opacity: 0.9; }
 .section-rail-link:hover .section-rail-kanji,
 .section-rail-link:focus-visible .section-rail-kanji { border-color: var(--accent); color: var(--accent); }
-.section-rail-link[aria-current]:hover .section-rail-kanji { color: var(--on-accent); }
+.section-rail-link[aria-current]:hover .section-rail-kanji { color: var(--season-on, var(--on-accent)); }
 .section-rail-link:focus-visible { outline: none; }
 .section-rail-link:focus-visible .section-rail-kanji { outline: 2px solid var(--accent); outline-offset: 3px; }
 /* 伝統色 da estação atual, em 縦書き embaixo do trilho; a leitura aparece ao passar o mouse */

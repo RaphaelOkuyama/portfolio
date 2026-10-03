@@ -1,7 +1,7 @@
 'use client';
 import { useEffect } from 'react';
 import { useJourney } from '../../store/journey';
-import { seasonInk } from '../../lib/dentoushoku';
+import { inkOn, seasonInk } from '../../lib/dentoushoku';
 import { useSettings } from '../../context/SettingsContext';
 import { scrollToId } from '../../lib/scroll';
 import Ruby from '../Ruby';
@@ -17,8 +17,12 @@ export default function SectionRail({ sections }) {
   const ink = seasonInk(theme, mix);
   useEffect(() => {
     document.documentElement.style.setProperty('--season', ink.hex);
+    document.documentElement.style.setProperty('--season-on', inkOn(ink.hex));
   }, [ink.hex]);
-  useEffect(() => () => document.documentElement.style.removeProperty('--season'), []);
+  useEffect(() => () => {
+    document.documentElement.style.removeProperty('--season');
+    document.documentElement.style.removeProperty('--season-on');
+  }, []);
   const label = (s) => s[language] ?? s.pt;
   const active = sections.find((s) => s.id === current) ?? sections[0];
 

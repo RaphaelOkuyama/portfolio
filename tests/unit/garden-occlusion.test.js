@@ -14,7 +14,7 @@ const layers = MOUNTAIN_LAYERS.map((layer) => {
   const points = ridgePoints(layer);
   // Floresta na maior densidade (qualidade alta): o pior caso
   const trees = forestPlacements(points, {
-    seed: layer.seed + 5, count: FOREST.count.high, halfWidth: FOREST.halfWidth, valleyHalf: FOREST.valleyHalf,
+    seed: layer.seed + 5, count: FOREST.count.high, halfWidth: FOREST.halfWidth, valleyHalf: layer.forestValleyHalf ?? FOREST.valleyHalf, valleyCenter: layer.valleyCenter,
   });
   return { layer, points, trees };
 });

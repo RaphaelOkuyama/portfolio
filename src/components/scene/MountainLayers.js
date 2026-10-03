@@ -153,7 +153,7 @@ export default function MountainLayers() {
   const forests = useMemo(() => {
     const count = FOREST.count[quality] ?? FOREST.count.low;
     return layers.map(({ layer, points }, i) =>
-      forestPlacements(points, { seed: layer.seed + 5, count, halfWidth: FOREST.halfWidth, valleyHalf: FOREST.valleyHalf })
+      forestPlacements(points, { seed: layer.seed + 5, count, halfWidth: FOREST.halfWidth, valleyHalf: layer.forestValleyHalf ?? FOREST.valleyHalf, valleyCenter: layer.valleyCenter })
         .map(([x, y, s]) => [x, y, s * (1 + i * FOREST.growWithDistance)]),
     );
   }, [layers, quality]);

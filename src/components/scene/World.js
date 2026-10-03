@@ -9,7 +9,7 @@ import MountainLayers from './MountainLayers';
 import Petals from './Petals';
 import Torii from './Torii';
 import Iwakura from './Iwakura';
-import { Komainu, Pagoda, ShishiOdoshi, StoneLanterns, StonePaths, Taikobashi } from './ShrineProps';
+import { Katana, Komainu, Pagoda, ShishiOdoshi, StoneLanterns, StonePaths, Taikobashi } from './ShrineProps';
 import { BambooGrove, Kodama } from './BambooGrove';
 import Celestial from './Celestial';
 import ZenGarden from './ZenGarden';
@@ -68,6 +68,7 @@ export default function World() {
       <ShishiOdoshi />
       <Pagoda />
       <Taikobashi />
+      <Katana />
       <ZenGarden />
       <Momiji />
       <Snow />

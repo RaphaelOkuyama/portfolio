@@ -102,3 +102,14 @@ describe('書道', () => {
     [...SHODO_STROKES.奥, ...SHODO_STROKES.山].forEach((d) => expect(d).toMatch(/^M[\d.]+,[\d.]+[cC]/));
   });
 });
+
+describe('伝統色: texto sobre a cor da estação', () => {
+  it('escuro nos tons claros, branco nos fundos', async () => {
+    const { inkOn, SEASON_INKS } = await import('../../src/lib/dentoushoku');
+    expect(inkOn('#c1e4e9')).toBe('#1b1405');
+    expect(inkOn('#f09199')).toBe('#1b1405');
+    expect(inkOn('#165e83')).toBe('#ffffff');
+    expect(inkOn('#bb5535')).toBe('#ffffff');
+    [...SEASON_INKS.night, ...SEASON_INKS.day].forEach((i) => expect(['#1b1405', '#ffffff']).toContain(inkOn(i.hex)));
+  });
+});

@@ -7,11 +7,11 @@ import { useCameraMap, getCameraCurve } from './useCameraMap';
 import { useAccentMaterials } from './useAccentMaterials';
 import { besideTorii } from './toriiFrame';
 import {
-  komainuGeometry, pagodaGeometry, shishiOdoshiGeometry, SHISHI_PIVOT_Y, stoneLanternGeometry, taikobashiGeometry,
+  katanaGeometry, komainuGeometry, pagodaGeometry, shishiOdoshiGeometry, SHISHI_PIVOT_Y, stoneLanternGeometry, taikobashiGeometry,
 } from './shrineGeometry';
 import { gangiGeometry, sandoGeometry } from './pathGeometry';
 import {
-  GROUND, KOMAINU, PAGODA, RIVER, RIVERSIDE, SHISHI_ODOSHI, STONE_LANTERNS, TAIKOBASHI,
+  GROUND, KATANA, KOMAINU, PAGODA, RIVER, RIVERSIDE, SHISHI_ODOSHI, STONE_LANTERNS, TAIKOBASHI,
 } from './config';
 
 // 狛犬: o par de guardiões nos pés do torii. À esquerda o "a" (boca aberta), à direita o "un"
@@ -150,6 +150,23 @@ export function Taikobashi() {
       <mesh geometry={red} material={materials.red} dispose={null} />
       <mesh geometry={dark} material={materials.dark} dispose={null} />
       <mesh geometry={bronze} material={materials.bronze} dispose={null} />
+    </group>
+  );
+}
+
+// 刀掛け: katana e wakizashi no suporte de laca, bainhas vermelhas, tsuba de bronze
+export function Katana() {
+  const materials = useAccentMaterials({
+    stone: { accent: 'granite' }, lacquer: { accent: 'toriiTop' }, saya: { accent: 'torii' },
+    wrap: { accent: 'plaster' }, metal: { accent: 'bronze' },
+  });
+  const geometry = katanaGeometry();
+  const { x, z } = KATANA;
+  return (
+    <group position={[x, groundHeight(x, z, GROUND), z]} rotation={[0, KATANA.rotY, 0]} scale={KATANA.scale}>
+      {['stone', 'lacquer', 'saya', 'wrap', 'metal'].map((part) => (
+        <mesh key={part} geometry={geometry[part]} material={materials[part]} dispose={null} />
+      ))}
     </group>
   );
 }

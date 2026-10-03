@@ -23,6 +23,15 @@ const GARDEN_CLEARING = {
   valley: { valleyDepth: 1, valleyWidth: 30, baseHeight: -0.6 },
 };
 
+// A camada da margem (z = -51) fica entre a câmera e o trecho do caminho que vira à esquerda
+// rumo à ponte: com o vale centrado no meio a encosta engolia as lajes (o caminho "sumia" no fim
+// dos Projetos). Aqui o vale desce abaixo do chão e se abre para a esquerda, sem sugi na faixa
+const RIVERBANK_OPENING = {
+  layer: 5,
+  valley: { valleyCenter: -6, valleyDepth: 1, valleyWidth: 16, baseHeight: -1.2 },
+  forestValleyHalf: 17,
+};
+
 const PATH_LAYERS = Array.from({ length: 6 }, (_, i) => ({
   seed: 101 + i * 37,
   x: 0,
@@ -39,6 +48,7 @@ const PATH_LAYERS = Array.from({ length: 6 }, (_, i) => ({
   // As camadas que abraçam o jardim zen abrem uma clareira: vale mais largo e com o fundo
   // abaixo do chão, para nenhuma encosta passar na frente da areia (tests/unit/garden-occlusion)
   ...(GARDEN_CLEARING.layers.includes(i) ? GARDEN_CLEARING.valley : {}),
+  ...(i === RIVERBANK_OPENING.layer ? { ...RIVERBANK_OPENING.valley, forestValleyHalf: RIVERBANK_OPENING.forestValleyHalf } : {}),
 }));
 
 const FAR_RANGE = [
@@ -112,6 +122,10 @@ export const RIVERSIDE = {
   gangi: { z: [-84, -90.5], x: [-21.5, -12.2], steps: 13 },
   lanterns: [[-19.6, -92.6], [-19.6, -99.4], [19.6, -92.6], [19.6, -99.4]],
 };
+
+// 刀掛け: o par de espadas (大小) num suporte na margem direita do rio, virado para quem desce
+// o vale. Aparece na Experiência, do lado oposto ao caminho e aos cartões
+export const KATANA = { x: 14.8, z: -80, rotY: -0.7, scale: 2.6 };
 
 // 参道 (sandō): o caminho de pedra do começo da montanha até o pagode. Passa sob o torii, contorna
 // o jardim zen pela direita, desce até a margem, segue pela beira do rio até a ponte e, do outro
