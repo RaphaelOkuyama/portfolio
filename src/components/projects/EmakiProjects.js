@@ -10,6 +10,7 @@ import KeepHyphenated from '../KeepHyphenated';
 import { startMorph } from '../../lib/panelMorph';
 import { homeProjects } from '../../lib/projects';
 import Ruby from '../Ruby';
+import Tate from '../Tate';
 
 
 // Modos do rolo: pin horizontal no desktop, arrastar no celular, grade estática com movimento reduzido
@@ -187,7 +188,7 @@ export default function EmakiProjects({ projects, labels }) {
         <header className="emaki-header">
           <h2 className="section-title">
             <span className="section-kanji font-jp" aria-hidden="true"><Ruby>作</Ruby></span>
-            {labels.title}
+            <span className="section-title-text">{labels.title}<Tate>作品</Tate></span>
           </h2>
           {/* No celular o rolo é arrastado, não rolado */}
           <p className="zen-hint">

@@ -2,6 +2,7 @@ import { createStore } from 'zustand/vanilla';
 import { useStore } from 'zustand';
 import { clamp01, seasonMixFromProgress, FROZEN_PROGRESS } from '../lib/journey/season';
 import { lanternLabel } from '../lib/journey/lanterns';
+import { stepDown } from '../lib/journey/quality';
 
 // Progresso que a cena deve usar: o real na jornada, o ponto fixo fora dela
 export function effectiveProgress(state) {
@@ -40,11 +41,14 @@ export function createJourneyStore() {
     },
     setSection: (section, p) => set({ section, sectionProgress: clamp01(p) }),
     setTheme: (theme) => set({ theme }),
-    // Primeira detecção; depois disso só downgradeQuality muda o valor
+    // Primeira leitura (escolha salva ou o mínimo); depois só a pessoa ou a queda de FPS mudam
     setInitialQuality: (quality) => {
       if (get().quality === null) set({ quality });
     },
-    downgradeQuality: () => set({ quality: 'low' }),
+    // Escolha da pessoa no seletor de gráficos
+    setQuality: (quality) => set({ quality }),
+    // FPS caiu: desce um degrau só nesta visita (a escolha salva não muda)
+    downgradeQuality: () => set({ quality: stepDown(get().quality) }),
     setReducedMotion: (reducedMotion) => set({ reducedMotion }),
     setRoute: (route) => set({ route, seasonMix: mixFor(get().progress, route) }),
     setAssetsProgress: (n) => set({ assetsProgress: Math.min(100, Math.max(0, n)) }),

@@ -10,6 +10,7 @@ import {
 } from '../lib/experience';
 import Section from './journey/Section';
 import Ruby from './Ruby';
+import Tate from './Tate';
 
 function ExperienceCard({ exp, labels, lang, today }) {
   const months = monthsBetween(exp.start, exp.end ?? today);
@@ -97,7 +98,7 @@ export default function ExperienceSection({ experience, education, labels, title
     <Section id="experience" ref={rootRef} className="exp-section">
       <h2 className="section-title">
         <span className="section-kanji font-jp" aria-hidden="true"><Ruby>歩</Ruby></span>
-        {title}
+        <span className="section-title-text">{title}<Tate>経歴</Tate></span>
       </h2>
 
       <div ref={timelineRef} className="exp-timeline">

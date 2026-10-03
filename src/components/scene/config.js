@@ -71,6 +71,63 @@ export const TORII = {
 // minAspect: abaixo dessa proporção (celular em pé) a pedra não aparece
 export const IWAKURA = { offset: [10.5, 2.5], scale: 2.25, sink: 0.55, turn: -0.35, minAspect: 0.75 };
 
+// 狛犬: o par de guardiões nos pés do torii, um de cada lado, um pouco à frente do portão e
+// virados para dentro do caminho (para quem chega)
+export const KOMAINU = { right: 5.3, ahead: -1.6, scale: 1.25, turnIn: 0.45 };
+
+// 石灯籠: lanternas de pedra ladeando a trilha depois do torii (pulam o jardim zen, em z -21 a -8).
+// Acendem à noite; `glow` > 1 dispara o bloom na qualidade alta
+export const STONE_LANTERNS = { x: 7.4, z: [5, -2.5, -26, -33.5, -41], scale: 1.15, glow: { night: 2.3, day: 1 } };
+
+// 竹林 e 木霊: bambuzal dos dois lados entre o torii e o jardim, com kodama no chão
+export const BAMBOO = {
+  // Afastados do centro e mais baixos: no hero ficam nas bordas, sem competir com o nome
+  groves: [{ x: [-20, -11], z: [-1, -7.5] }, { x: [11, 20], z: [-1, -7.5] }],
+  count: { high: 44, medium: 32, low: 22 },
+  height: [7, 11.5],
+  sway: 0.035,
+};
+export const KODAMA = {
+  // Dentro do bambuzal, longe da trilha e das lanternas: quem não procura nem percebe
+  spots: [[-12.4, -4.2, 0.5], [-13.3, -5.1, 0.2], [-12.1, -6.4, 0.8], [12.8, -5.0, -0.4], [13.6, -4.1, -0.1]],
+  scale: 0.95,
+  // A câmera chegando perto faz as cabeças girarem (o "estalo" dos kodama)
+  near: 18,
+};
+
+// 鹿威し no canto do jardim zen, fora da moldura de areia
+export const SHISHI_ODOSHI = { x: -9.5, z: -8.6, rotY: 0.9, scale: 1.4, cycle: 5.5 };
+
+// 五重塔 na outra margem do rio, no alto do barranco: o destino da jornada, do outro lado da ponte
+// e virado para ela
+export const PAGODA = { x: 26, z: -118, scale: 1.5, rotY: -0.55 };
+
+// 太鼓橋: ponte em arco de margem a margem, com as lanternas passando embaixo. Arco alto, como as
+// taikobashi de verdade (a ponte "tambor")
+export const TAIKOBASHI = { z: -96, span: 34, rise: 5.5, width: 3.6 };
+
+// Beira do rio: 雁木 (gangi), a escadaria de pedra que desce da margem esquerda até a água (de
+// onde as lanternas partem), e as lanternas de pedra nas cabeceiras da ponte
+export const RIVERSIDE = {
+  gangi: { z: [-84, -90.5], x: [-21.5, -12.2], steps: 13 },
+  lanterns: [[-19.6, -92.6], [-19.6, -99.4], [19.6, -92.6], [19.6, -99.4]],
+};
+
+// 参道 (sandō): o caminho de pedra do começo da montanha até o pagode. Passa sob o torii, contorna
+// o jardim zen pela direita, desce até a margem, segue pela beira do rio até a ponte e, do outro
+// lado, sobe até o pagode. Pontos [x, z]; a altura vem do chão
+export const SANDO = {
+  width: 2.3,
+  step: 0.95,
+  points: [
+    [0, 33], [0, 20], [0, 12], [0, 2], [0.4, -5], [5, -7.1], [10.9, -8.4], [11.1, -12.5],
+    [11.1, -19.4], [8, -22.7], [0.6, -27], [0, -35], [-1.5, -42], [-9, -47], [-15, -50.4], [-17, -56], [-17.2, -70],
+    [-17.4, -84], [-17.2, -92], [-16.6, -96],
+  ],
+  // Do outro lado da ponte até a escadaria do pagode
+  farPoints: [[16.6, -96], [18.5, -102], [22.5, -109], [25.2, -113.5]],
+};
+
 // Sol (昼) / lua (夜) no céu, visível do começo do caminho
 export const CELESTIAL = { position: [-14, 22, -90], radius: 4 };
 
@@ -90,13 +147,17 @@ export const GROUND = {
     [-50, -0.45],
     [-56, -0.5],
   ],
-  // Faixa plana no meio do vale e subida em concha nas laterais
+  // Faixa plana no meio do vale e subida em concha nas laterais. Depois da margem o chão segue
+  // por baixo do rio: no meio fica sob a água e nas laterais sobe e vira as duas margens (a
+  // água aparece entre |x| ≈ 14), onde ficam a escadaria, a ponte e o pagode
   flatHalf: 10,
   bowl: 0.02,
   bowlMax: 5,
-  size: [120, 102],
-  center: [0, -5],
-  segments: [96, 120],
+  // Até logo atrás do pagode (z = -132): mais longe a névoa já fecha, e cada metro de chão a
+  // mais é shader de ruído por pixel pago à toa
+  size: [140, 178],
+  center: [0, -43],
+  segments: [96, 160],
 };
 
 // Jardim zen (枯山水) visto de cima durante o "Stack": areia rastelada + 6 pedras
@@ -157,11 +218,12 @@ export const RIVER = {
 };
 
 export const LANTERNS = {
-  count: { high: 36, low: 20 },
+  count: { high: 36, medium: 28, low: 20 },
   maxReleased: 8,
   // Faixa em z local do rio (a câmera fica do lado +z): as lanternas andam para -z, se afastando
   laneZ: [-22, 50],
-  laneX: [-15, 15],
+  // Dentro da água (as margens começam em |x| ≈ 14)
+  laneX: [-11.5, 11.5],
   // z local da câmera no fim do caminho (= -RIVER.offsetZ) e abertura lateral por unidade de distância
   viewZ: 56,
   // Lanterna solta pelo formulário: distância à frente da câmera e tamanho
@@ -198,7 +260,7 @@ export const MOUNTAIN_LOOK = {
 // Sugi (杉) nas cristas: fora do vale por onde a câmera passa; camadas distantes ganham
 // árvores maiores para continuarem legíveis
 export const FOREST = {
-  count: { high: 110, low: 45 },
+  count: { high: 110, medium: 75, low: 45 },
   halfWidth: 72,
   valleyHalf: 13,
   growWithDistance: 0.12,
@@ -207,7 +269,7 @@ export const FOREST = {
 // Kasumi (霞): faixas de névoa entre as camadas, à deriva
 export const KASUMI = {
   width: 190,
-  every: { high: 1, low: 2 },
+  every: { high: 1, medium: 1, low: 2 },
   opacity: { night: 0.5, day: 0.6 },
   // Clareia a cor da névoa (dia: papel; noite: luar)
   lighten: { night: 0.12, day: 0.35 },

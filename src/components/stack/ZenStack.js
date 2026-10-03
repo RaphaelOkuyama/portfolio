@@ -6,6 +6,7 @@ import { toolKey } from '../../lib/stack/tools';
 import { TOOL_ICONS } from './toolIcons';
 import Section from '../journey/Section';
 import Ruby from '../Ruby';
+import Tate from '../Tate';
 
 // Formas irregulares de pedra, alternadas entre os botões
 const STONE_SHAPES = [
@@ -79,7 +80,7 @@ export default function ZenStack({ techData, icons }) {
     <Section id="stack" ref={rootRef} className="zen-section">
       <h2 className="section-title">
         <span className="section-kanji font-jp" aria-hidden="true"><Ruby>技</Ruby></span>
-        {techData.title}
+        <span className="section-title-text">{techData.title}<Tate>技術</Tate></span>
       </h2>
       <p className="zen-hint">{techData.hint}</p>
 

@@ -138,7 +138,9 @@ export default function River() {
     const group = groupRef.current;
     if (!group) return;
     const journey = journeyStore.getState();
-    const opacity = smoothstep(start - 0.06, start + 0.01, effectiveProgress(journey));
+    // O rio faz parte da paisagem (margens, ponte, pagode): surge no fim dos Projetos, bem antes
+    // do contato, para o vale nunca aparecer como uma planície vazia no lugar da água
+    const opacity = smoothstep(start - 0.4, start - 0.24, effectiveProgress(journey));
     group.visible = opacity > 0.001;
     if (!group.visible) return;
     const { theme } = journey;

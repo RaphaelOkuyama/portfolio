@@ -91,7 +91,7 @@ describe('normalizeTheme', () => {
 describe('SCENE_ACCENTS', () => {
   it('os dois temas têm pétala, torii, topo do torii, astro e o iwakura em hex', () => {
     for (const theme of ['night', 'day']) {
-      expect(Object.keys(SCENE_ACCENTS[theme]).sort()).toEqual(['celestial', 'firefly', 'iwakura', 'lantern', 'momiji', 'petal', 'sand', 'shide', 'shimenawa', 'snow', 'stone', 'torii', 'toriiTop', 'water']);
+      expect(Object.keys(SCENE_ACCENTS[theme]).sort()).toEqual(['bamboo', 'bambooLeaf', 'bronze', 'celestial', 'firefly', 'granite', 'iwakura', 'kodama', 'lantern', 'momiji', 'petal', 'plaster', 'roof', 'sand', 'shide', 'shimenawa', 'snow', 'stone', 'torii', 'toriiTop', 'tourou', 'water']);
       Object.values(SCENE_ACCENTS[theme]).forEach((c) => expect(c).toMatch(HEX));
     }
   });

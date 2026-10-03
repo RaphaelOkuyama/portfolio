@@ -11,6 +11,7 @@ import { lanternLabel } from '../../lib/journey/lanterns';
 import { resumeData } from '../../data/resume';
 import Meishi from './Meishi';
 import Ruby from '../Ruby';
+import Tate from '../Tate';
 
 const EMPTY = { name: '', email: '', message: '' };
 const EMAIL = 'raphaelokuyama123@gmail.com';
@@ -172,7 +173,7 @@ export default function ContactSection({ contact }) {
         <div className="contact-intro">
           <h2 className="section-title">
             <span className="section-kanji font-jp" aria-hidden="true"><Ruby>縁</Ruby></span>
-            {contact.title}
+            <span className="section-title-text">{contact.title}<Tate>ご縁</Tate></span>
           </h2>
           <p className="contact-subtitle">{contact.subtitle}</p>
           <div className="contact-availability">

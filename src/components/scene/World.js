@@ -1,13 +1,16 @@
 'use client';
 import { useEffect } from 'react';
-import { useThree } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import { journeyStore } from '../../store/journey';
+import { stepWind } from '../../lib/journey/wind';
 import Atmosphere from './Atmosphere';
 import JourneyCamera from './JourneyCamera';
 import MountainLayers from './MountainLayers';
 import Petals from './Petals';
 import Torii from './Torii';
 import Iwakura from './Iwakura';
+import { Komainu, Pagoda, ShishiOdoshi, StoneLanterns, StonePaths, Taikobashi } from './ShrineProps';
+import { BambooGrove, Kodama } from './BambooGrove';
 import Celestial from './Celestial';
 import ZenGarden from './ZenGarden';
 import Ground from './Ground';
@@ -40,6 +43,11 @@ export default function World() {
     [invalidate],
   );
 
+  // 風神: a rajada do scroll é atualizada uma vez por frame; pétalas e bambus só leem
+  useFrame((_, delta) => {
+    stepWind(delta);
+  });
+
   return (
     <>
       <Atmosphere />
@@ -52,6 +60,14 @@ export default function World() {
       <Kasumi />
       <Torii />
       <Iwakura />
+      <Komainu />
+      <StonePaths />
+      <StoneLanterns />
+      <BambooGrove />
+      <Kodama />
+      <ShishiOdoshi />
+      <Pagoda />
+      <Taikobashi />
       <ZenGarden />
       <Momiji />
       <Snow />

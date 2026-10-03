@@ -42,12 +42,14 @@ export default function Canvas3D() {
 
   return (
     <Canvas
+      // Antialias só existe na criação do contexto: trocar de nível com ele recria o canvas
+      key={settings.antialias ? 'aa' : 'plain'}
       flat
       onCreated={() => journeyStore.getState().setSceneReady()}
       dpr={settings.dpr}
       frameloop={frameloop}
       camera={{ fov: 50, near: 0.1, far: 300, position: CAMERA_PATH[0] }}
-      gl={{ antialias: quality === 'high', powerPreference: 'high-performance' }}
+      gl={{ antialias: settings.antialias, powerPreference: 'high-performance' }}
     >
       {/* Fora do frameloop "always" os frames chegam em rajadas e o FPS medido não vale */}
       {frameloop === 'always' && warmedUp ? (

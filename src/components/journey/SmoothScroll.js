@@ -6,6 +6,7 @@ import 'lenis/dist/lenis.css';
 import { gsap, ScrollTrigger } from '../../lib/gsap';
 import { journeyStore, useJourney } from '../../store/journey';
 import { setLenis } from '../../lib/scroll';
+import { feedScrollVelocity } from '../../lib/journey/wind';
 
 function nativeProgress() {
   const max = document.documentElement.scrollHeight - window.innerHeight;
@@ -35,6 +36,7 @@ export default function SmoothScroll() {
     lenis.on('scroll', (instance) => {
       ScrollTrigger.update();
       setProgress(instance.progress);
+      feedScrollVelocity(instance.velocity);
     });
     const tick = (time) => lenis.raf(time * 1000);
     gsap.ticker.add(tick);

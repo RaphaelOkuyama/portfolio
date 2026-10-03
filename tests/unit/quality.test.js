@@ -1,22 +1,38 @@
 import { describe, it, expect } from 'vitest';
-import { decideQuality, QUALITY_SETTINGS } from '../../src/lib/journey/quality';
+import {
+  DEFAULT_QUALITY, QUALITY_KEY, QUALITY_LEVELS, QUALITY_SETTINGS, readQuality, saveQuality, stepDown,
+} from '../../src/lib/journey/quality';
 
-describe('decideQuality', () => {
-  it.each([
-    [{ pointerFine: true, width: 1440, gpuTier: 3 }, 'high'],
-    [{ pointerFine: true, width: 1024, gpuTier: 2 }, 'high'],
-    [{ pointerFine: true, width: 1440, gpuTier: 1 }, 'low'],
-    [{ pointerFine: true, width: 1023, gpuTier: 3 }, 'low'],
-    [{ pointerFine: false, width: 1440, gpuTier: 3 }, 'low'],
-    // Detecção de GPU falhou: decide só por ponteiro e largura
-    [{ pointerFine: true, width: 1440, gpuTier: null }, 'high'],
-    [{ pointerFine: false, width: 400, gpuTier: null }, 'low'],
-  ])('%o → %s', (input, expected) => expect(decideQuality(input)).toBe(expected));
-});
+const memory = (initial = {}) => {
+  const data = { ...initial };
+  return { getItem: (k) => data[k] ?? null, setItem: (k, v) => { data[k] = v; }, data };
+};
 
-describe('QUALITY_SETTINGS', () => {
-  it('segue a tabela da spec', () => {
-    expect(QUALITY_SETTINGS.high).toEqual({ dpr: [1, 1.5], particles: 1500, postprocessing: true, sandDisplacement: true });
-    expect(QUALITY_SETTINGS.low).toEqual({ dpr: 1, particles: 300, postprocessing: false, sandDisplacement: false });
+describe('qualidade gráfica', () => {
+  it('três níveis, do mínimo ao alto; o bloom só no alto', () => {
+    expect(QUALITY_LEVELS).toEqual(['low', 'medium', 'high']);
+    expect(QUALITY_SETTINGS.low.postprocessing).toBe(false);
+    expect(QUALITY_SETTINGS.medium.postprocessing).toBe(false);
+    expect(QUALITY_SETTINGS.high.postprocessing).toBe(true);
+    expect(QUALITY_SETTINGS.low.particles).toBeLessThan(QUALITY_SETTINGS.medium.particles);
+    expect(QUALITY_SETTINGS.medium.particles).toBeLessThan(QUALITY_SETTINGS.high.particles);
+  });
+
+  it('começa no mínimo; lê a escolha salva e ignora valores inválidos ou storage bloqueado', () => {
+    expect(DEFAULT_QUALITY).toBe('low');
+    expect(readQuality(memory())).toBe('low');
+    expect(readQuality(memory({ [QUALITY_KEY]: 'high' }))).toBe('high');
+    expect(readQuality(memory({ [QUALITY_KEY]: 'ultra' }))).toBe('low');
+    expect(readQuality({ getItem: () => { throw new Error('bloqueado'); } })).toBe('low');
+  });
+
+  it('salva a escolha e, com o FPS caindo, desce um degrau por vez', () => {
+    const storage = memory();
+    saveQuality(storage, 'medium');
+    expect(storage.data[QUALITY_KEY]).toBe('medium');
+    expect(() => saveQuality({ setItem: () => { throw new Error('bloqueado'); } }, 'high')).not.toThrow();
+    expect(stepDown('high')).toBe('medium');
+    expect(stepDown('medium')).toBe('low');
+    expect(stepDown('low')).toBe('low');
   });
 });

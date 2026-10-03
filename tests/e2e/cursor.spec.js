@@ -36,8 +36,15 @@ test('o rastro sai do centro do ponto mesmo com barra de rolagem', async ({ page
 
   // Traço horizontal terminando em x=1000: o fim do rastro tem de estar no cursor
   for (let x = 800; x <= 1000; x += 10) await page.mouse.move(x, 400);
-  const end = await trailEndAt(page, 400);
-  expect(end).not.toBeNull();
+  // Com a máquina carregada o quadro do rastro pode ainda não ter sido pintado: lê de novo,
+  // reavivando o fim do traço no mesmo ponto, até o desenho aparecer
+  let end = null;
+  await expect.poll(async () => {
+    await page.mouse.move(990, 400);
+    await page.mouse.move(1000, 400);
+    end = await trailEndAt(page, 400);
+    return end;
+  }, { timeout: 5_000 }).not.toBeNull();
   expect(Math.abs(end - 1000)).toBeLessThan(6);
 });
 

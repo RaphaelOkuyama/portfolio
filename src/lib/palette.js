@@ -57,12 +57,18 @@ export const SCENE_ACCENTS = {
     snow: '#dfe6f2', water: '#070b16', lantern: '#ffc46b',
     // 磐座: rocha sagrada ao lado do torii; corda e papel tingidos pelo luar
     iwakura: '#3b4260', shimenawa: '#8d8aa0', shide: '#c9d1e6',
+    // Santuário: pedra dos komainu e lanternas, luz do 火袋, bambu, bronze dos giboshi, kodama
+    granite: '#4a5474', tourou: '#ffc46b',
+    // 五重塔: parede de reboco branco e telhado de casca de cipreste (escuro)
+    plaster: '#aeb4c8', roof: '#1b2032', bamboo: '#2f4b4b', bambooLeaf: '#223b3d', bronze: '#7d6c3d', kodama: '#e2e9f8',
   },
   day: {
     petal: '#f0a8bd', torii: '#c23b30', toriiTop: '#1f1d1a', celestial: '#f7e3b5',
     sand: '#e6dac2', stone: '#4a463f', firefly: '#f6e27a', momiji: '#d8572a',
     snow: '#b9c6d6', water: '#7f95a8', lantern: '#ffb85c',
     iwakura: '#7b7468', shimenawa: '#ffffff', shide: '#ffffff',
+    granite: '#9c9587', tourou: '#6e5a44',
+    plaster: '#f1ece0', roof: '#3a3532', bamboo: '#a3ae96', bambooLeaf: '#9aab90', bronze: '#b8933f', kodama: '#f6f3ea',
   },
 };
 

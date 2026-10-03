@@ -452,8 +452,8 @@ p, li { text-wrap: pretty; }
   transition: background-color 0.25s, color 0.25s, border-color 0.25s, scale 0.25s;
 }
 .section-rail-link[aria-current] .section-rail-kanji {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--season, var(--accent));
+  border-color: var(--season, var(--accent));
   color: var(--on-accent);
   scale: 1.12;
 }
@@ -462,6 +462,45 @@ p, li { text-wrap: pretty; }
 .section-rail-link[aria-current]:hover .section-rail-kanji { color: var(--on-accent); }
 .section-rail-link:focus-visible { outline: none; }
 .section-rail-link:focus-visible .section-rail-kanji { outline: 2px solid var(--accent); outline-offset: 3px; }
+/* 伝統色 da estação atual, em 縦書き embaixo do trilho; a leitura aparece ao passar o mouse */
+.section-rail-ink {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 35px;
+  margin: 18px 0 0;
+}
+.section-rail-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--season, var(--accent));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--season, var(--accent)) 25%, transparent);
+}
+.section-rail-ink .font-jp {
+  writing-mode: vertical-rl;
+  font-size: 0.8rem;
+  letter-spacing: 0.2em;
+  color: var(--season, var(--accent));
+}
+.section-rail-ink-name {
+  position: absolute;
+  left: 46px;
+  top: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-color) 88%, transparent);
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  translate: -6px 0;
+  transition: opacity 0.2s, translate 0.2s;
+  pointer-events: none;
+}
+.section-rail-ink:hover .section-rail-ink-name { opacity: 1; translate: 0 0; }
 /* Nome da seção: aparece ao passar o mouse ou focar. Fora do fluxo: invisível, ele não pode
    ocupar espaço no link (bloqueava cliques nos painéis do emakimono por baixo) */
 .section-rail-label {
@@ -760,8 +799,28 @@ p, li { text-wrap: pretty; }
 }
 .section-kanji {
   font-size: 0.8em;
-  color: var(--accent);
+  /* 伝統色: a cor tradicional da estação da cena (a home publica em --season) */
+  color: var(--season, var(--accent));
   opacity: 0.85;
+}
+/* 縦書き: o nome da seção em japonês, na vertical, como inscrição logo depois do título.
+   Pendurada fora do fluxo: não ocupa largura, então o título nunca quebra por causa dela */
+.section-title-text { position: relative; display: inline-block; }
+.section-tate {
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  translate: 0 -50%;
+  padding-left: 8px;
+  border-left: 1px solid color-mix(in srgb, var(--season, var(--accent)) 40%, transparent);
+  writing-mode: vertical-rl;
+  font-size: 0.32em;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.3em;
+  color: var(--season, var(--accent));
+  opacity: 0.8;
+  white-space: nowrap;
 }
 
 /* --- Sobre (人): texto à esquerda, kakejiku e sobrenomes à direita --- */
@@ -3351,3 +3410,104 @@ html:not(:lang(en)) [data-lang="en"] { display: none !important; }
   .carousel-side-arrow.is-left { left: 6px !important; }
   .carousel-side-arrow.is-right { right: 6px !important; }
 }
+
+/* --- 和紙 Washi: fibras de papel nos cartões (imagem SVG em mosaico, desenhada uma vez) --- */
+:root, [data-theme='night'] {
+  --washi: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='w'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.008 0.22' numOctaves='2' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1.8 -1'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23w)'/%3E%3C/svg%3E");
+  --washi-strength: 0.1;
+}
+[data-theme='day'] {
+  --washi: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='w'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.008 0.22' numOctaves='2' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.36  0 0 0 0 0.3  0 0 0 0 0.22  0 0 0 1.8 -1'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23w)'/%3E%3C/svg%3E");
+  --washi-strength: 0.16;
+}
+.pj-card, .emaki-panel, .zen-panels, .exp-card, .contact-letter { isolation: isolate; }
+.zen-panels, .exp-card, .contact-letter { position: relative; }
+.pj-card::after, .emaki-panel::after, .zen-panels::after, .exp-card::after, .contact-letter::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--washi);
+  opacity: var(--washi-strength);
+  pointer-events: none;
+}
+
+/* --- 扇子 Sensu: o menu do celular abre como um leque --- */
+.mobile-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 49;
+  overflow: hidden;
+}
+.mobile-menu-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+  padding-top: 100px;
+}
+.sensu { position: absolute; inset: 0; }
+.sensu-paper { fill: var(--bg-color); }
+.sensu-paper.is-alt { fill: color-mix(in srgb, var(--bg-color) 92%, var(--text-primary)); }
+.sensu-rib { stroke: color-mix(in srgb, var(--wood) 70%, var(--bg-color)); stroke-width: 1.2; }
+.sensu-gold { stroke: var(--accent); stroke-width: 2; opacity: 0.55; }
+.sensu-rivet { fill: var(--wood); stroke: var(--accent); stroke-width: 2; }
+
+/* --- 画質: seletor de qualidade gráfica (navbar e menu do celular) --- */
+.quality { position: relative; }
+.quality-button {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+}
+.quality-pop {
+  position: absolute;
+  top: calc(100% + 14px);
+  right: -8px;
+  z-index: 60;
+  width: 270px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bg-color) 96%, transparent);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 40px -20px rgba(0, 0, 0, 0.55);
+}
+.quality-title {
+  margin: 0 0 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.quality-title .font-jp { color: var(--accent); margin-right: 4px; letter-spacing: 0.1em; }
+.quality-options { display: grid; gap: 6px; }
+.quality-option {
+  display: grid;
+  gap: 2px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+}
+.quality-option:hover, .quality-option:focus-visible { border-color: var(--accent); }
+.quality-option[aria-checked='true'] {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+.quality-option-name { font-weight: 700; font-size: 0.92rem; }
+.quality-option-hint { font-size: 0.78rem; color: var(--text-secondary); }
+.quality.is-inline { width: min(320px, calc(100vw - 48px)); margin-top: 6px; }
+.quality.is-inline .quality-options { grid-template-columns: repeat(3, 1fr); }
+.quality.is-inline .quality-option { text-align: center; }
+.quality.is-inline .quality-option-hint { display: none; }
+.quality.is-inline .quality-title { text-align: center; }

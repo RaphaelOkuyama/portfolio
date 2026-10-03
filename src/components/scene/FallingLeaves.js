@@ -7,11 +7,13 @@ import { QUALITY_SETTINGS } from '../../lib/journey/quality';
 import { createPetalData } from '../../lib/journey/petals';
 import { SCENE_ACCENTS } from '../../lib/palette';
 import { pointer } from '../../lib/pointer';
+import { wind } from '../../lib/journey/wind';
 
 const vertexShader = /* glsl */ `
   attribute vec3 aOffset;
   attribute vec3 aParams; // fase, queda, giro
   uniform float uTime;
+  uniform float uGust;
   uniform vec2 uPointer;
   uniform float uPointerActive;
   uniform float uAspect;
@@ -32,7 +34,8 @@ const vertexShader = /* glsl */ `
     // Queda com vento: desce, deriva em x e oscila; volta ao topo ao sair do volume
     vec3 p = aOffset;
     p.y = uVolumeMin.y + mod(p.y - uVolumeMin.y - t * 1.2, uVolumeSize.y);
-    p.x = uVolumeMin.x + mod(p.x - uVolumeMin.x + t * 0.8 + sin(t + aParams.x) * 0.6, uVolumeSize.x);
+    // Fūjin: a rajada acumulada (uGust) arrasta tudo para o lado, mais as peças mais leves
+    p.x = uVolumeMin.x + mod(p.x - uVolumeMin.x + t * 0.8 + uGust * (0.6 + aParams.y) + sin(t + aParams.x) * 0.6, uVolumeSize.x);
     p.z += cos(t * 0.7 + aParams.x) * 0.4;
 
     // Giro da pétala em torno do próprio centro
@@ -102,6 +105,7 @@ export default function FallingLeaves({ volume, seed = 7, size = [0.22, 0.16], a
   const uniforms = useMemo(
     () => ({
       uTime: { value: 0 },
+      uGust: { value: 0 },
       uPointer: { value: new Vector2() },
       uPointerActive: { value: 0 },
       uAspect: { value: 1 },
@@ -130,7 +134,11 @@ export default function FallingLeaves({ volume, seed = 7, size = [0.22, 0.16], a
     uniforms.uPointer.value.set(pointer.x, pointer.y);
     uniforms.uPointerActive.value = pointer.active && !reducedMotion ? 1 : 0;
     uniforms.uAspect.value = state.size.width / Math.max(1, state.size.height);
-    if (!reducedMotion) uniforms.uTime.value += delta;
+    if (!reducedMotion) {
+      uniforms.uTime.value += delta;
+      // A rajada empurra mais quanto mais forte (acumula: as peças não voltam quando o vento passa)
+      uniforms.uGust.value += wind.gust * delta * 9;
+    }
   });
 
   return (

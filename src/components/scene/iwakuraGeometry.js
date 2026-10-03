@@ -3,13 +3,11 @@ import {
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { bakeShade } from './toriiGeometry';
+import { hex, paint, shadeOnto } from './lowpoly';
 
 // 磐座 (iwakura): a rocha sagrada amarrada com 注連縄 (shimenawa), com os papéis 紙垂 (shide) e
 // os tufos de palha (房) pendurados na frente. Mesma linguagem do torii: low-poly, tom de luz
 // pintado nos vértices e cor da paleta no material. Unidades: raio da rocha ~1, base em y = 0
-
-const LIGHT = new Vector3(-0.45, 0.8, 0.55).normalize();
-const MIN_SHADE = 0.68;
 
 // Altura e raio da rocha em cada direção: ondulações suaves (continuas, para os vértices
 // repetidos das faces baterem) e base achatada, assentada no chão
@@ -76,30 +74,6 @@ const PEBBLES = [
   [1.45, 0.3, 0.12, 0.8],
 ];
 
-// Multiplica a luz pintada sobre as cores que a geometria já tem (listras da corda, papel)
-function shadeOnto(geometry) {
-  const flat = geometry.index ? geometry.toNonIndexed() : geometry;
-  flat.computeVertexNormals();
-  const normals = flat.attributes.normal;
-  const colors = flat.attributes.color;
-  const n = new Vector3();
-  for (let i = 0; i < normals.count; i += 1) {
-    n.fromBufferAttribute(normals, i);
-    const shade = MIN_SHADE + (1 - MIN_SHADE) * Math.max(0, n.dot(LIGHT));
-    colors.setXYZ(i, colors.getX(i) * shade, colors.getY(i) * shade, colors.getZ(i) * shade);
-  }
-  return flat;
-}
-
-function paint(geometry, [r, g, b]) {
-  const count = geometry.attributes.position.count;
-  const colors = new Float32Array(count * 3);
-  for (let i = 0; i < count; i += 1) colors.set([r, g, b], i * 3);
-  geometry.setAttribute('color', new BufferAttribute(colors, 3));
-  return geometry;
-}
-
-const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
 const STRAW = hex('#d9bb7c');
 const STRAW_DARK = hex('#9a7740');
 const PAPER = hex('#fbf8f0');

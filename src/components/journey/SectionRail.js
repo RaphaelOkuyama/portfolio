@@ -1,5 +1,7 @@
 'use client';
+import { useEffect } from 'react';
 import { useJourney } from '../../store/journey';
+import { seasonInk } from '../../lib/dentoushoku';
 import { useSettings } from '../../context/SettingsContext';
 import { scrollToId } from '../../lib/scroll';
 import Ruby from '../Ruby';
@@ -8,7 +10,15 @@ import Ruby from '../Ruby';
 // (a mesma que a cena 3D usa); clicar leva até ela. No celular vira só o indicador da seção atual
 export default function SectionRail({ sections }) {
   const current = useJourney((s) => s.section);
+  const mix = useJourney((s) => s.seasonMix);
+  const theme = useJourney((s) => s.theme);
   const { language } = useSettings();
+  // 伝統色: a cor tradicional da estação em que a câmera está tinge os kanji das seções
+  const ink = seasonInk(theme, mix);
+  useEffect(() => {
+    document.documentElement.style.setProperty('--season', ink.hex);
+  }, [ink.hex]);
+  useEffect(() => () => document.documentElement.style.removeProperty('--season'), []);
   const label = (s) => s[language] ?? s.pt;
   const active = sections.find((s) => s.id === current) ?? sections[0];
 
@@ -41,6 +51,12 @@ export default function SectionRail({ sections }) {
             </li>
           ))}
         </ol>
+        {/* O nome da cor, em 縦書き, embaixo do trilho */}
+        <p className="section-rail-ink" data-season-ink={ink.reading}>
+          <span className="section-rail-swatch" aria-hidden="true" />
+          <span className="font-jp" lang="ja">{ink.kanji}</span>
+          <span className="section-rail-ink-name">{ink.reading} · {ink[language] ?? ink.pt}</span>
+        </p>
       </nav>
       {/* key: a cada troca de seção o selo reaparece por um instante e some (não cobre o conteúdo) */}
       <p key={active.id} className="section-chip" aria-hidden="true">

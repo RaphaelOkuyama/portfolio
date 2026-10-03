@@ -6,6 +6,8 @@ import { gsap, useGSAP } from '../lib/gsap';
 import { Sun, Moon, Globe, Menu, X, Github, Linkedin, Mail } from 'lucide-react'; // Importei os ícones sociais
 import { useSettings } from '../context/SettingsContext';
 import Kamon from './Kamon';
+import Sensu, { sensuStep } from './Sensu';
+import QualityPicker from './QualityPicker';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -24,18 +26,38 @@ export default function Navbar() {
   const menuRef = useRef(null);
   const navRef = useRef(null);
 
+  // Tamanho da tela no momento de abrir: o leque é desenhado para ela
+  const [fan, setFan] = useState({ width: 390, height: 844 });
   const toggleMenu = () => {
-    if (!isMobileMenuOpen) setIsMenuMounted(true);
+    if (!isMobileMenuOpen) {
+      setFan({ width: window.innerWidth, height: window.innerHeight });
+      setIsMenuMounted(true);
+    }
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
+  // 扇子: o menu abre como um leque. As lâminas se desdobram a partir da borda direita até
+  // cobrir a tela e só então os links aparecem; ao fechar, o leque se dobra de volta
   useGSAP(() => {
     if (!isMenuMounted || !menuRef.current) return;
+    const blades = menuRef.current.querySelectorAll('.sensu-blade');
+    const content = menuRef.current.querySelector('.mobile-menu-content');
+    const folded = (i) => -i * sensuStep;
+    const origin = `${fan.width} 0`;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (isMobileMenuOpen) {
-      gsap.fromTo(menuRef.current, { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' });
+      if (reduced) return;
+      gsap.timeline()
+        .fromTo(blades, { rotation: folded, svgOrigin: origin }, { rotation: 0, svgOrigin: origin, duration: 0.6, ease: 'power3.out', stagger: 0.025 })
+        .fromTo(content, { opacity: 0, y: -12 }, { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' }, '-=0.25');
     } else {
-      gsap.to(menuRef.current, { opacity: 0, y: -20, duration: 0.3, ease: 'power2.in', onComplete: () => setIsMenuMounted(false) });
+      const done = () => setIsMenuMounted(false);
+      if (reduced) return done();
+      gsap.timeline({ onComplete: done })
+        .to(content, { opacity: 0, duration: 0.15, ease: 'power1.in' })
+        .to(blades, { rotation: folded, svgOrigin: origin, duration: 0.45, ease: 'power3.in', stagger: { each: 0.02, from: 'end' } }, '<0.05');
     }
+    return undefined;
   }, { dependencies: [isMobileMenuOpen, isMenuMounted] });
 
   const themeLabel = language === 'pt' ? 'Alternar dia/noite' : 'Toggle day/night';
@@ -75,6 +97,7 @@ export default function Navbar() {
             </div>
             <div style={{ display: 'flex', gap: '15px', paddingLeft: '20px', borderLeft: '1px solid var(--border)' }}>
               <button onClick={toggleLanguage} style={btnStyle} aria-label={languageLabel}><Globe size={20} /><span style={{fontSize: '0.8rem', fontWeight: 'bold'}}>{language.toUpperCase()}</span></button>
+              <QualityPicker />
               <button onClick={toggleTheme} style={btnStyle} aria-label={themeLabel}><span className="theme-icon" style={{ display: 'inline-flex' }}>{theme === 'night' ? <Sun size={20} /> : <Moon size={20} />}</span></button>
             </div>
           </div>
@@ -94,14 +117,9 @@ export default function Navbar() {
 
       {/* MOBILE MENU OVERLAY */}
       {isMenuMounted && (
-          <div
-            ref={menuRef}
-            style={{
-              position: 'fixed', top: 0, left: 0, width: '100%', height: '100vh',
-              background: 'var(--bg-color)', zIndex: 49, paddingTop: '100px',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '30px'
-            }}
-          >
+          <div ref={menuRef} className="mobile-menu" data-mobile-menu="">
+            <Sensu width={fan.width} height={fan.height} />
+            <div className="mobile-menu-content">
             {links.map((link) => (
               <Link 
                 key={link.path} 
@@ -129,6 +147,8 @@ export default function Navbar() {
             <div style={{ display: 'flex', gap: '20px', marginTop: '10px' }}>
               <button onClick={toggleLanguage} style={{...btnStyle, transform: 'scale(1.2)'}} aria-label={languageLabel}><Globe size={24} /> {language.toUpperCase()}</button>
               <button onClick={toggleTheme} style={{...btnStyle, transform: 'scale(1.2)'}} aria-label={themeLabel}><span className="theme-icon" style={{ display: 'inline-flex' }}>{theme === 'night' ? <Sun size={24} /> : <Moon size={24} />}</span></button>
+            </div>
+            <QualityPicker inline />
             </div>
           </div>
       )}

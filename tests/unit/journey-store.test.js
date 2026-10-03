@@ -68,12 +68,20 @@ describe('qualidade', () => {
     expect(store.getState().quality).toBe('high');
   });
 
-  it('downgradeQuality rebaixa para low e não volta', () => {
+  it('downgradeQuality desce um degrau por vez e a leitura inicial não sobe de volta', () => {
     store.getState().setInitialQuality('high');
+    store.getState().downgradeQuality();
+    expect(store.getState().quality).toBe('medium');
     store.getState().downgradeQuality();
     expect(store.getState().quality).toBe('low');
     store.getState().setInitialQuality('high');
     expect(store.getState().quality).toBe('low');
+  });
+
+  it('setQuality aplica a escolha da pessoa a qualquer momento', () => {
+    store.getState().setInitialQuality('low');
+    store.getState().setQuality('high');
+    expect(store.getState().quality).toBe('high');
   });
 });
 
