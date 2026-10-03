@@ -98,6 +98,7 @@ export default function ProjectImageCarousel({ images = [], isMobile = false }) 
           {/* Botão esquerdo */}
           {images.length > 1 && (
             <button
+              className="carousel-side-arrow is-left"
               onClick={() => go(-1)}
               style={{
                 position: 'absolute', left: '-44px', top: '50%', transform: 'translateY(-50%)',
@@ -116,6 +117,7 @@ export default function ProjectImageCarousel({ images = [], isMobile = false }) 
           {/* Botão direito */}
           {images.length > 1 && (
             <button
+              className="carousel-side-arrow is-right"
               onClick={() => go(1)}
               style={{
                 position: 'absolute', right: '-44px', top: '50%', transform: 'translateY(-50%)',

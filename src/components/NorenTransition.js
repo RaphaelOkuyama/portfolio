@@ -2,11 +2,13 @@
 import { useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { gsap } from '../lib/gsap';
+import Kamon from './Kamon';
 
 const COVER = 0.6;
-const REVEAL = 0.7;
-// Se a rota não mudar (ex.: mesma página), descobre a tela mesmo assim
-const FALLBACK_MS = 2500;
+const REVEAL = 0.75;
+// Rede de segurança se a rota nunca trocar (link para a mesma página já é ignorado antes):
+// longa o bastante para um aparelho lento não abrir as faixas ainda na página antiga
+const FALLBACK_MS = 8000;
 
 // Link interno que troca de página (âncora na mesma página segue o comportamento normal)
 function internalNavigation(e) {
@@ -22,8 +24,9 @@ function internalNavigation(e) {
   return `${url.pathname}${url.search}${url.hash}`;
 }
 
-// 墨: ao navegar, a tinta se espalha a partir do clique, a rota troca por baixo e a tinta recua
-export default function InkTransition() {
+// 暖簾 (noren): a cortina de tecido das portas japonesas. Ao navegar, as duas faixas descem do
+// varão e cobrem a tela, a rota troca por baixo e elas se abrem para os lados, como quem entra
+export default function NorenTransition() {
   const rootRef = useRef(null);
   const router = useRouter();
   const pathname = usePathname();
@@ -36,16 +39,15 @@ export default function InkTransition() {
     pending.current = false;
     clearTimeout(fallback.current);
     root.dataset.state = 'reveal';
-    const layers = root.querySelectorAll('.ink-layer');
+    // Cada faixa sai para o seu lado, inclinando como tecido empurrado
     gsap
       .timeline({ onComplete: () => { root.dataset.state = 'idle'; } })
-      .to(root.querySelector('.ink-transition-hanko'), { opacity: 0, scale: 0.9, duration: 0.25 }, 0)
-      .to([...layers].reverse(), {
-        clipPath: 'circle(0% at 50% 50%)',
+      .to(root.querySelectorAll('.noren-panel'), {
+        xPercent: (i) => (i === 0 ? -120 : 120),
+        skewX: (i) => (i === 0 ? 8 : -8),
         duration: REVEAL,
         ease: 'power3.inOut',
-        stagger: 0.07,
-      }, 0.1);
+      });
   };
 
   useEffect(() => {
@@ -57,9 +59,6 @@ export default function InkTransition() {
       if (!root || root.dataset.state !== 'idle') return;
       e.preventDefault();
 
-      const x = `${((e.clientX || window.innerWidth / 2) / window.innerWidth) * 100}%`;
-      const y = `${((e.clientY || window.innerHeight / 2) / window.innerHeight) * 100}%`;
-      const layers = root.querySelectorAll('.ink-layer');
       root.dataset.state = 'cover';
       gsap
         .timeline({
@@ -69,12 +68,14 @@ export default function InkTransition() {
             fallback.current = setTimeout(reveal, FALLBACK_MS);
           },
         })
-        .fromTo(layers,
-          { clipPath: `circle(0% at ${x} ${y})` },
-          { clipPath: `circle(150% at ${x} ${y})`, duration: COVER, ease: 'power3.inOut', stagger: 0.06 })
-        .fromTo(root.querySelector('.ink-transition-hanko'),
-          { opacity: 0, scale: 1.4, rotate: -14 },
-          { opacity: 1, scale: 1, rotate: -6, duration: 0.3, ease: 'back.out(2)' }, '-=0.25');
+        // As faixas descem do varão e balançam um pouco ao parar
+        .fromTo(root.querySelectorAll('.noren-panel'),
+          // y em px zerado: o GSAP guarda o deslocamento em px e em % separados
+          { yPercent: -102, y: 0, xPercent: 0, skewX: 0 },
+          { yPercent: 0, duration: COVER, ease: 'power3.out', stagger: 0.07 })
+        .fromTo(root.querySelectorAll('.noren-panel'),
+          { skewX: (i) => (i === 0 ? -2.5 : 2.5) },
+          { skewX: 0, duration: 0.5, ease: 'elastic.out(1, 0.5)' }, '-=0.25');
     };
     // Captura no window: roda antes do <Link> do Next, que navegaria na hora.
     // O preventDefault aqui faz o Link desistir; os outros onClick (ex.: fechar o menu) seguem rodando.
@@ -99,11 +100,13 @@ export default function InkTransition() {
   }, [pathname]);
 
   return (
-    <div ref={rootRef} className="ink-transition" data-ink-transition="" data-state="idle" aria-hidden="true">
-      <div className="ink-layer" />
-      <div className="ink-layer" />
-      <div className="ink-layer" />
-      <span className="ink-transition-hanko font-jp">奥山</span>
+    <div ref={rootRef} className="noren" data-page-transition="" data-state="idle" aria-hidden="true">
+      {/* O kamon 奥山 fica inteiro em cada faixa, centrado na emenda: cada uma mostra a sua metade */}
+      {['left', 'right'].map((side) => (
+        <div key={side} className={`noren-panel is-${side}`}>
+          <Kamon className="noren-crest" size={null} />
+        </div>
+      ))}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { useState, useRef } from 'react';
 import { gsap, useGSAP } from '../lib/gsap';
 import { Sun, Moon, Globe, Menu, X, Github, Linkedin, Mail } from 'lucide-react'; // Importei os ícones sociais
 import { useSettings } from '../context/SettingsContext';
+import Kamon from './Kamon';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -55,7 +56,8 @@ export default function Navbar() {
       <nav style={{ position: 'fixed', top: 0, width: '100%', zIndex: 50, padding: '20px 0', backdropFilter: 'blur(10px)', borderBottom: '1px solid var(--border)' }}>
         <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           
-          <Link href="/" onClick={() => setIsMobileMenuOpen(false)} style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--text-primary)', zIndex: 51 }}>
+          <Link href="/" className="nav-brand" onClick={() => setIsMobileMenuOpen(false)} style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--text-primary)', zIndex: 51 }}>
+            <Kamon size={28} className="nav-kamon" />
             Raphael Okuyama
           </Link>
           

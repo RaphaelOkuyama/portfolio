@@ -76,16 +76,28 @@ test.describe('Certificados (証)', () => {
   });
 });
 
-test.describe('404 (迷子)', () => {
-  test('rota inexistente fecha a névoa e oferece a volta', async ({ page }) => {
+test.describe('404 (金継ぎ)', () => {
+  test('rota inexistente fecha a névoa, conserta a tigela com ouro e oferece a volta', async ({ page }) => {
     await page.goto('/caminho-perdido');
     await waitLoader(page);
     await expect(page.locator('html')).toHaveAttribute('data-lost', 'true');
-    await expect(page.locator('.nf-kanji')).toHaveText('迷子');
+    await expect(page.locator('.nf-kanji')).toHaveText('金継ぎ');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Página não encontrada');
+    await expect(page.locator('.nf-desc')).toContainText('consertado com ouro');
+
+    // Três cacos e duas rachaduras de ouro que terminam inteiras (o DrawSVG desenha pelo
+    // dasharray: o primeiro valor é o trecho visível do caminho)
+    const bowl = page.locator('[data-kintsugi]');
+    await expect(bowl.locator('.kintsugi-fragment')).toHaveCount(3);
+    await expect(bowl.locator('.kintsugi-gold')).toHaveCount(2);
+    await expect
+      .poll(() => bowl.locator('.kintsugi-gold').last().evaluate((el) => (
+        (parseFloat(getComputedStyle(el).strokeDasharray) || 0) >= el.getTotalLength() - 0.5
+      )), { timeout: 6_000 })
+      .toBe(true);
 
     // Link simples (sem botão aninhado) que leva de volta à home e desfaz a névoa
-    const back = page.getByRole('link', { name: 'Voltar para a base' });
+    const back = page.getByRole('link', { name: 'Voltar ao início' });
     await expect(back.locator('button')).toHaveCount(0);
     await back.click();
     await expect(page).toHaveURL(/\/$/);

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowRight, Download } from 'lucide-react';
 import { gsap, SplitText, useGSAP } from '../../lib/gsap';
 import Section from '../journey/Section';
+import Ruby from '../Ruby';
 
 function prefersReducedMotion() {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -76,7 +77,7 @@ export default function AboutSection({ about }) {
       <div className="about-grid">
         <div className="about-copy">
           <h2 className="section-title">
-            <span className="section-kanji font-jp" aria-hidden="true">人</span>
+            <span className="section-kanji font-jp" aria-hidden="true"><Ruby>人</Ruby></span>
             {about.title}
           </h2>
           <p className="about-lead">{about.lead}</p>
@@ -121,7 +122,7 @@ export default function AboutSection({ about }) {
           <figcaption className="about-names">
             {about.names.map((name) => (
               <span key={name.romaji} className="about-name">
-                <span className="about-name-kanji font-jp" lang="ja">{name.kanji}</span>
+                <span className="about-name-kanji font-jp" lang="ja"><Ruby>{name.kanji}</Ruby></span>
                 <span className="about-name-text">
                   <strong>{name.romaji}</strong>
                   <span>{name.note}</span>

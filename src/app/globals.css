@@ -10,7 +10,6 @@
   --paper: #1b2438;
   --hanko: #b8392e;
   --wood: #5a3b24;
-  --ink-wash: #05070d;
 }
 
 [data-theme='day'] {
@@ -25,7 +24,6 @@
   --paper: #fbf8f1;
   --hanko: #c23b30;
   --wood: #7a5230;
-  --ink-wash: #1f1d1a;
 }
 
 * {
@@ -96,6 +94,13 @@ p, li { text-wrap: pretty; }
    sistema reaparecer junto com o ponto de tinta, com a ponta no centro e o desenho para o lado */
 @media (pointer: fine) and (min-width: 768px) {
   *, *::before, *::after { cursor: none !important; }
+}
+/* Diálogo modal (meishi, omikuji) fica na camada superior do navegador, acima do ponto de tinta:
+   lá dentro volta o cursor do sistema, e o ponto some enquanto o diálogo está aberto */
+@media (pointer: fine) and (min-width: 768px) {
+  dialog[open], dialog[open] * { cursor: auto !important; }
+  dialog[open] :is(a, button, [role='button']), dialog[open] :is(a, button, [role='button']) * { cursor: pointer !important; }
+  html:has(dialog[open]) :is([data-cursor], [data-cursor-trail]) { opacity: 0; }
 }
 
 .container {
@@ -366,6 +371,14 @@ p, li { text-wrap: pretty; }
 }
 
 /* --- NAVBAR UTILS --- */
+.nav-brand { display: inline-flex; align-items: center; gap: 10px; white-space: nowrap; }
+/* Celular estreito: o nome numa linha só, senão a navbar dobra de altura e cobre o conteúdo */
+@media (max-width: 360px) {
+  .nav-brand { font-size: 1.2rem !important; gap: 8px; }
+}
+.nav-kamon { flex: none; color: var(--hanko); transition: rotate 0.6s cubic-bezier(0.6, 0, 0.2, 1); }
+.nav-brand:hover .nav-kamon { rotate: 360deg; }
+[data-theme='night'] .nav-kamon { color: #e8665a; }
 .mobile-menu-btn { display: flex; }
 .desktop-menu { display: none; }
 
@@ -2054,7 +2067,7 @@ textarea.contact-input { resize: vertical; min-height: 130px; }
   .cert-view { padding: 8px; }
 }
 
-/* --- 404 迷子 --- */
+/* --- 404 金継ぎ --- */
 .nf-root {
   min-height: 85vh;
   display: flex;
@@ -2084,16 +2097,24 @@ textarea.contact-input { resize: vertical; min-height: 130px; }
   color: var(--ink);
   letter-spacing: 0.15em;
 }
-.nf-trail-svg {
-  width: min(440px, 80vw);
+/* 金継ぎ: a tigela de cacos com as rachaduras em ouro */
+.kintsugi-svg {
+  --gold-glow: 0;
+  width: min(300px, 70vw);
   height: auto;
-  margin: 10px 0 24px;
+  margin: 8px 0 22px;
+  overflow: visible;
 }
-.nf-trail {
+.kintsugi-glaze { fill: color-mix(in srgb, var(--text-primary) 82%, var(--bg-color)); }
+.kintsugi-glaze.is-foot { fill: color-mix(in srgb, var(--text-primary) 62%, var(--bg-color)); }
+.kintsugi-inside { fill: color-mix(in srgb, var(--text-primary) 45%, var(--bg-color)); }
+.kintsugi-gold {
   fill: none;
-  stroke: var(--text-secondary);
-  stroke-width: 3;
+  stroke: #d9a83f;
+  stroke-width: 3.2;
   stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 calc(var(--gold-glow) * 5px) rgba(243, 197, 90, 0.85));
 }
 .nf-title {
   font-size: clamp(2rem, 5vw, 3rem);
@@ -2131,46 +2152,47 @@ html[data-visited] [data-loader="enso"] { display: none; }
 html[data-visited].is-loading,
 html[data-visited].is-loading body { overflow: visible; }
 
-/* --- Transição entre páginas: tinta sumi cobrindo a tela --- */
-.ink-transition {
+/* --- Transição entre páginas: 暖簾 noren, duas faixas de tecido índigo --- */
+.noren {
   position: fixed;
   inset: 0;
   /* Acima da navbar e da barra social (9990); abaixo do loader (10000) e do cursor */
   z-index: 9995;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   pointer-events: none;
   visibility: hidden;
+  overflow: hidden;
 }
-.ink-transition[data-state='cover'],
-.ink-transition[data-state='reveal'] {
+.noren[data-state='cover'],
+.noren[data-state='reveal'] {
   visibility: visible;
   pointer-events: auto;
 }
-.ink-layer {
-  position: absolute;
-  inset: 0;
-  background: var(--ink-wash);
-  clip-path: circle(0% at 50% 50%);
+.noren-panel {
+  position: relative;
+  overflow: hidden;
+  /* 藍染: índigo com as dobras verticais do tecido e o varão de madeira no topo */
+  background:
+    linear-gradient(var(--wood), var(--wood)) top / 100% 14px no-repeat,
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.035) 0 2px, transparent 2px 46px),
+    linear-gradient(180deg, #24345c 0%, #1c2a4b 60%, #17223d 100%);
+  box-shadow: inset 0 -18px 30px -18px rgba(0, 0, 0, 0.45);
 }
-.ink-layer:nth-child(1) { opacity: 0.45; }
-.ink-layer:nth-child(2) { opacity: 0.75; }
-.ink-transition-hanko {
+.noren-panel.is-left { transform-origin: 0 0; border-right: 1px solid rgba(0, 0, 0, 0.35); }
+.noren-panel.is-right { transform-origin: 100% 0; }
+/* Kamon 奥山 em branco, centrado na emenda entre as faixas */
+.noren-crest {
   position: absolute;
-  left: 50%;
   top: 50%;
-  width: 64px;
-  height: 64px;
-  margin: -32px 0 0 -32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 3px solid var(--hanko);
-  border-radius: 8px;
-  color: var(--hanko);
-  font-size: 1.15rem;
-  font-weight: 700;
-  line-height: 1;
-  opacity: 0;
+  width: clamp(130px, 24vw, 220px);
+  height: auto;
+  aspect-ratio: 1;
+  color: #f3efe6;
+  translate: 0 -50%;
 }
+.is-left .noren-crest { right: 0; translate: 50% -50%; }
+.is-right .noren-crest { left: 0; translate: -50% -50%; }
 
 /* Dica do emakimono: rolar no desktop, arrastar no celular */
 .emaki-hint-drag { display: none; }
@@ -2753,9 +2775,17 @@ html[data-visited].is-loading body { overflow: visible; }
 .site-footer {
   position: relative;
   width: 100%;
+  /* Última página do rolo: exatamente a altura da tela (dvh desconta as barras do navegador
+     no celular). A assinatura OKUYAMA encolhe para caber na sobra; só se o resto sozinho não
+     couber (celular muito baixo) o rodapé cresce, em vez de cortar texto */
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
   margin-top: auto;
   overflow: hidden;
-  padding: clamp(64px, 9vw, 128px) 0 28px;
+  /* A navbar é fixa e cobre o topo da tela: o espaço de cima começa abaixo dela */
+  padding: calc(76px + clamp(12px, 4vh, 48px)) 0 clamp(14px, 3vh, 28px);
   border-top: 1px solid var(--border);
   background: var(--bg-color);
   color: var(--text-secondary);
@@ -2766,7 +2796,7 @@ html[data-visited].is-loading body { overflow: visible; }
   align-items: flex-end;
   justify-content: space-between;
   gap: 32px;
-  padding-bottom: clamp(40px, 6vw, 72px);
+  padding-bottom: clamp(18px, 4.5vh, 72px);
 }
 
 .sf-lead {
@@ -2822,7 +2852,7 @@ html[data-visited].is-loading body { overflow: visible; }
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 32px;
-  padding: 36px 0 clamp(48px, 7vw, 88px);
+  padding: clamp(18px, 3.5vh, 36px) 0 clamp(16px, 4vh, 56px);
   border-top: 1px solid var(--border);
 }
 
@@ -2868,7 +2898,7 @@ html[data-visited].is-loading body { overflow: visible; }
   gap: 16px;
   max-width: 260px;
 }
-.sf-city { color: var(--text-secondary); }
+.sf-city { color: var(--text-secondary); white-space: nowrap; }
 .sf-time {
   font-family: var(--font-display), 'Yu Mincho', serif;
   font-size: 1.3rem;
@@ -2877,8 +2907,33 @@ html[data-visited].is-loading body { overflow: visible; }
   font-variant-numeric: tabular-nums;
 }
 
+/* 七十二候: a microestação de agora no Japão, embaixo dos relógios */
+.sf-season {
+  display: grid;
+  gap: 4px;
+  max-width: 260px;
+  margin: 18px 0 0;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border);
+}
+.sf-season-label {
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.sf-season-kanji { font-size: 1.35rem; color: var(--text-primary); letter-spacing: 0.08em; }
+.sf-season-text { font-size: 0.9rem; line-height: 1.45; color: var(--text-primary); }
+.sf-season-reading { color: var(--text-secondary); font-style: italic; }
+
 /* Assinatura OKUYAMA de ponta a ponta, em contorno; cada letra se enche de tinta no hover */
+.sf-inner { flex: 1; display: flex; flex-direction: column; }
 .sf-wordmark {
+  /* Ocupa só a sobra da tela (base 0: o tamanho das letras nunca empurra o rodapé);
+     o ajuste em JS mede essa caixa e escolhe a fonte que cabe na largura e na altura */
+  flex: 1 1 0;
+  /* Piso proporcional à largura: em tela muito baixa a assinatura não vira um risco */
+  min-height: min(12vw, 72px);
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -2934,7 +2989,7 @@ html[data-visited].is-loading body { overflow: visible; }
   align-items: center;
   gap: 18px;
   flex-wrap: wrap;
-  padding-top: 24px;
+  padding-top: clamp(12px, 2.5vh, 24px);
   border-top: 1px solid var(--border);
   font-size: 0.85rem;
 }
@@ -2944,16 +2999,54 @@ html[data-visited].is-loading body { overflow: visible; }
 .sf-name .font-jp { margin-left: 6px; color: var(--text-secondary); font-weight: 400; }
 .sf-rights { margin-left: auto !important; }
 
+/* Tablet e celular: tudo precisa caber em uma tela, então o rodapé fica compacto.
+   Navegação e redes lado a lado; relógios e microestação dividem a última linha */
 @media (max-width: 860px) {
-  .sf-top { flex-direction: column; align-items: flex-start; }
-  .sf-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .sf-grid > :last-child { grid-column: 1 / -1; }
+  .sf-top { align-items: flex-end; gap: 16px; }
+  .sf-lead { font-size: clamp(1.55rem, 6.4vw, 2.8rem); }
+  .sf-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 24px; }
+  .sf-grid > :last-child {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 24px;
+    align-items: start;
+  }
+  .sf-grid > :last-child .sf-heading { grid-column: 1 / -1; }
+  .sf-season { margin: 0; padding: 0 0 0 16px; border-top: 0; border-left: 1px dashed var(--border); }
+  .sf-heading { margin-bottom: 10px; }
+  .sf-list { gap: 6px; }
+  .sf-link { font-size: 0.95rem; }
+  .sf-bottom { gap: 8px 14px; font-size: 0.78rem; }
+  .sf-bottom .footer-hanko { width: 36px; height: 36px; font-size: 0.7rem; }
   .sf-rights { margin-left: 0 !important; width: 100%; }
 }
 
+/* Telas até 920px de altura (notebooks, celulares): aperta o resto para a assinatura ter espaço */
+@media (max-height: 920px) {
+  .sf-lead { font-size: clamp(1.3rem, 5.4vw, 2.2rem); }
+  .sf-heading { margin-bottom: 6px; }
+  .sf-list { gap: 3px; }
+  .sf-link { font-size: 0.88rem; }
+  .sf-time { font-size: 1.1rem; }
+  .sf-season-reading { display: none; }
+  .sf-season-kanji { font-size: 1.1rem; }
+  .sf-name { display: none; }
+}
+
+/* Celular pequeno (≈ 640px de altura): o último aperto */
+@media (max-height: 680px) and (max-width: 480px) {
+  .site-footer { padding-top: calc(76px + 4px); }
+  .sf-top { padding-bottom: 12px; }
+  .sf-grid { gap: 12px 18px; padding-top: 12px; }
+  .sf-season-label { display: none; }
+}
+
 @media (max-width: 480px) {
-  .sf-grid { grid-template-columns: 1fr; }
   .sf-wordmark-kanji { display: none; }
+  /* Só o círculo da seta; o texto continua para leitores de tela */
+  .sf-top-btn { gap: 0; font-size: 0; }
+  .sf-name .font-jp { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2963,3 +3056,298 @@ html[data-visited].is-loading body { overflow: visible; }
 /* Texto bilíngue vindo do servidor (components/Lang.js): mostra só o idioma do <html lang> */
 html:lang(en) [data-lang="pt"],
 html:not(:lang(en)) [data-lang="en"] { display: none !important; }
+
+/* --- 名刺 Meishi: cartão de visita (91×55 mm, o padrão japonês) --- */
+.meishi-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 10px 18px;
+  border: 1px dashed color-mix(in srgb, var(--text-primary) 35%, transparent);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-weight: 600;
+}
+.meishi-open:hover, .meishi-open:focus-visible { border-style: solid; border-color: var(--accent); }
+.meishi-open-kanji { color: var(--hanko); font-weight: 700; }
+
+.meishi-dialog {
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--bg-color);
+  color: var(--text-primary);
+  overflow: auto;
+}
+.meishi-dialog::backdrop {
+  background: color-mix(in srgb, #000 55%, transparent);
+  backdrop-filter: blur(4px);
+}
+.meishi-body { position: relative; padding: 28px 24px 24px; text-align: left; }
+.meishi-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-secondary);
+}
+.meishi-close:hover, .meishi-close:focus-visible { color: var(--text-primary); background: var(--border); }
+.meishi-title { margin: 0 0 22px; font-size: 1.1rem; font-family: inherit; }
+.meishi-title .font-jp { color: var(--hanko); margin-right: 6px; }
+
+.meishi-stage { perspective: 1200px; }
+.meishi-card {
+  position: relative;
+  aspect-ratio: 91 / 55;
+  transform-style: preserve-3d;
+  transition: transform 0.8s cubic-bezier(0.6, 0, 0.2, 1);
+}
+.meishi-card.is-flipped { transform: rotateY(180deg); }
+.meishi-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 6px;
+  /* Papel de verdade: claro nos dois temas */
+  background:
+    radial-gradient(circle at 20% 15%, #fffdf7 0%, transparent 60%),
+    #f4efe3;
+  color: #1b1a17;
+  box-shadow: 0 18px 40px -18px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+.meishi-front {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  justify-items: start;
+  padding: 7% 8%;
+}
+.meishi-role-jp { font-size: clamp(0.7rem, 2.2vw, 0.85rem); letter-spacing: 0.2em; color: #6b655a; }
+.meishi-name-jp { align-self: center; font-size: clamp(0.95rem, 4.2vw, 1.55rem); font-weight: 700; letter-spacing: 0.1em; white-space: nowrap; }
+.meishi-kana { font-size: clamp(0.65rem, 2vw, 0.8rem); letter-spacing: 0.18em; color: #6b655a; }
+.meishi-hanko {
+  position: absolute;
+  right: 8%;
+  bottom: 12%;
+  display: grid;
+  place-items: center;
+  width: clamp(38px, 10vw, 52px);
+  aspect-ratio: 1;
+  border: 2px solid #c23b30;
+  border-radius: 6px;
+  color: #c23b30;
+  font-size: clamp(0.75rem, 2.4vw, 1rem);
+  font-weight: 700;
+  rotate: -6deg;
+}
+.meishi-back {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4%;
+  padding: 6% 7%;
+  transform: rotateY(180deg);
+}
+.meishi-back-text { display: grid; gap: 2px; font-size: clamp(0.62rem, 2vw, 0.8rem); line-height: 1.35; color: #3d3a33; min-width: 0; }
+.meishi-back-text span { overflow-wrap: anywhere; }
+.meishi-name { font-size: clamp(0.85rem, 2.8vw, 1.05rem); color: #1b1a17; margin-bottom: 2px; }
+.meishi-role { color: #c23b30; font-weight: 600; margin-bottom: 6px; }
+.meishi-qr { flex: none; width: 34%; aspect-ratio: 1; }
+.meishi-qr svg { display: block; width: 100%; height: 100%; }
+
+.meishi-note { margin: 18px 0 0; font-size: 0.88rem; line-height: 1.5; color: var(--text-secondary); }
+.meishi-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.meishi-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: 1px solid color-mix(in srgb, var(--text-primary) 30%, transparent);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-weight: 600;
+}
+.meishi-btn:hover, .meishi-btn:focus-visible { border-color: var(--text-primary); }
+.meishi-btn.is-primary { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+@media (prefers-reduced-motion: reduce) { .meishi-card { transition: none; } }
+
+/* --- おみくじ Omikuji: clicar no torii da hero tira a sorte --- */
+/* Dica que segue o cursor quando ele passa sobre o portão */
+.omikuji-hint {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 9980;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-color) 85%, transparent);
+  backdrop-filter: blur(6px);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.omikuji-hint .font-jp { color: var(--hanko); margin-right: 4px; }
+.omikuji-hint[data-visible='true'] { opacity: 1; }
+/* Anel de tinta no ponto do clique */
+.omikuji-ripple {
+  position: fixed;
+  z-index: 9980;
+  width: 60px;
+  height: 60px;
+  margin: -30px 0 0 -30px;
+  border: 2px solid var(--hanko);
+  border-radius: 50%;
+  pointer-events: none;
+}
+/* Teclado: escondido até receber foco */
+.omikuji-skip {
+  position: absolute;
+  left: 50%;
+  bottom: 72px;
+  z-index: 3;
+  padding: 8px 16px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--bg-color);
+  color: var(--text-primary);
+  font: inherit;
+  translate: -50% 0;
+  clip-path: inset(50%);
+  opacity: 0;
+}
+.omikuji-skip:focus-visible { clip-path: none; opacity: 1; }
+.omikuji-skip .font-jp { color: var(--hanko); margin-right: 4px; }
+
+.omikuji-dialog {
+  width: min(380px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: visible;
+}
+.omikuji-dialog::backdrop {
+  background: color-mix(in srgb, #000 55%, transparent);
+  backdrop-filter: blur(4px);
+}
+/* O papel: washi claro com faixa vermelha no topo, como os de templo */
+.omikuji-slip {
+  position: relative;
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  border-top: 10px solid #c23b30;
+  border-radius: 4px;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 27px, rgba(0, 0, 0, 0.035) 27px 28px),
+    #f6f1e4;
+  color: #1b1a17;
+  box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.6);
+}
+.omikuji-slip-inner { display: grid; gap: 14px; padding: 22px 24px 24px; text-align: left; }
+.omikuji-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #6b655a;
+}
+.omikuji-close:hover, .omikuji-close:focus-visible { background: rgba(0, 0, 0, 0.06); color: #1b1a17; }
+.omikuji-number { display: flex; justify-content: space-between; gap: 12px; margin: 0; padding-right: 28px; font-size: 0.9rem; color: #6b655a; }
+.omikuji-number-latin { font-family: var(--font-body, inherit); font-size: 0.78rem; letter-spacing: 0.06em; }
+.omikuji-rank { display: grid; justify-items: center; gap: 6px; margin: 4px 0 6px; padding: 14px 0; border-block: 1px solid rgba(0, 0, 0, 0.12); font-family: inherit; }
+.omikuji-rank-kanji { font-size: 3.4rem; line-height: 1; color: #c23b30; letter-spacing: 0.1em; }
+[data-rank='凶'] .omikuji-rank-kanji { color: #1b1a17; }
+.omikuji-rank-name { font-size: 1rem; font-weight: 700; }
+.omikuji-rank-reading { font-weight: 400; font-style: italic; color: #6b655a; }
+.omikuji-lines { display: grid; gap: 10px; margin: 0; }
+.omikuji-line dt { font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: #6b655a; }
+.omikuji-line dt .font-jp { color: #c23b30; letter-spacing: 0.05em; margin-right: 4px; }
+.omikuji-line dd { margin: 2px 0 0; font-size: 0.95rem; line-height: 1.4; }
+.omikuji-tie-note { margin: 0; font-size: 0.85rem; line-height: 1.45; color: #6b655a; }
+.omikuji-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+.omikuji-btn {
+  padding: 9px 16px;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  border-radius: 999px;
+  background: transparent;
+  color: #1b1a17;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.omikuji-btn:hover, .omikuji-btn:focus-visible { border-color: #1b1a17; }
+.omikuji-btn.is-primary { border-color: #c23b30; background: #c23b30; color: #fff; }
+
+/* --- ふりがな Furigana: leitura em hiragana por cima dos kanji --- */
+.furigana { ruby-position: over; ruby-align: center; }
+.furigana rt {
+  font-size: 0.45em;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  color: var(--text-secondary);
+  opacity: 0.85;
+  user-select: none;
+}
+/* Nos kanji grandes do jardim do Stack, a leitura pode ser proporcionalmente menor */
+.zen-panel-kanji .furigana rt { font-size: 0.24em; }
+
+/* --- 墨流し Suminagashi: anéis de tinta flutuando no fundo dos cartões, no hover --- */
+.pj-card, .emaki-panel { isolation: isolate; }
+.pj-card::before,
+.emaki-panel::before {
+  content: '';
+  position: absolute;
+  inset: -12%;
+  z-index: -1;
+  background: repeating-radial-gradient(
+    circle at var(--sumi-x, 50%) var(--sumi-y, 50%),
+    color-mix(in srgb, var(--ink) 8%, transparent) 0 3px,
+    transparent 3px 15px,
+    color-mix(in srgb, var(--hanko) 9%, transparent) 15px 17px,
+    transparent 17px 30px
+  );
+  filter: url(#suminagashi);
+  opacity: 0;
+  scale: 0.55;
+  transform-origin: var(--sumi-x, 50%) var(--sumi-y, 50%);
+  transition: opacity 0.7s ease, scale 1.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+  pointer-events: none;
+}
+.pj-card:hover::before,
+.pj-card:focus-within::before,
+.emaki-panel:hover::before,
+.emaki-panel:focus-visible::before { opacity: 1; scale: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .pj-card::before, .emaki-panel::before { transition: opacity 0.3s ease; scale: 1; }
+}
+
+/* Carrossel de telas do projeto: em tela estreita as setas laterais (fora da moldura) passavam
+   da borda e a página rolava de lado; ali elas entram por cima da imagem */
+@media (max-width: 420px) {
+  .carousel-side-arrow.is-left { left: 6px !important; }
+  .carousel-side-arrow.is-right { right: 6px !important; }
+}

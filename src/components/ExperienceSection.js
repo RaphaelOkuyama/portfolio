@@ -9,6 +9,7 @@ import {
   currentMonth, formatMonth, formatPeriod, formatDuration, monthsBetween, orderTimeline,
 } from '../lib/experience';
 import Section from './journey/Section';
+import Ruby from './Ruby';
 
 function ExperienceCard({ exp, labels, lang, today }) {
   const months = monthsBetween(exp.start, exp.end ?? today);
@@ -95,7 +96,7 @@ export default function ExperienceSection({ experience, education, labels, title
   return (
     <Section id="experience" ref={rootRef} className="exp-section">
       <h2 className="section-title">
-        <span className="section-kanji font-jp" aria-hidden="true">歩</span>
+        <span className="section-kanji font-jp" aria-hidden="true"><Ruby>歩</Ruby></span>
         {title}
       </h2>
 

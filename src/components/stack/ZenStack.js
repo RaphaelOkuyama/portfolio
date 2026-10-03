@@ -5,6 +5,7 @@ import { journeyStore } from '../../store/journey';
 import { toolKey } from '../../lib/stack/tools';
 import { TOOL_ICONS } from './toolIcons';
 import Section from '../journey/Section';
+import Ruby from '../Ruby';
 
 // Formas irregulares de pedra, alternadas entre os botões
 const STONE_SHAPES = [
@@ -77,7 +78,7 @@ export default function ZenStack({ techData, icons }) {
   return (
     <Section id="stack" ref={rootRef} className="zen-section">
       <h2 className="section-title">
-        <span className="section-kanji font-jp" aria-hidden="true">技</span>
+        <span className="section-kanji font-jp" aria-hidden="true"><Ruby>技</Ruby></span>
         {techData.title}
       </h2>
       <p className="zen-hint">{techData.hint}</p>
@@ -138,7 +139,7 @@ export default function ZenStack({ techData, icons }) {
               style={{ '--order': i * 2 + 1 }}
             >
               <div className="zen-panel-head">
-                <span className="zen-panel-kanji font-jp" aria-hidden="true">{cat.kanji}</span>
+                <span className="zen-panel-kanji font-jp" aria-hidden="true"><Ruby>{cat.kanji}</Ruby></span>
                 <div>
                   <h3 className="zen-panel-title">{cat.name}</h3>
                   <p className="zen-panel-count">

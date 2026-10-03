@@ -8,7 +8,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 const LIGHT = new Vector3(-0.45, 0.8, 0.55).normalize();
 const MIN_SHADE = 0.68;
 
-function bakeShade(geometry) {
+export function bakeShade(geometry) {
   const flat = geometry.index ? geometry.toNonIndexed() : geometry;
   flat.computeVertexNormals();
   const normals = flat.attributes.normal;

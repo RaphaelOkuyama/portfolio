@@ -8,7 +8,8 @@ import JourneySync from '../components/journey/JourneySync';
 import SmoothScroll from '../components/journey/SmoothScroll';
 import SceneCanvas from '../components/scene/SceneCanvas';
 import EnsoLoader from '../components/EnsoLoader';
-import InkTransition from '../components/InkTransition';
+import NorenTransition from '../components/NorenTransition';
+import Suminagashi from '../components/Suminagashi';
 import Senbazuru from '../components/Senbazuru';
 import { SettingsProvider } from '../context/SettingsContext';
 import { THEME_BOOT_SCRIPT } from '../lib/themeBoot';
@@ -68,7 +69,8 @@ export default function RootLayout({ children }) {
           <SmoothScroll />
           <SceneCanvas />
           <EnsoLoader />
-          <InkTransition />
+          <NorenTransition />
+          <Suminagashi />
           <Senbazuru />
           <InkCursor />
           <Navbar />

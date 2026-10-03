@@ -2,6 +2,7 @@
 import { useJourney } from '../../store/journey';
 import { useSettings } from '../../context/SettingsContext';
 import { scrollToId } from '../../lib/scroll';
+import Ruby from '../Ruby';
 
 // 山 人 技 作 歩 縁: o mapa do caminho montanha adentro. Um kanji por seção da home, aceso na seção atual
 // (a mesma que a cena 3D usa); clicar leva até ela. No celular vira só o indicador da seção atual
@@ -34,7 +35,7 @@ export default function SectionRail({ sections }) {
                 aria-current={s.id === current ? 'location' : undefined}
                 onClick={(e) => go(e, s.id)}
               >
-                <span className="section-rail-kanji font-jp" aria-hidden="true">{s.kanji}</span>
+                <span className="section-rail-kanji font-jp" aria-hidden="true"><Ruby>{s.kanji}</Ruby></span>
                 <span className="section-rail-label">{label(s)}</span>
               </a>
             </li>

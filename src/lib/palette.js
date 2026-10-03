@@ -16,7 +16,6 @@ export const THEMES = {
     paper: '#1b2438',
     hanko: '#b8392e',
     wood: '#5a3b24',
-    inkWash: '#05070d',
   },
   day: {
     bgColor: '#f3eee3',
@@ -30,7 +29,6 @@ export const THEMES = {
     paper: '#fbf8f1',
     hanko: '#c23b30',
     wood: '#7a5230',
-    inkWash: '#1f1d1a',
   },
 };
 
@@ -57,11 +55,14 @@ export const SCENE_ACCENTS = {
     petal: '#d99bb0', torii: '#8f2a23', toriiTop: '#0b0d14', celestial: '#f3ead2',
     sand: '#9a9caa', stone: '#252a3c', firefly: '#f6e27a', momiji: '#b5452c',
     snow: '#dfe6f2', water: '#070b16', lantern: '#ffc46b',
+    // 磐座: rocha sagrada ao lado do torii; corda e papel tingidos pelo luar
+    iwakura: '#3b4260', shimenawa: '#8d8aa0', shide: '#c9d1e6',
   },
   day: {
     petal: '#f0a8bd', torii: '#c23b30', toriiTop: '#1f1d1a', celestial: '#f7e3b5',
     sand: '#e6dac2', stone: '#4a463f', firefly: '#f6e27a', momiji: '#d8572a',
     snow: '#b9c6d6', water: '#7f95a8', lantern: '#ffb85c',
+    iwakura: '#7b7468', shimenawa: '#ffffff', shide: '#ffffff',
   },
 };
 

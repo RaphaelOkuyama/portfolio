@@ -28,13 +28,24 @@ export const resumeData = {
       socialTitle: "Onde me achar",
       timeTitle: "Agora em",
       cities: { saoPaulo: "São Paulo", tokyo: "Tóquio" },
+      seasonLabel: "Microestação no Japão",
     },
     hero: {
       roles: ['Desenvolvedor Full-Stack', 'APIs & Arquitetura Limpa', 'Integrações & IA'],
       summary: 'Desenvolvo sistemas que rodam de verdade: meu código atende 42+ clínicas e assina 2.000+ laudos por mês.',
       available: 'Disponível para',
       ctaProjects: 'Ver projetos',
-      ctaContact: 'Fale comigo'
+      ctaContact: 'Fale comigo',
+      omikuji: {
+        open: 'Tirar a sorte',
+        hint: 'Clique no torii para tirar a sorte',
+        stick: 'Vareta nº',
+        keep: 'Guardar a sorte',
+        again: 'Tirar de novo',
+        tie: 'Amarrar no galho',
+        tieNote: 'No templo, quem tira 凶 amarra o papel num galho e deixa o azar para trás.',
+        close: 'Fechar',
+      }
     },
     about: {
       title: 'Sobre mim',
@@ -343,6 +354,15 @@ export const resumeData = {
       copied: "E-mail copiado!",
       letter: "手紙",
       lanternHint: "Ao enviar, sua mensagem desce o rio numa lanterna.",
+      meishi: {
+        open: "Pegar meu cartão",
+        title: "Cartão de visita",
+        note: "No Japão, o meishi é entregue com as duas mãos, virado para quem recebe. Aponte a câmera para o QR no verso e salve meu contato.",
+        flip: "Virar cartão",
+        save: "Salvar contato",
+        close: "Fechar",
+        qr: "QR code com o meu contato",
+      },
       form: {
         nameLabel: "Nome", namePlaceholder: "Como posso te chamar?",
         emailLabel: "E-mail", emailPlaceholder: "seu@email.com",
@@ -381,13 +401,24 @@ export const resumeData = {
       socialTitle: "Find me",
       timeTitle: "Right now in",
       cities: { saoPaulo: "São Paulo", tokyo: "Tokyo" },
+      seasonLabel: "Microseason in Japan",
     },
     hero: {
       roles: ['Full-Stack Developer', 'APIs & Clean Architecture', 'Integrations & AI'],
       summary: 'I build software that runs for real: my code serves 42+ clinics and signs 2,000+ medical reports a month.',
       available: 'Available for',
       ctaProjects: 'See projects',
-      ctaContact: 'Get in touch'
+      ctaContact: 'Get in touch',
+      omikuji: {
+        open: 'Draw your fortune',
+        hint: 'Click the torii to draw your fortune',
+        stick: 'Stick no.',
+        keep: 'Keep the fortune',
+        again: 'Draw again',
+        tie: 'Tie it to the branch',
+        tieNote: 'At the shrine, whoever draws 凶 ties the paper to a branch and leaves the bad luck behind.',
+        close: 'Close',
+      }
     },
     about: {
       title: 'About Me',
@@ -693,6 +724,15 @@ export const resumeData = {
       copied: "Email copied!",
       letter: "手紙",
       lanternHint: "When you send it, your message floats down the river in a lantern.",
+      meishi: {
+        open: "Take my card",
+        title: "Business card",
+        note: "In Japan, a meishi is handed over with both hands, facing the person receiving it. Point your camera at the QR on the back to save my contact.",
+        flip: "Flip card",
+        save: "Save contact",
+        close: "Close",
+        qr: "QR code with my contact",
+      },
       form: {
         nameLabel: "Name", namePlaceholder: "What should I call you?",
         emailLabel: "Email", emailPlaceholder: "you@email.com",

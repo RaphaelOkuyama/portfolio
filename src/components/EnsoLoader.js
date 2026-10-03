@@ -4,12 +4,22 @@ import { gsap, useGSAP } from '../lib/gsap';
 import { journeyStore, useJourney } from '../store/journey';
 import { loaderProgress, isReturningVisit, markVisited } from '../lib/loader';
 import { ensoShapes } from '../lib/enso';
+import { SHODO_STROKES } from '../lib/shodo';
 
 // Ensō de pincel: corpo de tinta + cerdas, revelados por uma máscara que segue o traço
 const SHAPES = ensoShapes();
 
 // Só redesenha quando o progresso anda pelo menos 1%
 const MIN_STEP = 0.01;
+
+// 書道: 奥山 escrito traço a traço no meio do ensō (grade de 109 do KanjiVG, ~37px por kanji)
+const SHODO_SCALE = 0.34;
+const SHODO_LAYOUT = [
+  { char: '奥', x: 72, y: 91 },
+  { char: '山', x: 111, y: 91 },
+];
+// Cada traço leva um instante; o kanji inteiro cabe no tempo mínimo do loader
+const STROKE_SECONDS = 0.07;
 
 export default function EnsoLoader() {
   const loaderDone = useJourney((s) => s.loaderDone);
@@ -30,6 +40,17 @@ export default function EnsoLoader() {
     let finished = false;
 
     gsap.set(path, { drawSVG: '0%', visibility: 'visible' });
+
+    // O pincel escreve 奥 e depois 山, na ordem dos traços
+    // (escondido no HTML do servidor: sem isso os traços apareceriam prontos e sumiriam)
+    const strokes = rootRef.current.querySelectorAll('[data-shodo-stroke]');
+    gsap.set(strokes, { drawSVG: reduced ? '100%' : '0%' });
+    gsap.set(rootRef.current.querySelector('[data-shodo]'), { visibility: 'visible' });
+    if (!reduced) {
+      gsap.to(strokes, {
+        drawSVG: '100%', duration: STROKE_SECONDS, ease: 'power1.in', stagger: STROKE_SECONDS * 1.1, delay: 0.15,
+      });
+    }
 
     const tick = () => {
       if (finished) return;
@@ -58,6 +79,8 @@ export default function EnsoLoader() {
           },
         })
         .to(path, { drawSVG: '100%', duration: reduced ? 0 : 0.35, ease: 'power2.out', overwrite: true })
+        // Num aparelho lento o ensō pode fechar antes do pincel: 奥山 termina de ser escrito antes de sumir
+        .to(strokes, { drawSVG: '100%', duration: reduced ? 0 : 0.25, ease: 'power1.out', overwrite: true }, '<')
         .to(rootRef.current, { opacity: 0, duration: reduced ? 0 : 0.6, ease: 'power2.inOut' });
     };
 
@@ -110,9 +133,15 @@ export default function EnsoLoader() {
             ))}
           </g>
         </g>
-        <text x="110" y="122" textAnchor="middle" fontSize="34" fill="var(--ink)" className="font-jp">
-          奥山
-        </text>
+        <g data-shodo="" style={{ visibility: 'hidden' }} fill="none" stroke="var(--ink)" strokeWidth="9" strokeLinecap="round" strokeLinejoin="round">
+          {SHODO_LAYOUT.map(({ char, x, y }) => (
+            <g key={char} transform={`translate(${x} ${y}) scale(${SHODO_SCALE})`}>
+              {SHODO_STROKES[char].map((d, i) => (
+                <path key={i} d={d} data-shodo-stroke="" />
+              ))}
+            </g>
+          ))}
+        </g>
       </svg>
     </div>
   );

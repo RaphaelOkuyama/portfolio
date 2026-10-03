@@ -9,6 +9,7 @@ import { kanjiNumber } from '../../lib/kanji';
 import KeepHyphenated from '../KeepHyphenated';
 import { startMorph } from '../../lib/panelMorph';
 import { homeProjects } from '../../lib/projects';
+import Ruby from '../Ruby';
 
 
 // Modos do rolo: pin horizontal no desktop, arrastar no celular, grade estática com movimento reduzido
@@ -185,7 +186,7 @@ export default function EmakiProjects({ projects, labels }) {
       <div ref={pinRef} className="emaki-pin">
         <header className="emaki-header">
           <h2 className="section-title">
-            <span className="section-kanji font-jp" aria-hidden="true">作</span>
+            <span className="section-kanji font-jp" aria-hidden="true"><Ruby>作</Ruby></span>
             {labels.title}
           </h2>
           {/* No celular o rolo é arrastado, não rolado */}

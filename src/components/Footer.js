@@ -7,6 +7,7 @@ import { profile } from '../data/resume';
 import { gsap, SplitText, useGSAP } from '../lib/gsap';
 import { createClickCounter, TSURU_EVENT } from '../lib/easterEgg';
 import { cityTime, scrollToTop } from '../lib/scroll';
+import { microseasonFor } from '../lib/microseasons';
 
 const SOCIAL = [
   { label: 'GitHub', href: 'https://github.com/RaphaelOkuyama' },
@@ -33,8 +34,9 @@ function useClocks() {
   return now;
 }
 
-// Assinatura do tamanho exato da largura disponível (descontando o 奥山 vertical ao lado):
-// mede numa fonte de referência e escala; refaz ao redimensionar e quando a fonte carrega
+// Assinatura do maior tamanho que cabe na sobra do rodapé: na largura (descontando o 奥山
+// vertical ao lado) e na altura (o rodapé tem a altura da tela). Mede numa fonte de referência
+// e escala; refaz ao redimensionar e quando a fonte carrega
 function useFitWordmark(rootRef) {
   useEffect(() => {
     const wrap = rootRef.current?.querySelector('.sf-wordmark');
@@ -42,12 +44,22 @@ function useFitWordmark(rootRef) {
     if (!wrap || !text) return undefined;
     const kanji = wrap.querySelector('.sf-wordmark-kanji');
     const fit = () => {
+      const height = wrap.clientHeight;
+      // O 奥山 vertical (dois kanji em pé) também precisa caber na altura
+      if (kanji && height > 0) {
+        kanji.style.fontSize = '';
+        const max = parseFloat(getComputedStyle(kanji).fontSize);
+        kanji.style.fontSize = `${Math.max(14, Math.min(max, height / 2.4))}px`;
+      }
       const gap = parseFloat(getComputedStyle(wrap).columnGap) || 0;
       const side = kanji && getComputedStyle(kanji).display !== 'none' ? kanji.offsetWidth + gap : 0;
       const available = wrap.clientWidth - side;
       text.style.fontSize = '100px';
-      const natural = text.getBoundingClientRect().width;
-      if (natural > 0 && available > 0) text.style.fontSize = `${Math.floor((100 * available) / natural)}px`;
+      const box = text.getBoundingClientRect();
+      if (!box.width || available <= 0) return;
+      const byWidth = (100 * available) / box.width;
+      const byHeight = height > 0 && box.height > 0 ? (100 * height) / box.height : Infinity;
+      text.style.fontSize = `${Math.floor(Math.min(byWidth, byHeight))}px`;
     };
     fit();
     document.fonts?.ready.then(fit);
@@ -60,10 +72,12 @@ function useFitWordmark(rootRef) {
 // Rodapé como a última página do emakimono: fecho, navegação, relógios Brasil/Japão
 // e a assinatura OKUYAMA de ponta a ponta, com o hanko 奥山 (easter egg) ao lado
 export default function Footer() {
-  const { currentData } = useSettings();
+  const { currentData, language } = useSettings();
   const t = currentData.footer;
   const nav = currentData.nav;
   const now = useClocks();
+  // 七十二候: a microestação de agora no Japão (só no cliente, como os relógios)
+  const season = now ? microseasonFor(now) : null;
   const rootRef = useRef(null);
   const countClick = useMemo(() => createClickCounter(5, 2500), []);
   useFitWordmark(rootRef);
@@ -150,6 +164,16 @@ export default function Footer() {
                 </li>
               ))}
             </ul>
+            {season && (
+              <p className="sf-season" data-microseason="">
+                <span className="sf-season-label">{t.seasonLabel}</span>
+                <span className="sf-season-kanji font-jp" lang="ja">{season.kanji}</span>
+                <span className="sf-season-text">
+                  {season[language] ?? season.pt}
+                  <span className="sf-season-reading"> · {season.reading}</span>
+                </span>
+              </p>
+            )}
           </div>
         </div>
 

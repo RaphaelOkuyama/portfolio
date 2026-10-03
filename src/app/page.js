@@ -4,6 +4,7 @@ import { profile, resumeData } from '../data/resume';
 import HeroMotion from '../components/hero/HeroMotion';
 import HomeSections from '../components/HomeSections';
 import Lang from '../components/Lang';
+import Omikuji from '../components/hero/Omikuji';
 import SectionRail from '../components/journey/SectionRail';
 
 const { pt, en } = resumeData;
@@ -70,6 +71,8 @@ export default function Home() {
             />
           </p>
         </div>
+
+        <Omikuji labels={{ pt: pt.hero.omikuji, en: en.hero.omikuji }} />
 
         <div className="hero-scroll" aria-hidden="true">
           <div className="hero-scroll-arrow">

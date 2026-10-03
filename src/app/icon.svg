@@ -1,5 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect x="4" y="4" width="56" height="56" rx="10" fill="#fbf8f1"/>
-  <rect x="8" y="8" width="48" height="48" rx="7" fill="none" stroke="#c23b30" stroke-width="5"/>
-  <text x="32" y="44" text-anchor="middle" font-size="32" font-weight="700" fill="#c23b30" font-family="'Hiragino Mincho ProN','Yu Mincho','Noto Serif JP',serif">奥</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- 家紋 奥山: o desenho do componente Kamon, um pouco menor para caber no disco de papel -->
+  <defs>
+    <mask id="snow">
+      <rect width="100" height="100" fill="#fff"/>
+      <path d="M50 33 L52 43 L50 41 L48 43 Z" fill="#000"/>
+    </mask>
+  </defs>
+  <circle cx="50" cy="50" r="48" fill="#fbf8f1"/>
+  <circle cx="50" cy="50" r="40" fill="none" stroke="#c23b30" stroke-width="7"/>
+  <path d="M22 64 L37 43 L44.5 51.5 L50 28 L55.5 51.5 L63 43 L78 64 Z" fill="#c23b30" mask="url(#snow)"/>
+  <rect x="29" y="69" width="42" height="5" rx="2.5" fill="#c23b30"/>
+  <rect x="36" y="77" width="28" height="5" rx="2.5" fill="#c23b30"/>
 </svg>

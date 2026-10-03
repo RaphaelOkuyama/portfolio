@@ -66,6 +66,11 @@ export const TORII = {
   fallbackRange: [0.1, 0.26],
 };
 
+// 磐座: a rocha sagrada ao lado do torii. offset = [à direita do caminho, atrás do portão] em
+// unidades da cena; turn gira a frente (com a corda e os papéis) para o começo do caminho
+// minAspect: abaixo dessa proporção (celular em pé) a pedra não aparece
+export const IWAKURA = { offset: [10.5, 2.5], scale: 2.25, sink: 0.55, turn: -0.35, minAspect: 0.75 };
+
 // Sol (昼) / lua (夜) no céu, visível do começo do caminho
 export const CELESTIAL = { position: [-14, 22, -90], radius: 4 };
 

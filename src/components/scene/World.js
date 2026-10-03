@@ -7,6 +7,7 @@ import JourneyCamera from './JourneyCamera';
 import MountainLayers from './MountainLayers';
 import Petals from './Petals';
 import Torii from './Torii';
+import Iwakura from './Iwakura';
 import Celestial from './Celestial';
 import ZenGarden from './ZenGarden';
 import Ground from './Ground';
@@ -50,6 +51,7 @@ export default function World() {
       <Ground />
       <Kasumi />
       <Torii />
+      <Iwakura />
       <ZenGarden />
       <Momiji />
       <Snow />

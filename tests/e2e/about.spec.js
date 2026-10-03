@@ -77,7 +77,9 @@ test('a história vem com os dois sobrenomes e o atalho para o contato', async (
   const about = page.locator('#about');
   await expect(about.locator('.about-lead')).toHaveText('Minha história começa muito antes do código.');
   await expect(about.locator('.about-name')).toHaveCount(2);
-  await expect(about.locator('.about-name-kanji')).toHaveText(['奥山', '芳賀']);
+  // Cada sobrenome com a leitura em furigana por cima
+  await expect(about.locator('.about-name-kanji')).toHaveText([/^奥山/, /^芳賀/]);
+  await expect(about.locator('.about-name-kanji rt')).toHaveText(['おくやま', 'はが']);
   await expect(about.locator('.about-name').first()).toContainText('família do pai');
   await expect(about.locator('.about-name').last()).toContainText('família da mãe');
   await expect(about.locator('.about-stats')).toHaveCount(0);

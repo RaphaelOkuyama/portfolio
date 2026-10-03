@@ -8,6 +8,9 @@ import { useSettings } from '../../context/SettingsContext';
 import { fieldErrors, LIMITS } from '../../lib/contactMail';
 import Section from '../journey/Section';
 import { lanternLabel } from '../../lib/journey/lanterns';
+import { resumeData } from '../../data/resume';
+import Meishi from './Meishi';
+import Ruby from '../Ruby';
 
 const EMPTY = { name: '', email: '', message: '' };
 const EMAIL = 'raphaelokuyama123@gmail.com';
@@ -168,7 +171,7 @@ export default function ContactSection({ contact }) {
       <div className="contact-grid">
         <div className="contact-intro">
           <h2 className="section-title">
-            <span className="section-kanji font-jp" aria-hidden="true">縁</span>
+            <span className="section-kanji font-jp" aria-hidden="true"><Ruby>縁</Ruby></span>
             {contact.title}
           </h2>
           <p className="contact-subtitle">{contact.subtitle}</p>
@@ -280,6 +283,7 @@ export default function ContactSection({ contact }) {
               </a>
             </li>
           </ul>
+          <Meishi labels={contact.meishi} role={resumeData[language].hero.roles[0]} />
         </div>
       </div>
     </Section>
