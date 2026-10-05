@@ -1,6 +1,5 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
-import QRCode from 'qrcode';
+import { useRef, useState } from 'react';
 import { Download, RefreshCw, X } from 'lucide-react';
 import { gsap } from '../../lib/gsap';
 import { profile } from '../../data/resume';
@@ -19,15 +18,20 @@ export default function Meishi({ labels, role }) {
   const [qr, setQr] = useState('');
   const vcard = buildVCard({ title: role });
 
-  useEffect(() => {
-    let alive = true;
-    QRCode.toString(vcard, { type: 'svg', margin: 0, errorCorrectionLevel: 'L', color: { dark: '#1b1a17', light: '#0000' } })
-      .then((svg) => { if (alive) setQr(svg); })
-      .catch(() => {});
-    return () => { alive = false; };
-  }, [vcard]);
+  // O QR (e a biblioteca dele) só é gerado quando o cartão vai abrir: mouse por cima, foco ou
+  // clique. Antes saía no carregamento da página, para um cartão que fica fechado
+  const qrFor = useRef(null);
+  const prepareQr = () => {
+    if (qrFor.current === vcard) return;
+    qrFor.current = vcard;
+    import('qrcode')
+      .then(({ default: QRCode }) => QRCode.toString(vcard, { type: 'svg', margin: 0, errorCorrectionLevel: 'L', color: { dark: '#1b1a17', light: '#0000' } }))
+      .then((svg) => { if (qrFor.current === vcard) setQr(svg); })
+      .catch(() => { qrFor.current = null; });
+  };
 
   const open = () => {
+    prepareQr();
     const dialog = dialogRef.current;
     setFlipped(false);
     dialog.showModal();
@@ -50,7 +54,7 @@ export default function Meishi({ labels, role }) {
 
   return (
     <>
-      <button type="button" className="meishi-open hover-nudge" onClick={open}>
+      <button type="button" className="meishi-open hover-nudge" onClick={open} onPointerEnter={prepareQr} onFocus={prepareQr}>
         <span className="meishi-open-kanji font-jp" aria-hidden="true">名刺</span>
         {labels.open}
       </button>

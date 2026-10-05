@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "perf": "node scripts/perf.mjs",
+    "perf:mobile": "node scripts/perf.mjs --mobile"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

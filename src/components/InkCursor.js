@@ -100,12 +100,25 @@ export default function InkCursor() {
       });
       observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
+      // Mouse parado e rastro já apagado: nada a fazer no quadro (antes limpava o canvas da tela
+      // inteira e reescrevia a posição do ponto 60 vezes por segundo, sem mudança nenhuma)
+      const placed = { x: NaN, y: NaN };
+      let painted = false;
       const draw = () => {
-        setX(latest.x);
-        setY(latest.y);
+        if (latest.x !== placed.x || latest.y !== placed.y) {
+          setX(latest.x);
+          setY(latest.y);
+          placed.x = latest.x;
+          placed.y = latest.y;
+        }
         points = pruneTrail(points, performance.now());
+        if (points.length < 2) {
+          if (painted) ctx.clearRect(0, 0, size.w, size.h);
+          painted = false;
+          return;
+        }
         ctx.clearRect(0, 0, size.w, size.h);
-        if (points.length < 2) return;
+        painted = true;
         ctx.strokeStyle = ink;
         ctx.lineCap = 'round';
         for (let i = 1; i < points.length; i++) {

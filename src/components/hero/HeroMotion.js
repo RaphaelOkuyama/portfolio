@@ -1,6 +1,6 @@
 'use client';
 import { useRef } from 'react';
-import { gsap, useGSAP } from '../../lib/gsap';
+import { gsap, ScrollTrigger, useGSAP } from '../../lib/gsap';
 import { profile } from '../../data/resume';
 import Section from '../journey/Section';
 import { useJourney } from '../../store/journey';
@@ -23,7 +23,7 @@ export default function HeroMotion({ children }) {
     gsap.to('.hero-scroll', { autoAlpha: 1, delay: reduced ? 0 : 1, duration: reduced ? 0 : 0.5 });
     if (reduced) return;
 
-    gsap.to('.hero-scroll-arrow', { keyframes: { y: [0, 10, 0], easeEach: 'sine.inOut' }, duration: 2, repeat: -1 });
+    const arrow = gsap.to('.hero-scroll-arrow', { keyframes: { y: [0, 10, 0], easeEach: 'sine.inOut' }, duration: 2, repeat: -1 });
 
     const cycle = gsap.timeline({ repeat: -1, delay: NAME_HOLD_SECONDS });
     buildNameSequence(profile).forEach((text) => {
@@ -33,6 +33,14 @@ export default function HeroMotion({ children }) {
           scrambleText: { text, chars: SCRAMBLE_CHARS, speed: 0.5, revealDelay: 0.3 },
         })
         .to({}, { duration: NAME_HOLD_SECONDS });
+    });
+
+    // Os dois laços infinitos só rodam com o hero na tela (fora dela recalculavam estilo à toa)
+    ScrollTrigger.create({
+      trigger: heroRef.current,
+      start: 'top bottom',
+      end: 'bottom top',
+      onToggle: ({ isActive }) => [arrow, cycle].forEach((t) => (isActive ? t.resume() : t.pause())),
     });
   }, { scope: heroRef, dependencies: [loaderDone] });
 

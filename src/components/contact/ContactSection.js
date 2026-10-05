@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { Mail, Linkedin, Github, Send, Copy, Check, MapPin } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '../../lib/toast';
 import { gsap } from '../../lib/gsap';
 import { journeyStore } from '../../store/journey';
 import { useSettings } from '../../context/SettingsContext';
@@ -112,7 +112,8 @@ export default function ContactSection({ contact }) {
       return;
     }
     setStatus('loading');
-    const loadingToast = toast.loading(messages.loading);
+    const loadingToast = 'contact-send';
+    toast.loading(messages.loading, { id: loadingToast });
     try {
       const res = await fetch('/api/contact', {
         method: 'POST',

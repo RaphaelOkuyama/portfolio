@@ -106,9 +106,18 @@ test.describe('Cursor de tinta', () => {
   });
 
   test('a ponta do rastro coincide com o centro do ponto', async ({ page }) => {
+    // Sem WebGL (fundo estático): aqui a cena roda em software e cada quadro dela levava mais que a
+    // vida do rastro (260ms); a linha sumia antes da leitura e o teste falhava ao acaso
+    await page.addInitScript(() => {
+      const original = HTMLCanvasElement.prototype.getContext;
+      HTMLCanvasElement.prototype.getContext = function getContext(type, ...rest) {
+        return /webgl/.test(type) ? null : original.call(this, type, ...rest);
+      };
+    });
     await page.goto('/certificates');
     await waitLoader(page);
-    for (let x = 700; x <= 1000; x += 15) await page.mouse.move(x, 420);
+    await page.mouse.move(700, 420);
+    await page.mouse.move(1000, 420, { steps: 20 });
     const r = await page.evaluate(() => new Promise((resolve) => {
       requestAnimationFrame(() => {
         const dot = document.querySelector('[data-cursor="ink"]').getBoundingClientRect();

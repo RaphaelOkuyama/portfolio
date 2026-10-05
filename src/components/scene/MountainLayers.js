@@ -130,8 +130,20 @@ function createMaterial(layer, ridge, index, quality) {
   return material;
 }
 
+// Material das árvores de uma camada: mesma cor e mesmos uniforms da encosta (a silhueta funde),
+// mas um objeto à parte. Com um só material para o mesh e o InstancedMesh, o three trocava de
+// programa (instanciado ↔ comum) e recalculava os parâmetros duas vezes por camada a cada quadro
+function twinMaterial(material) {
+  const twin = new MeshBasicMaterial();
+  twin.defines = material.defines;
+  twin.color = material.color;
+  twin.userData.uniforms = material.userData.uniforms;
+  twin.onBeforeCompile = material.onBeforeCompile;
+  return twin;
+}
+
 // Silhuetas em camadas; o tom vai de "perto" a "longe" conforme a distância da câmera.
-// Cada camada tem sua floresta de sugi, com o mesmo material para a silhueta fundir
+// Cada camada tem sua floresta de sugi, na mesma cor da encosta para a silhueta fundir
 export default function MountainLayers() {
   const quality = useJourney((s) => s.quality);
 
@@ -148,6 +160,7 @@ export default function MountainLayers() {
     () => layers.map(({ layer, ridge }, i) => createMaterial(layer, ridge, i, quality)),
     [layers, quality],
   );
+  const forestMaterials = useMemo(() => materials.map(twinMaterial), [materials]);
 
   const sugi = useMemo(() => sugiGeometry(), []);
   const forests = useMemo(() => {
@@ -169,6 +182,7 @@ export default function MountainLayers() {
     [layers, sugi],
   );
   useEffect(() => () => materials.forEach((m) => m.dispose()), [materials]);
+  useEffect(() => () => forestMaterials.forEach((m) => m.dispose()), [forestMaterials]);
 
   const tones = useMemo(
     () => ({ near: new Color(), mid: new Color(), far: new Color(), target: new Color(), rim: new Color() }),
@@ -218,7 +232,7 @@ export default function MountainLayers() {
   return layers.map(({ layer, geometry }, i) => (
     <group key={layer.seed} position={[layer.x, 0, layer.z]}>
       <mesh geometry={geometry} material={materials[i]} />
-      <Forest geometry={sugi} material={materials[i]} trees={forests[i]} />
+      <Forest geometry={sugi} material={forestMaterials[i]} trees={forests[i]} />
     </group>
   ));
 }

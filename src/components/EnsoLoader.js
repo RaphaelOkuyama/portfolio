@@ -56,6 +56,8 @@ export default function EnsoLoader() {
       if (finished) return;
       const progress = loaderProgress({
         elapsed: performance.now() - start,
+        // performance.now() começa na navegação
+        waited: performance.now(),
         sceneReady: journeyStore.getState().sceneReady,
         ...(reduced ? { minMs: 0 } : {}),
       });

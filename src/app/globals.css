@@ -542,9 +542,7 @@ p, li { text-wrap: pretty; }
     padding: 5px 12px 5px 8px;
     border: 1px solid var(--border);
     border-radius: 999px;
-    background: color-mix(in srgb, var(--bg-color) 88%, transparent);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    background: color-mix(in srgb, var(--bg-color) 92%, transparent);
     color: var(--text-secondary);
     font-size: 0.78rem;
     font-weight: 600;
@@ -900,9 +898,7 @@ p, li { text-wrap: pretty; }
   padding: 14px 20px;
   border: 1px solid var(--border);
   border-radius: 14px;
-  background: color-mix(in srgb, var(--bg-color) 90%, transparent);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: color-mix(in srgb, var(--bg-color) 94%, transparent);
 }
 .about-name {
   display: flex;
@@ -1197,6 +1193,21 @@ p, li { text-wrap: pretty; }
   .zen-layout { display: flex; flex-direction: column; gap: 10px; }
   .zen-stones,
   .zen-panels { display: contents; }
+  /* Sem caixa (display: contents), o papel washi do .zen-panels se ancorava num ancestral bem
+     maior e esticava as fibras pela tela inteira: listras de "névoa" por cima da cena */
+  .zen-layout .zen-panels::after { content: none; }
+  /* O papel passa para cada painel do acordeão */
+  .zen-layout .zen-panel { isolation: isolate; }
+  .zen-layout .zen-panel::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: var(--washi);
+    opacity: var(--washi-strength);
+    pointer-events: none;
+  }
   .zen-stone { order: var(--order); width: 100%; }
   .zen-stone::before,
   .zen-stone::after { display: none; }
@@ -1221,10 +1232,10 @@ p, li { text-wrap: pretty; }
 .about-copy {
   padding: 32px 34px;
   border-radius: 20px;
-  /* Quase opaco: o torii e a cena passam por trás sem atrapalhar a leitura */
-  background: color-mix(in srgb, var(--bg-color) 90%, transparent);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  /* Quase opaco: o torii e a cena passam por trás sem atrapalhar a leitura. Sem backdrop-filter
+     nos cartões sobre a cena: o desfoque era refeito a cada quadro do WebGL (caro no celular) e,
+     com o fundo ~90% opaco, quase não aparecia */
+  background: color-mix(in srgb, var(--bg-color) 94%, transparent);
 }
 @media (max-width: 900px) {
   .about-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr); gap: 32px; }
@@ -1450,9 +1461,7 @@ p, li { text-wrap: pretty; }
   padding: 24px 28px 22px;
   border: 1px solid var(--border);
   border-radius: 16px;
-  background: color-mix(in srgb, var(--card-bg) 92%, transparent);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: color-mix(in srgb, var(--card-bg) 96%, transparent);
 }
 .is-education .exp-card {
   border-style: dashed;
@@ -1614,9 +1623,7 @@ p, li { text-wrap: pretty; }
   grid-area: intro;
   padding: 28px 30px;
   border-radius: 20px;
-  background: color-mix(in srgb, var(--bg-color) 86%, transparent);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: color-mix(in srgb, var(--bg-color) 90%, transparent);
 }
 .contact-subtitle {
   color: var(--text-secondary);
@@ -1667,9 +1674,7 @@ p, li { text-wrap: pretty; }
   grid-area: direct;
   padding: 20px 30px 14px;
   border-radius: 20px;
-  background: color-mix(in srgb, var(--bg-color) 86%, transparent);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: color-mix(in srgb, var(--bg-color) 90%, transparent);
 }
 .contact-link-row:last-child { border-bottom: none; }
 .contact-channels {
@@ -1997,9 +2002,7 @@ textarea.contact-input { resize: vertical; min-height: 130px; }
   padding: 24px 28px 16px;
   border: 1px solid var(--border);
   border-radius: 18px;
-  background: color-mix(in srgb, var(--bg-color) 86%, transparent);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: color-mix(in srgb, var(--bg-color) 90%, transparent);
 }
 .cert-group-title {
   position: relative;
@@ -3255,8 +3258,7 @@ html:not(:lang(en)) [data-lang="en"] { display: none !important; }
   padding: 6px 12px;
   border: 1px solid var(--border);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--bg-color) 85%, transparent);
-  backdrop-filter: blur(6px);
+  background: color-mix(in srgb, var(--bg-color) 89%, transparent);
   color: var(--text-primary);
   font-size: 0.8rem;
   white-space: nowrap;
@@ -3413,13 +3415,16 @@ html:not(:lang(en)) [data-lang="en"] { display: none !important; }
   .carousel-side-arrow.is-right { right: 6px !important; }
 }
 
-/* --- 和紙 Washi: fibras de papel nos cartões (imagem SVG em mosaico, desenhada uma vez) --- */
+/* --- 和紙 Washi: fibras de papel nos cartões (imagem SVG em mosaico, desenhada uma vez). Ladrilho
+   de 250px: com a frequência 0.008 × 0.22 dá ciclos inteiros (2 × 55) e o stitchTiles costura sem
+   emenda (a região do filtro fica em 0–100%: com a margem padrão de 10% o período virava 300px);
+   antes aparecia uma linha vertical a cada ladrilho --- */
 :root, [data-theme='night'] {
-  --washi: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='w'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.008 0.22' numOctaves='2' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1.8 -1'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23w)'/%3E%3C/svg%3E");
+  --washi: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='250' height='250'%3E%3Cfilter id='w' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.008 0.22' numOctaves='2' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1.8 -1'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23w)'/%3E%3C/svg%3E");
   --washi-strength: 0.1;
 }
 [data-theme='day'] {
-  --washi: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='w'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.008 0.22' numOctaves='2' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.36  0 0 0 0 0.3  0 0 0 0 0.22  0 0 0 1.8 -1'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23w)'/%3E%3C/svg%3E");
+  --washi: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='250' height='250'%3E%3Cfilter id='w' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.008 0.22' numOctaves='2' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.36  0 0 0 0 0.3  0 0 0 0 0.22  0 0 0 1.8 -1'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23w)'/%3E%3C/svg%3E");
   --washi-strength: 0.16;
 }
 .pj-card, .emaki-panel, .zen-panels, .exp-card, .contact-letter { isolation: isolate; }

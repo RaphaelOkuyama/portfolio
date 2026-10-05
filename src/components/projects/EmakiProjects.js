@@ -3,7 +3,7 @@ import { useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
-import { gsap, ScrollTrigger, Draggable, useGSAP } from '../../lib/gsap';
+import { gsap, ScrollTrigger, loadDraggable, useGSAP } from '../../lib/gsap';
 import Section from '../journey/Section';
 import { kanjiNumber } from '../../lib/kanji';
 import KeepHyphenated from '../KeepHyphenated';
@@ -37,19 +37,32 @@ export default function EmakiProjects({ projects, labels }) {
 
     // Desenrolar (0 = enrolado junto ao rolo de madeira, 1 = aberto): o papel aparece por um
     // recorte que acompanha o cilindro de papel enrolado, puxado da esquerda para a direita
-    const setUnroll = (p) => {
+    // As medidas (borda do rolo, largura) só mudam com o layout: são lidas no começo e a cada
+    // refresh/resize. Antes cada quadro da rolagem lia getBoundingClientRect e criava um gsap.set,
+    // forçando layout da página inteira (~600ms de CPU numa descida no celular)
+    let metrics = null;
+    let setRollerX = null;
+    const measure = () => {
       const viewport = viewportRef.current;
       const roller = rollerRef.current;
       const rod = trackRef.current?.querySelector('.emaki-rod');
-      if (!viewport || !roller || !rod) return;
+      if (!viewport || !roller || !rod) {
+        metrics = null;
+        return;
+      }
       const box = viewport.getBoundingClientRect();
       const width = viewport.clientWidth;
-      const start = rod.getBoundingClientRect().right - box.left + 2;
-      const end = width - roller.offsetWidth;
+      metrics = { width, start: rod.getBoundingClientRect().right - box.left + 2, end: width - roller.offsetWidth };
+      setRollerX = gsap.quickSetter(roller, 'x', 'px');
+    };
+    const setUnroll = (p, remeasure = false) => {
+      if (!metrics || remeasure) measure();
+      if (!metrics) return;
+      const { width, start, end } = metrics;
       const edge = start + (end - start) * p;
       // Inset negativo em cima/embaixo: as pontas dos rolos passam um pouco do papel
-      viewport.style.clipPath = p >= 1 ? '' : `inset(-24px ${Math.max(0, width - edge)}px -24px 0)`;
-      gsap.set(roller, { x: edge });
+      viewportRef.current.style.clipPath = p >= 1 ? '' : `inset(-24px ${Math.max(0, width - edge)}px -24px 0)`;
+      setRollerX(edge);
     };
     const resetUnroll = () => {
       if (viewportRef.current) viewportRef.current.style.clipPath = '';
@@ -61,7 +74,7 @@ export default function EmakiProjects({ projects, labels }) {
 
       // O rolo se abre enquanto a seção sobe na tela e termina aberto quando ela fixa
       const unroll = { p: 0 };
-      setUnroll(0);
+      setUnroll(0, true);
       gsap.to(unroll, {
         p: 1,
         ease: 'none',
@@ -71,7 +84,7 @@ export default function EmakiProjects({ projects, labels }) {
           start: 'top 85%',
           end: 'top 72px',
           scrub: 0.6,
-          onRefresh: () => setUnroll(unroll.p),
+          onRefresh: () => setUnroll(unroll.p, true),
         },
       });
 
@@ -126,7 +139,7 @@ export default function EmakiProjects({ projects, labels }) {
 
       // Sem pin no celular: o rolo se abre sozinho quando aparece e o cilindro sai de cena
       const unroll = { p: 0 };
-      setUnroll(0);
+      setUnroll(0, true);
       const opening = gsap.to(unroll, {
         p: 1,
         duration: 1.4,
@@ -135,18 +148,30 @@ export default function EmakiProjects({ projects, labels }) {
         onUpdate: () => setUnroll(unroll.p),
         onComplete: () => gsap.to(rollerRef.current, { autoAlpha: 0, duration: 0.4 }),
       });
-      ScrollTrigger.create({ trigger: viewportRef.current, start: 'top 80%', once: true, onEnter: () => opening.play() });
+      ScrollTrigger.create({
+        trigger: viewportRef.current, start: 'top 80%', once: true,
+        onEnter: () => {
+          setUnroll(0, true);
+          opening.play();
+        },
+      });
 
-      const [draggable] = Draggable.create(track, {
-        type: 'x',
-        inertia: true,
-        bounds: viewportRef.current,
-        edgeResistance: 0.85,
-        dragClickables: true,
-        allowNativeTouchScrolling: true,
+      let draggable = null;
+      let alive = true;
+      loadDraggable().then((Draggable) => {
+        if (!alive) return;
+        [draggable] = Draggable.create(track, {
+          type: 'x',
+          inertia: true,
+          bounds: viewportRef.current,
+          edgeResistance: 0.85,
+          dragClickables: true,
+          allowNativeTouchScrolling: true,
+        });
       });
       return () => {
-        draggable.kill();
+        alive = false;
+        draggable?.kill();
         resetUnroll();
       };
     });

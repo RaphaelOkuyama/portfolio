@@ -15,7 +15,7 @@ import { SettingsProvider } from '../context/SettingsContext';
 import { THEME_BOOT_SCRIPT } from '../lib/themeBoot';
 import { SITE_URL, personJsonLd, jsonLdScript } from '../lib/site';
 import { Analytics } from "@vercel/analytics/react";
-import { Toaster } from 'sonner';
+import { LazyToaster } from '../lib/toast';
 
 // Texto em Inter; títulos em Shippori Mincho (serifa japonesa)
 const sans = Inter({ subsets: ['latin'], display: 'swap', variable: '--font-sans' });
@@ -82,7 +82,7 @@ export default function RootLayout({ children }) {
             <Analytics />
           </main>
 
-          <Toaster position="bottom-right" richColors />
+          <LazyToaster position="bottom-right" richColors />
           
           <Footer />
         </SettingsProvider>

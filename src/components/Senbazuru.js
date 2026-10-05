@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef } from 'react';
-import { toast } from 'sonner';
+import { toast } from '../lib/toast';
 import { gsap } from '../lib/gsap';
 import { useSettings } from '../context/SettingsContext';
 import { createKonamiMatcher, TSURU_EVENT } from '../lib/easterEgg';

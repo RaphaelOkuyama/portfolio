@@ -1,5 +1,5 @@
 'use client';
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { PerformanceMonitor } from '@react-three/drei';
 import { journeyStore, useJourney } from '../../store/journey';
@@ -38,14 +38,27 @@ export default function Canvas3D() {
   useEffect(() => trackPointer(), []);
 
   const settings = QUALITY_SETTINGS[quality];
-  const frameloop = hidden ? 'never' : route === 'frozen' ? 'demand' : 'always';
+  // Antialias só existe na criação do contexto: trocar de nível com ele recria o canvas
+  const contextKey = settings.antialias ? 'aa' : 'plain';
+
+  // Nenhum quadro antes da cena montar e os shaders compilarem (ver World e ShaderWarmup); um contexto novo recompila
+  const [compiledKey, setCompiledKey] = useState(null);
+  const onCompiled = useCallback(() => {
+    performance.mark('scene-ready');
+    setCompiledKey(contextKey);
+    journeyStore.getState().setSceneReady();
+  }, [contextKey]);
+
+  const frameloop = hidden || compiledKey !== contextKey ? 'never' : route === 'frozen' ? 'demand' : 'always';
 
   return (
     <Canvas
-      // Antialias só existe na criação do contexto: trocar de nível com ele recria o canvas
-      key={settings.antialias ? 'aa' : 'plain'}
+      key={contextKey}
       flat
-      onCreated={() => journeyStore.getState().setSceneReady()}
+      onCreated={(state) => {
+        // ?perf na URL: expõe o renderer para medir programas, draw calls e triângulos
+        if (new URLSearchParams(window.location.search).has('perf')) window.__r3f = state;
+      }}
       dpr={settings.dpr}
       frameloop={frameloop}
       camera={{ fov: 50, near: 0.1, far: 300, position: CAMERA_PATH[0] }}
@@ -55,7 +68,7 @@ export default function Canvas3D() {
       {frameloop === 'always' && warmedUp ? (
         <PerformanceMonitor bounds={FPS_BOUNDS} onDecline={() => journeyStore.getState().downgradeQuality()} />
       ) : null}
-      <World />
+      <World onReady={onCompiled} />
       {settings.postprocessing ? (
         <Suspense fallback={null}>
           <Effects />

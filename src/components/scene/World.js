@@ -1,5 +1,5 @@
 'use client';
-import { useEffect } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { journeyStore } from '../../store/journey';
 import { stepWind } from '../../lib/journey/wind';
@@ -20,9 +20,28 @@ import River from './River';
 import Sky from './Sky';
 import Kasumi from './Kasumi';
 import Birds from './Birds';
+import ShaderWarmup from './ShaderWarmup';
+
+// Grupos montados em sequência (ordem: o que aparece primeiro no hero vem antes)
+const STAGES = [
+  [Atmosphere, JourneyCamera, Sky, Celestial, Birds],
+  [MountainLayers],
+  [Ground, Kasumi],
+  [Torii, Iwakura, Komainu],
+  [StonePaths, StoneLanterns],
+  [BambooGrove, Kodama, ShishiOdoshi],
+  [Pagoda, Taikobashi, Katana],
+  [ZenGarden, Momiji, Snow],
+  [River, Petals],
+];
+
+// memo: montar o grupo seguinte não re-renderiza os anteriores
+const Stage = memo(function Stage({ index }) {
+  return STAGES[index].map((Part, i) => <Part key={i} />);
+});
 
 // Monta a cena; no frameloop "demand" qualquer mudança da store pede um frame
-export default function World() {
+export default function World({ onReady }) {
   const invalidate = useThree((s) => s.invalidate);
 
   useEffect(
@@ -48,32 +67,19 @@ export default function World() {
     stepWind(delta);
   });
 
+  // Monta um grupo por vez, cada um numa tarefa curta (a cena inteira de uma vez travava a
+  // thread ~600ms num celular); por último compila os shaders de tudo
+  const [mounted, setMounted] = useState(1);
+  useEffect(() => {
+    if (mounted >= STAGES.length) return undefined;
+    const id = setTimeout(() => setMounted((n) => n + 1), 0);
+    return () => clearTimeout(id);
+  }, [mounted]);
+
   return (
     <>
-      <Atmosphere />
-      <JourneyCamera />
-      <Sky />
-      <Celestial />
-      <Birds />
-      <MountainLayers />
-      <Ground />
-      <Kasumi />
-      <Torii />
-      <Iwakura />
-      <Komainu />
-      <StonePaths />
-      <StoneLanterns />
-      <BambooGrove />
-      <Kodama />
-      <ShishiOdoshi />
-      <Pagoda />
-      <Taikobashi />
-      <Katana />
-      <ZenGarden />
-      <Momiji />
-      <Snow />
-      <River />
-      <Petals />
+      {STAGES.slice(0, mounted).map((_, i) => <Stage key={i} index={i} />)}
+      {mounted >= STAGES.length ? <ShaderWarmup onReady={onReady} /> : null}
     </>
   );
 }
