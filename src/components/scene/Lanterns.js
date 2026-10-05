@@ -72,7 +72,7 @@ const haloFragment = /* glsl */ `
 
 // 灯籠流し: lanternas de papel descendo o rio até sumirem na névoa;
 // cada mensagem enviada solta mais uma perto da câmera
-export default function Lanterns({ reflections }) {
+export default function Lanterns({ reflections, released }) {
   const quality = useJourney((s) => s.quality);
   const baseCount = LANTERNS.count[quality] ?? LANTERNS.count.low;
   const capacity = baseCount + LANTERNS.maxReleased;
@@ -162,7 +162,10 @@ export default function Lanterns({ reflections }) {
       if (items.length < capacity) {
         const label = journey.lanternNames[releasesSeen.current - 1] || '';
         // Nasce na faixa de água visível abaixo do conteúdo, maior que as outras: é a lanterna da pessoa
-        items.push({ ...spawn(lerp(-1.2, 1.2, rand()), LANTERNS.viewZ - LANTERNS.releaseAhead), released: true, label });
+        const item = { ...spawn(lerp(-1.2, 1.2, rand()), LANTERNS.viewZ - LANTERNS.releaseAhead), released: true, label };
+        items.push(item);
+        // As carpas (Koi) vêm atrás da lanterna nova; o relógio é o das carpas (só avança em movimento)
+        if (released) Object.assign(released, { item, at: released.clock?.() ?? 0 });
       }
     }
 

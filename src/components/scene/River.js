@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Color, PlaneGeometry, ShaderMaterial, UniformsLib, UniformsUtils, Vector3 } from 'three';
 import { journeyStore, effectiveProgress, useJourney } from '../../store/journey';
@@ -8,6 +8,7 @@ import { smoothstep } from '../../lib/journey/math';
 import { getCameraCurve } from './useCameraMap';
 import { NOISE, noiseDefines } from './glsl';
 import Lanterns from './Lanterns';
+import Koi from './Koi';
 import { LANTERNS, RIVER } from './config';
 
 // Máximo de reflexos: lanternas fixas + soltas pelo formulário
@@ -130,6 +131,22 @@ export default function River() {
   );
   useEffect(() => () => geometry.dispose(), [geometry]);
   useEffect(() => () => material.dispose(), [material]);
+  // Lanterna solta pelo formulário mais recente: as lanternas escrevem, as carpas seguem
+  const released = useMemo(() => ({ item: null, at: 0 }), []);
+  // As carpas só aparecem no fim da jornada: montam quando a rolagem se aproxima do rio (antes,
+  // junto com a cena, engordavam a tarefa do primeiro quadro; quem não chega ao fim nem paga)
+  const [withKoi, setWithKoi] = useState(false);
+  useEffect(() => {
+    if (withKoi) return undefined;
+    const near = (state) => effectiveProgress(state) > start - 0.55;
+    if (near(journeyStore.getState())) {
+      setWithKoi(true);
+      return undefined;
+    }
+    return journeyStore.subscribe((state) => {
+      if (near(state)) setWithKoi(true);
+    });
+  }, [start, withKoi]);
 
   const target = useMemo(() => new Color(), []);
   const init = useRef(false);
@@ -161,7 +178,8 @@ export default function River() {
   return (
     <group ref={groupRef} position={center}>
       <mesh geometry={geometry} material={material} rotation={[-Math.PI / 2, 0, 0]} />
-      <Lanterns reflections={reflections} />
+      <Lanterns reflections={reflections} released={released} />
+      {withKoi ? <Koi water={material.uniforms.uWater} released={released} /> : null}
     </group>
   );
 }

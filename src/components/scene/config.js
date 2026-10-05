@@ -231,6 +231,41 @@ export const RIVER = {
   skyReflection: { night: 0.55, day: 0.6 },
 };
 
+// 鯉: carpas no rio do contato, nas coordenadas do rio (x lateral, z ao longo; a câmera fica em
+// z = LANTERNS.viewZ). Nadam na faixa de água visível abaixo do conteúdo, vêm até o cursor quando
+// ele passa sobre a água e acompanham a lanterna solta pelo formulário
+export const KOI = {
+  school: [
+    { variant: 'kohaku', tint: '#ffffff', size: 1.95 },
+    { variant: 'showa', tint: '#ffffff', size: 1.7 },
+    { variant: 'plain', tint: '#e9b54c', size: 1.8 }, // 黄金 ogon
+    { variant: 'kohaku', tint: '#ffffff', size: 1.55 },
+    { variant: 'plain', tint: '#d6dbe2', size: 1.6 }, // プラチナ platina
+    { variant: 'showa', tint: '#ffffff', size: 2.05 },
+    { variant: 'kohaku', tint: '#ffffff', size: 1.45 },
+  ],
+  // Perto da câmera (que fica em z ≈ 56–61 no contato): a faixa de água que aparece embaixo do
+  // conteúdo e no vão até o rodapé
+  zone: { x: [-4.5, 4.5], z: [41, 56.5] },
+  // Cursor um pouco fora da zona ainda atrai: elas vão até a borda mais próxima
+  lureMargin: 4,
+  // Logo acima do plano da água (que é transparente e não escreve profundidade)
+  y: 0.03,
+  speed: [0.45, 0.85],
+  // Multiplicador da velocidade quando vão atrás do cursor ou da lanterna
+  dash: 1.8,
+  turn: 1.5,
+  slowRadius: 1.2,
+  spacing: 1.3,
+  // Quantas vêm até o cursor e o raio da roda em volta dele (e da lanterna)
+  curious: 4,
+  orbit: { pointer: 1.2, lantern: 1.6 },
+  followLantern: 14,
+  // Mergulho: mistura com a cor da água; à noite as cores apagam um pouco
+  submerge: 0.28,
+  brightness: { night: 0.62, day: 1 },
+};
+
 export const LANTERNS = {
   count: { high: 36, medium: 28, low: 20 },
   maxReleased: 8,
