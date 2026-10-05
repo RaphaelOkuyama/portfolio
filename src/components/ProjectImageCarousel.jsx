@@ -1,6 +1,7 @@
 'use client';
 import { useState, useRef } from 'react';
 import { gsap, useGSAP } from '../lib/gsap';
+import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 /**
@@ -80,17 +81,14 @@ export default function ProjectImageCarousel({ images = [], isMobile = false }) 
               background: '#000',
               position: 'relative',
             }}>
-                <img
+                {/* next/image: redimensionada e em AVIF/WebP (os PNGs originais têm até 200KB) */}
+                <Image
                   ref={imgRef}
                   src={images[current].src}
                   alt={images[current].alt || `Tela ${current + 1}`}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    objectPosition: 'top',
-                    display: 'block',
-                  }}
+                  fill
+                  sizes="240px"
+                  style={{ objectFit: 'cover', objectPosition: 'top' }}
                 />
             </div>
           </div>
@@ -169,11 +167,13 @@ export default function ProjectImageCarousel({ images = [], isMobile = false }) 
   // Layout desktop (landscape screenshots) — carrossel normal 16/9
   return (
     <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', borderRadius: '20px', overflow: 'hidden', border: '1px solid var(--border)', marginBottom: '50px', background: 'var(--card-bg)' }}>
-      <img
+      <Image
         ref={imgRef}
         src={images[current].src}
         alt={images[current].alt || `Screenshot ${current + 1}`}
-        style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', top: 0, left: 0 }}
+        fill
+        sizes="(max-width: 900px) 100vw, 900px"
+        style={{ objectFit: 'cover' }}
       />
 
       {images.length > 1 && (

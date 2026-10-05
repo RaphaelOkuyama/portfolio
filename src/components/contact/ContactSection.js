@@ -285,7 +285,7 @@ export default function ContactSection({ contact }) {
               </a>
             </li>
           </ul>
-          <Meishi labels={contact.meishi} role={resumeData[language].hero.roles[0]} />
+          <Meishi labels={contact.meishi} role={resumeData[language].hero.roles[0]} lang={language} />
         </div>
       </div>
     </Section>

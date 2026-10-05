@@ -116,10 +116,15 @@ test.describe('Cursor de tinta', () => {
     });
     await page.goto('/certificates');
     await waitLoader(page);
+    // Um mouse real primeiro (ativa o cursor), depois o gesto disparado dentro da página: entre
+    // comandos do Playwright, com a suíte em paralelo, a espera passava da vida do rastro (260ms)
     await page.mouse.move(700, 420);
-    await page.mouse.move(1000, 420, { steps: 20 });
     const r = await page.evaluate(() => new Promise((resolve) => {
-      requestAnimationFrame(() => {
+      for (let x = 700; x <= 1000; x += 15) {
+        window.dispatchEvent(new PointerEvent('pointermove', { clientX: x, clientY: 420, bubbles: true }));
+      }
+      // Dois quadros: o ticker do GSAP desenha no primeiro, a leitura vem no seguinte
+      requestAnimationFrame(() => requestAnimationFrame(() => {
         const dot = document.querySelector('[data-cursor="ink"]').getBoundingClientRect();
         const c = document.querySelector('[data-cursor-trail]');
         const s = c.width / c.clientWidth;
@@ -127,7 +132,7 @@ test.describe('Cursor de tinta', () => {
         let right = -1;
         for (let i = 0; i < c.width; i++) if (row[i * 4 + 3] > 20) right = i;
         resolve({ dot: dot.left + dot.width / 2, trail: right < 0 ? null : right / s });
-      });
+      }));
     }));
     expect(r.trail).not.toBeNull();
     expect(Math.abs(r.dot - 1000)).toBeLessThan(1);

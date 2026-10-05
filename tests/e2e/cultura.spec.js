@@ -6,6 +6,11 @@ async function openHome(page) {
   await expect(page.locator('[data-loader="enso"]')).toHaveCount(0, { timeout: 10_000 });
 }
 
+// O ensō pode fechar antes da cena compilar (teto de 4s): o torii do omikuji é da cena 3D
+async function waitScene(page) {
+  await expect.poll(() => page.evaluate(() => performance.getEntriesByName('scene-ready').length), { timeout: 20_000 }).toBe(1);
+}
+
 test.describe('名刺 Meishi', () => {
   test('o cartão abre de frente em japonês, vira para o latino com QR e salva o vCard', async ({ page }) => {
     const errors = collectConsoleErrors(page);
@@ -26,7 +31,9 @@ test.describe('名刺 Meishi', () => {
     await dialog.getByRole('button', { name: 'Virar cartão' }).click();
     await expect(card).toHaveClass(/is-flipped/);
     await expect(card.locator('.meishi-back')).toContainText('Raphael Nobuyuki Haga Okuyama');
-    await expect(card.getByRole('img', { name: 'QR code com o meu contato' }).locator('svg')).toHaveCount(1);
+    // QR: SVG estático gerado no build (app/meishi-qr), carregado como imagem quando o cartão abre
+    const qr = card.getByRole('img', { name: 'QR code com o meu contato' });
+    await expect.poll(() => qr.evaluate((img) => img.complete && img.naturalWidth > 0)).toBe(true);
 
     const [download] = await Promise.all([
       page.waitForEvent('download'),
@@ -96,21 +103,26 @@ test.describe('おみくじ Omikuji', () => {
     await expect(slip).toBeHidden();
   });
 
-  test('ao passar o mouse no torii aparece a dica; rolar a página esconde', async ({ page }) => {
-    await openHome(page);
-    const point = await clickTorii(page);
-    await page.keyboard.press('Escape');
-    // Sai e volta exatamente ao ponto achado (1px ao lado pode cair fora de um pilar fino); com a
-    // máquina carregada o raycast pode perder o frame, então repete o movimento até a dica acender
-    const hint = page.locator('.omikuji-hint');
-    await expect.poll(async () => {
-      await page.mouse.move(point.x - 40, point.y - 40);
-      await page.mouse.move(point.x, point.y, { steps: 4 });
-      return hint.getAttribute('data-visible');
-    }, { timeout: 8_000 }).toBe('true');
-    await expect(hint).toContainText('Clique no torii para tirar a sorte');
-    await page.mouse.wheel(0, 600);
-    await expect(hint).toHaveAttribute('data-visible', 'false');
+  // Movimento reduzido: sem ele a câmera balança na direção do cursor (parallax) e o torii anda
+  // alguns pixels em relação ao ponto achado com eventos sintéticos; a dica é o que importa aqui
+  test.describe('sem o balanço da câmera', () => {
+    test.use({ reducedMotion: 'reduce' });
+
+    test('ao passar o mouse no torii aparece a dica; rolar a página esconde', async ({ page }) => {
+      await openHome(page);
+      await waitScene(page);
+      const point = await clickTorii(page);
+      await page.keyboard.press('Escape');
+      const hint = page.locator('.omikuji-hint');
+      await expect.poll(async () => {
+        await page.mouse.move(point.x - 40, point.y - 40);
+        await page.mouse.move(point.x, point.y, { steps: 4 });
+        return hint.getAttribute('data-visible');
+      }, { timeout: 8_000 }).toBe('true');
+      await expect(hint).toContainText('Clique no torii para tirar a sorte');
+      await page.mouse.wheel(0, 600);
+      await expect(hint).toHaveAttribute('data-visible', 'false');
+    });
   });
 
   test('pelo teclado, um botão aparece no foco e tira a sorte', async ({ page }) => {

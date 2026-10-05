@@ -11,24 +11,16 @@ const host = (url) => url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')
 // 名刺: o cartão de visita. No Japão ele é entregue com as duas mãos, virado para quem recebe:
 // aqui ele chega de cabeça para baixo e gira até ficar de frente. Frente em japonês, verso em latim,
 // e o QR leva o vCard para o celular de quem estiver olhando a tela
-export default function Meishi({ labels, role }) {
+export default function Meishi({ labels, role, lang }) {
   const dialogRef = useRef(null);
   const cardRef = useRef(null);
   const [flipped, setFlipped] = useState(false);
-  const [qr, setQr] = useState('');
   const vcard = buildVCard({ title: role });
 
-  // O QR (e a biblioteca dele) só é gerado quando o cartão vai abrir: mouse por cima, foco ou
-  // clique. Antes saía no carregamento da página, para um cartão que fica fechado
-  const qrFor = useRef(null);
-  const prepareQr = () => {
-    if (qrFor.current === vcard) return;
-    qrFor.current = vcard;
-    import('qrcode')
-      .then(({ default: QRCode }) => QRCode.toString(vcard, { type: 'svg', margin: 0, errorCorrectionLevel: 'L', color: { dark: '#1b1a17', light: '#0000' } }))
-      .then((svg) => { if (qrFor.current === vcard) setQr(svg); })
-      .catch(() => { qrFor.current = null; });
-  };
+  // O QR é um SVG gerado no build (app/meishi-qr) e só é pedido quando o cartão vai abrir: mouse
+  // por cima, foco ou clique. Antes a biblioteca do QR rodava no carregamento da página
+  const [wantsQr, setWantsQr] = useState(false);
+  const prepareQr = () => setWantsQr(true);
 
   const open = () => {
     prepareQr();
@@ -93,14 +85,10 @@ export default function Meishi({ labels, role }) {
                   <span>{host(SOCIAL.linkedin)}</span>
                   <span>{host(SOCIAL.github)}</span>
                 </div>
-                {qr && (
-                  <span
-                    className="meishi-qr"
-                    role="img"
-                    aria-label={labels.qr}
-                    dangerouslySetInnerHTML={{ __html: qr }}
-                  />
-                )}
+                {wantsQr ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- SVG estático, sem otimização a fazer
+                  <img className="meishi-qr" src={`/meishi-qr/${lang}`} alt={labels.qr} width={120} height={120} />
+                ) : null}
               </div>
             </div>
           </div>

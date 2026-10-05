@@ -21,6 +21,18 @@ export default function JourneySync() {
     journeyStore.getState().setRoute(pathname === '/' ? 'journey' : 'frozen');
   }, [pathname]);
 
+  // Fora da home: baixa os chunks das seções dela quando o navegador fica ocioso (ver HomeSections)
+  useEffect(() => {
+    if (pathname === '/') return undefined;
+    const preload = () => import('../HomeSections').then((m) => m.preloadHomeSections()).catch(() => {});
+    if (!('requestIdleCallback' in window)) {
+      const id = setTimeout(preload, 2000);
+      return () => clearTimeout(id);
+    }
+    const id = window.requestIdleCallback(preload, { timeout: 4000 });
+    return () => window.cancelIdleCallback(id);
+  }, [pathname]);
+
   useEffect(() => {
     journeyStore.getState().setTheme(theme);
   }, [theme]);

@@ -6,6 +6,7 @@ import { journeyStore, useJourney } from '../../store/journey';
 import { QUALITY_SETTINGS } from '../../lib/journey/quality';
 import { CAMERA_PATH } from './config';
 import World from './World';
+import { HalfRateFrames, useSceneIdle } from './idleFrames';
 // Pós-processamento só é baixado quando a qualidade alta pede
 const Effects = lazy(() => import('./Effects'));
 import { trackPointer } from '../../lib/pointer';
@@ -49,7 +50,10 @@ export default function Canvas3D() {
     journeyStore.getState().setSceneReady();
   }, [contextKey]);
 
-  const frameloop = hidden || compiledKey !== contextKey ? 'never' : route === 'frozen' ? 'demand' : 'always';
+  // Parada (sem interação há 2s): "demand" a 30 fps em vez de 60 (ver idleFrames)
+  const idle = useSceneIdle();
+  const halfRate = idle && route !== 'frozen';
+  const frameloop = hidden || compiledKey !== contextKey ? 'never' : route === 'frozen' || halfRate ? 'demand' : 'always';
 
   return (
     <Canvas
@@ -69,6 +73,7 @@ export default function Canvas3D() {
         <PerformanceMonitor bounds={FPS_BOUNDS} onDecline={() => journeyStore.getState().downgradeQuality()} />
       ) : null}
       <World onReady={onCompiled} />
+      {halfRate && frameloop === 'demand' ? <HalfRateFrames /> : null}
       {settings.postprocessing ? (
         <Suspense fallback={null}>
           <Effects />

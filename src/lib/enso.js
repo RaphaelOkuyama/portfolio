@@ -47,6 +47,17 @@ function polyline(points) {
   return points.map(([x, y], i) => `${i ? 'L' : 'M'}${x} ${y}`).join('');
 }
 
+// Mesmo traço em coordenadas relativas (l dx dy): as 58 cerdas iam ao HTML do loader com ~30KB
+// de números absolutos. Os deltas saem dos pontos já arredondados, então o desenho é idêntico
+const delta = (n) => Math.round(n * 10) / 10;
+function relativePolyline(points) {
+  return points.map(([x, y], i) => {
+    if (!i) return `M${x} ${y}`;
+    const [px, py] = points[i - 1];
+    return `l${delta(x - px)} ${delta(y - py)}`;
+  }).join('');
+}
+
 // Corpo: contorno externo indo, interno voltando, com borda rasgada por ruído
 function corePath(cfg, rand) {
   const n = Math.round(cfg.samples * cfg.coreEnd);
@@ -102,7 +113,7 @@ function bristlePaths(cfg, rand) {
     }
     if (segment.length > 1) points.push(segment);
     if (points.length) {
-      paths.push({ d: points.map(polyline).join(''), width: fmt(width), opacity });
+      paths.push({ d: points.map(relativePolyline).join(''), width: fmt(width), opacity });
     }
   }
   return paths;

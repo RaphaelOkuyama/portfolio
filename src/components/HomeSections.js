@@ -1,10 +1,28 @@
 'use client';
+import dynamic from 'next/dynamic';
 import { useSettings } from '../context/SettingsContext';
-import AboutSection from './about/AboutSection';
-import ZenStack from './stack/ZenStack';
-import EmakiProjects from './projects/EmakiProjects';
-import ExperienceSection from './ExperienceSection';
-import ContactSection from './contact/ContactSection';
+
+// Cada seção num chunk e num limite de Suspense próprios (o HTML continua vindo do servidor):
+// o React hidrata e roda os efeitos (GSAP, SplitText, ScrollTrigger) de uma seção por vez, em
+// tarefas curtas. Juntas, num commit só, travavam a thread ~400ms num celular
+const loaders = {
+  about: () => import('./about/AboutSection'),
+  stack: () => import('./stack/ZenStack'),
+  projects: () => import('./projects/EmakiProjects'),
+  experience: () => import('./ExperienceSection'),
+  contact: () => import('./contact/ContactSection'),
+};
+const AboutSection = dynamic(loaders.about);
+const ZenStack = dynamic(loaders.stack);
+const EmakiProjects = dynamic(loaders.projects);
+const ExperienceSection = dynamic(loaders.experience);
+const ContactSection = dynamic(loaders.contact);
+
+// Nas outras páginas os chunks são baixados quando o navegador fica ocioso: sem isso, ir até a
+// home (ou /#contato) esperava a cascata de downloads antes de trocar de tela
+export function preloadHomeSections() {
+  Object.values(loaders).forEach((load) => load().catch(() => {}));
+}
 
 // Seções animadas da jornada: seguem o idioma escolhido. Os ícones chegam prontos do servidor.
 export default function HomeSections({ icons }) {

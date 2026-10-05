@@ -43,7 +43,9 @@ test.describe('Performance: o que fica fora do carregamento', () => {
     const open = page.locator('.meishi-open');
     await open.scrollIntoViewIfNeeded();
     await open.click();
-    await expect(page.locator('.meishi-qr svg')).toHaveCount(1);
+    // O QR é um SVG estático gerado no build (app/meishi-qr), pedido só agora
+    await expect(page.locator('img.meishi-qr')).toHaveAttribute('src', '/meishi-qr/pt');
+    await expect.poll(() => page.locator('img.meishi-qr').evaluate((img) => img.complete && img.naturalWidth > 0)).toBe(true);
     expect(errors).toEqual([]);
   });
 

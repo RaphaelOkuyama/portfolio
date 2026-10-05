@@ -30,12 +30,25 @@ describe('ensoShapes', () => {
     expect(ensoShapes()).toEqual(ensoShapes());
   });
 
+  // Pontos absolutos de um path com M/L (absolutos) e l (relativos)
+  const absolutePoints = (d) => {
+    const pts = [];
+    let x = 0;
+    let y = 0;
+    for (const [, cmd, a, b] of d.matchAll(/([MLl])(-?[\d.]+) (-?[\d.]+)/g)) {
+      if (cmd === 'l') { x += Number(a); y += Number(b); } else { x = Number(a); y = Number(b); }
+      pts.push(x, y);
+    }
+    return pts;
+  };
+
   it('gera corpo fechado, cerdas e o guia da máscara dentro do viewBox', () => {
     const { core, bristles, guide } = ensoShapes();
     expect(core.startsWith('M')).toBe(true);
     expect(core.endsWith('Z')).toBe(true);
     expect(bristles.length).toBeGreaterThan(20);
-    const numbers = [core, guide, ...bristles.map((b) => b.d)].join(' ').match(/-?\d+(\.\d+)?/g).map(Number);
+    const numbers = [core, guide, ...bristles.map((b) => b.d)].flatMap(absolutePoints);
+    expect(numbers.length).toBeGreaterThan(1000);
     numbers.forEach((n) => {
       expect(n).toBeGreaterThanOrEqual(0);
       expect(n).toBeLessThanOrEqual(220);

@@ -1,5 +1,6 @@
 import './globals.css';
-import { Inter, Shippori_Mincho } from 'next/font/google';
+import { Inter } from 'next/font/google';
+import localFont from 'next/font/local';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import SocialSidebar from '../components/SocialSidebar';
@@ -19,10 +20,17 @@ import { LazyToaster } from '../lib/toast';
 
 // Texto em Inter; títulos em Shippori Mincho (serifa japonesa)
 const sans = Inter({ subsets: ['latin'], display: 'swap', variable: '--font-sans' });
-// Sem preload: a mincho vem fatiada em ~110 arquivos por unicode-range e o preload puxava
-// ~55 deles (3 MB) antes do JS. Sem ele o navegador baixa só as fatias dos caracteres em uso
-const display = Shippori_Mincho({
-  subsets: ['latin'], weight: ['600', '800'], display: 'swap', variable: '--font-display', preload: false,
+// Shippori Mincho só com o latim (scripts/subset-font.mjs): os títulos usam ela para as letras e
+// as fontes japonesas do sistema para kana/kanji. Pelo next/font/google vinham 244 fatias
+// japonesas e 64KB de @font-face no CSS que bloqueia a primeira pintura
+const display = localFont({
+  src: [
+    { path: '../fonts/shippori-mincho-600.woff2', weight: '600', style: 'normal' },
+    { path: '../fonts/shippori-mincho-800.woff2', weight: '800', style: 'normal' },
+  ],
+  display: 'swap',
+  variable: '--font-display',
+  fallback: ['Hiragino Mincho ProN', 'Yu Mincho', 'serif'],
 });
 
 const DESCRIPTION =

@@ -31,6 +31,7 @@ const page = await browser.newPage(mobile
   : { viewport: { width: 1440, height: 900 } });
 const cdp = await page.context().newCDPSession(page);
 await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 150, downloadThroughput: 1.6e6 / 8, uploadThroughput: 750e3 / 8 });
 await cdp.send('Profiler.enable');
 await cdp.send('Profiler.setSamplingInterval', { interval: 200 });
 if (scrolling) {
@@ -101,7 +102,7 @@ if (process.argv.includes('--tasks')) {
     const { callFrame: c } = byId.get(id);
     const busy = c.functionName !== '(idle)';
     if (busy) {
-      if (!cur || ts - cur.end > 5000) { cur = { start: ts, end: ts, items: new Map() }; windows.push(cur); }
+      if (!cur || ts - cur.end > 3000) { cur = { start: ts, end: ts, items: new Map() }; windows.push(cur); }
       cur.end = ts;
       const o = original(c.url, c.lineNumber, c.columnNumber);
       // Sobe a pilha até um frame do projeto (src/) para saber quem disparou

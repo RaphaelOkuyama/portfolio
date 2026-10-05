@@ -91,7 +91,12 @@ test('clicar num painel faz ele virar o topo do projeto', async ({ page }) => {
 test('o link "Ver todos os projetos" leva para a lista', async ({ page }) => {
   await openHome(page);
   await scrollProjects(page, 1);
-  await page.getByRole('link', { name: 'Ver todos os projetos' }).click();
+  // Pelo teclado: o clique fazia o Playwright rolar o link para a vista, o rolo fixado andava junto
+  // e o clique caía ao lado (falhava ao acaso com a suíte em paralelo). O foco leva o painel até a
+  // tela (revealPanel) e o Enter abre o link, como para quem navega pelo teclado
+  const all = page.getByRole('link', { name: 'Ver todos os projetos' });
+  await all.focus();
+  await page.keyboard.press('Enter');
   await expect(page).toHaveURL(/\/projects$/);
 });
 

@@ -9,7 +9,8 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "perf": "node scripts/perf.mjs",
-    "perf:mobile": "node scripts/perf.mjs --mobile"
+    "perf:mobile": "node scripts/perf.mjs --mobile",
+    "font": "node scripts/subset-font.mjs"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

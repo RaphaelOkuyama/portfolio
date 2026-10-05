@@ -21,12 +21,14 @@ const STONE_SHAPES = [
 const STONE_TILT = [-3, 2, -1.5, 2.5, -2, 1];
 const pad = (n) => String(n).padStart(2, '0');
 
-function ToolRow({ name }) {
+// `withIcon` falso: só a caixa do ícone (painel ainda fechado). Os logos dos 6 painéis somavam
+// ~65KB de SVG no HTML da home, para 1 painel visível por vez
+function ToolRow({ name, withIcon }) {
   const Icon = TOOL_ICONS[toolKey(name)];
   return (
     <li className="zen-tool">
       <span className="zen-tool-icon" aria-hidden="true">
-        {Icon ? <Icon /> : <span className="zen-tool-initial">{name[0]}</span>}
+        {!withIcon ? null : Icon ? <Icon /> : <span className="zen-tool-initial">{name[0]}</span>}
       </span>
       <span className="zen-tool-name">{name}</span>
     </li>
@@ -36,6 +38,9 @@ function ToolRow({ name }) {
 // 技 Stack: cada pedra do jardim zen é uma área; escolher uma abre as ferramentas
 export default function ZenStack({ techData, icons }) {
   const [active, setActive] = useState(0);
+  // Painéis já abertos ao menos uma vez: só eles levam os logos
+  const [opened, setOpened] = useState(() => new Set([0]));
+  if (!opened.has(active)) setOpened(new Set(opened).add(active));
   const rootRef = useRef(null);
   const baseId = useId();
   const categories = techData.categories;
@@ -151,7 +156,7 @@ export default function ZenStack({ techData, icons }) {
               <span className="zen-panel-rule" aria-hidden="true" />
               <ul className="zen-tools">
                 {cat.items.map((item) => (
-                  <ToolRow key={item} name={item} />
+                  <ToolRow key={item} name={item} withIcon={opened.has(i)} />
                 ))}
               </ul>
             </div>
