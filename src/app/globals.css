@@ -3885,3 +3885,5 @@ html:not(:lang(en)) [data-lang="en"] { display: none !important; }
   display: block;
   will-change: transform;
 }
+/* Elementos que o domínio vai reconstruir: escondidos até o caco deles encaixar */
+.dx-hidden { opacity: 0 !important; }

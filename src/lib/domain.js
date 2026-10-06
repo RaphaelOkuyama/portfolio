@@ -46,6 +46,23 @@ function clipCloser(poly, a, b) {
   return out;
 }
 
+// Células de Voronoi dos pontos `sites` dentro da tela: cada célula é a região mais perto do seu
+// ponto. Devolve [{ poly, center, site, index }] (células degeneradas ficam de fora)
+export function voronoiCells(sites, w, h) {
+  const rect = [[0, 0], [w, 0], [w, h], [0, h]];
+  return sites.map((s, index) => {
+    let poly = rect;
+    for (const o of sites) {
+      if (o === s || poly.length < 3) continue;
+      if (o[0] === s[0] && o[1] === s[1]) continue;
+      poly = clipCloser(poly, s, o);
+    }
+    if (poly.length < 3) return null;
+    const center = poly.reduce((m, p) => [m[0] + p[0] / poly.length, m[1] + p[1] / poly.length], [0, 0]);
+    return { poly, center, site: s, index };
+  }).filter(Boolean);
+}
+
 // Cacos irregulares (células de Voronoi): pequenos perto do impacto, grandes longe dele, como vidro
 // de verdade. Cada caco: { poly, center, dist } com dist = distância do impacto (0..1 da diagonal)
 export function voronoiShards(cx, cy, w, h, count = 38, rand = Math.random) {
@@ -55,15 +72,54 @@ export function voronoiShards(cx, cy, w, h, count = 38, rand = Math.random) {
     const r = diag * 0.75 * (0.03 + 0.97 * ((i + rand()) / count) ** 1.7);
     return [cx + Math.cos(a) * r, cy + Math.sin(a) * r];
   });
-  const rect = [[0, 0], [w, 0], [w, h], [0, h]];
-  return sites.map((s) => {
-    let poly = rect;
-    for (const o of sites) {
-      if (o === s || poly.length < 3) continue;
-      poly = clipCloser(poly, s, o);
+  return voronoiCells(sites, w, h).map((c) => ({ ...c, dist: Math.hypot(c.center[0] - cx, c.center[1] - cy) / diag }));
+}
+
+// Retângulo (DOMRect-like) como polígono, no sentido horário a partir do canto de cima à esquerda
+export const rectPoly = ({ x, y, width, height }) => [[x, y], [x + width, y], [x + width, y + height], [x, y + height]];
+
+// Reamostra um polígono fechado em `n` pontos igualmente espaçados no contorno, começando pelo
+// vértice mais em cima à esquerda (assim dois polígonos reamostrados se correspondem ponto a ponto
+// e dá para transformar um no outro sem torcer)
+export function resample(poly, n) {
+  let start = 0;
+  poly.forEach((p, i) => {
+    if (p[0] + p[1] < poly[start][0] + poly[start][1]) start = i;
+  });
+  const pts = [...poly.slice(start), ...poly.slice(0, start)];
+  // Mesmo sentido para todos (horário na tela, com y para baixo: área positiva)
+  const area = pts.reduce((s, p, i) => {
+    const q = pts[(i + 1) % pts.length];
+    return s + p[0] * q[1] - q[0] * p[1];
+  }, 0);
+  if (area < 0) pts.splice(1, pts.length - 1, ...pts.slice(1).reverse());
+  const seg = pts.map((p, i) => {
+    const q = pts[(i + 1) % pts.length];
+    return Math.hypot(q[0] - p[0], q[1] - p[1]);
+  });
+  const total = seg.reduce((s, l) => s + l, 0) || 1;
+  const out = [];
+  let i = 0;
+  let acc = 0;
+  for (let k = 0; k < n; k += 1) {
+    const target = (k / n) * total;
+    while (i < seg.length - 1 && acc + seg[i] < target) {
+      acc += seg[i];
+      i += 1;
     }
-    if (poly.length < 3) return null;
-    const center = poly.reduce((m, p) => [m[0] + p[0] / poly.length, m[1] + p[1] / poly.length], [0, 0]);
-    return { poly, center, dist: Math.hypot(center[0] - cx, center[1] - cy) / diag };
-  }).filter(Boolean);
+    const t = seg[i] ? (target - acc) / seg[i] : 0;
+    const p = pts[i];
+    const q = pts[(i + 1) % pts.length];
+    out.push([p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]);
+  }
+  return out;
+}
+
+// Elementos da página que o domínio reconstrói: folhas visíveis (títulos, textos, botões, imagens,
+// cartões) dentro da tela, sem os que contêm outro escolhido. items: [{ el, rect }] (rect = getBoundingClientRect)
+export function pickTargets(items, w, h, max = 36) {
+  const visible = items.filter(({ rect: r }) => r.width * r.height > 900 && r.width < w * 0.95
+    && r.bottom > 0 && r.right > 0 && r.top < h && r.left < w);
+  const leaves = visible.filter((a) => !visible.some((b) => b !== a && a.el?.contains?.(b.el)));
+  return leaves.sort((a, b) => b.rect.width * b.rect.height - a.rect.width * a.rect.height).slice(0, max);
 }

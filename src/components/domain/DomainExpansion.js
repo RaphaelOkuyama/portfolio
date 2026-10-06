@@ -3,51 +3,67 @@ import { useEffect, useRef } from 'react';
 import { gsap } from '../../lib/gsap';
 import { resumeData } from '../../data/resume';
 import { journeyStore } from '../../store/journey';
-import { DOMAIN, domainWords, voronoiShards } from '../../lib/domain';
+import { DOMAIN, pickTargets, rectPoly, resample, voronoiCells } from '../../lib/domain';
 import { createVoid } from './voidShader';
+import { buildSprites } from './sprites';
 
 // 領域展開 · 無量空処: o Vazio Infinito (carregado só quando alguém abre; ver EasterEggs).
 //  1. 領域展開 cai sobre a página escurecida, ideograma por ideograma
 //  2. o vazio abre num círculo a partir do gatilho, com um clarão; o orbe negro cresce no centro
-//  3. o túnel de estrelas acelera e as ferramentas e números do portfólio voam na direção de quem
-//     olha (a "informação infinita"), com o nome do domínio e um contador que não para de subir
-//  4. saída (tempo, Esc ou clique): o quadro congela, racha em cacos de Voronoi que acendem nas
-//     bordas, giram e caem revelando a página
+//  3. peças do próprio portfólio (tiras do Tanabata, cartões de projeto, números) saem do orbe e
+//     voam na direção de quem olha; o contador da informação não para de subir
+//  4. saturação: a informação acelera, o túnel dispara, a tela treme e estoura para o branco
+//  5. reconstrução: o branco racha e cada caco, que é a região de um elemento real da página, voa e
+//     se molda até a forma dele; ao encaixar, o elemento se materializa. O domínio se desfaz e
+//     reconstrói o portfólio
 // Enquanto o vazio cobre a tela, a cena 3D para de desenhar (journeyStore.covered)
 
-const NUMBERS = ['42+', '2.000+', '-70%', '-83%', '40+', '2FA', '24/7', '100%', '∞'];
+const METRICS = {
+  pt: [['42+', 'clínicas'], ['2.000+', 'laudos/mês'], ['-70%', 'tempo de contratos'], ['-83%', 'chamados'], ['40+', 'PDVs'], ['2FA', 'segurança']],
+  en: [['42+', 'clinics'], ['2,000+', 'reports/month'], ['-70%', 'contract time'], ['-83%', 'tickets'], ['40+', 'POS'], ['2FA', 'security']],
+};
+// O que pode ser reconstruído: folhas visíveis da página (o resto é filtrado em pickTargets)
+const TARGETS = 'header a, header button, main h1, main h2, main h3, main p, main a, main button, main img, main li, main figure';
+// Saturação: quanto dura antes da quebra (no fim natural e quando a pessoa sai antes)
+const SATURATE = { natural: 1.4, early: 0.6 };
+const POINTS = 28;
 const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
+const clamp01 = (v) => Math.min(1, Math.max(0, v));
 
 export default function DomainExpansion({ origin, onDone }) {
   const rootRef = useRef(null);
   const glRef = useRef(null);
-  const wordsRef = useRef(null);
+  const itemsRef = useRef(null);
   const shardRef = useRef(null);
 
   useEffect(() => {
     const root = rootRef.current;
     const glCanvas = glRef.current;
-    const wordsCanvas = wordsRef.current;
+    const itemsCanvas = itemsRef.current;
     const shardCanvas = shardRef.current;
     const w = window.innerWidth;
     const h = window.innerHeight;
     const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const lang = document.documentElement.getAttribute('data-language') === 'en' ? 'en' : 'pt';
-    const words = domainWords(resumeData[lang].techSection.categories, NUMBERS);
-    const sans = getComputedStyle(document.body).fontFamily;
+    const fonts = {
+      sans: getComputedStyle(document.body).fontFamily,
+      serif: getComputedStyle(document.querySelector('h1, h2') ?? document.body).fontFamily,
+      jp: getComputedStyle(document.querySelector('.font-jp') ?? document.body).fontFamily,
+    };
+    const sprites = buildSprites(resumeData[lang], METRICS[lang], fonts);
     const unit = Math.min(w, h);
 
     // O shader roda numa resolução menor que a tela (é um vazio difuso: não precisa de nitidez)
     const glScale = Math.min(1, 1.15 / dpr) * dpr;
     glCanvas.width = Math.round(w * glScale);
     glCanvas.height = Math.round(h * glScale);
-    for (const c of [wordsCanvas, shardCanvas]) {
+    for (const c of [itemsCanvas, shardCanvas]) {
       c.width = Math.round(w * dpr);
       c.height = Math.round(h * dpr);
     }
-    const wctx = wordsCanvas.getContext('2d');
-    wctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const ictx = itemsCanvas.getContext('2d');
+    ictx.setTransform(dpr, 0, 0, dpr, 0, 0);
     const sctx = shardCanvas.getContext('2d');
     sctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     const voidGl = createVoid(glCanvas);
@@ -68,68 +84,208 @@ export default function DomainExpansion({ origin, onDone }) {
       .fromTo(q('.dx-line'), { scaleX: 0 }, { scaleX: 1, duration: 0.9, ease: 'expo.inOut' }, DOMAIN.close + 0.7)
       .fromTo(q('.dx-label'), { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.7, stagger: 0.08, ease: 'power3.out' }, DOMAIN.close + 0.85);
     const counter = root.querySelector('.dx-count');
+    const layers = [glCanvas, itemsCanvas];
 
-    // Palavras voando: profundidade z (0 longe .. 1 passando), ângulo e distância do centro
+    // Peças voando: nascem dentro do orbe (z = 0, perto do centro) e só aparecem ao passar da borda
+    // dele; com a perspectiva crescem e passam pela câmera
     const flying = [];
     let spawnAcc = 0;
-    let wordIndex = 0;
+    let spriteIndex = 0;
     const project = (a, d, z) => {
       const persp = 1 / Math.max(0.05, 1 - z);
       const r = d * unit * 0.11 * persp;
       return [w / 2 + Math.cos(a) * r, h / 2 + Math.sin(a) * r, persp];
     };
-    const drawWords = (dt, active) => {
-      wctx.clearRect(0, 0, w, h);
+    const drawItems = (dt, active, sat, orbR) => {
+      ictx.clearRect(0, 0, w, h);
       if (active && !reduced) {
-        spawnAcc += dt * 16;
+        spawnAcc += dt * (9 + 48 * sat);
         while (spawnAcc > 1) {
           spawnAcc -= 1;
-          const text = words[wordIndex % words.length];
-          flying.push({ text, a: Math.random() * Math.PI * 2, d: 0.9 + Math.random() * 1.6, z: 0, mono: /[0-9%∞+]/.test(text), hue: Math.random() });
-          wordIndex += 1 + Math.floor(Math.random() * 4);
+          flying.push({
+            s: sprites[spriteIndex % sprites.length],
+            a: Math.random() * Math.PI * 2,
+            d: 0.35 + Math.random() * 1.1,
+            z: 0,
+            rot: (Math.random() - 0.5) * 0.5,
+            spin: (Math.random() - 0.5) * 2.4,
+            flip: Math.random() * Math.PI * 2,
+          });
+          spriteIndex += 1;
         }
       }
-      wctx.globalCompositeOperation = 'lighter';
-      wctx.textAlign = 'center';
-      wctx.textBaseline = 'middle';
       for (let i = flying.length - 1; i >= 0; i -= 1) {
         const f = flying[i];
-        f.z += dt * 0.24;
-        if (f.z > 0.96) { flying.splice(i, 1); continue; }
+        f.z += dt * (0.2 + 0.4 * sat);
+        if (f.z > 0.95) { flying.splice(i, 1); continue; }
         const [x, y, p] = project(f.a, f.d, f.z);
-        const alpha = Math.min(1, f.z * 5) * (1 - Math.max(0, (f.z - 0.7) / 0.26));
-        const size = Math.min(140, 7 + p * 6.5);
-        const color = f.hue < 0.6 ? '225, 238, 255' : f.hue < 0.85 ? '150, 220, 255' : '215, 175, 255';
-        wctx.font = `${f.mono ? 500 : 600} ${size}px ${f.mono ? 'ui-monospace, SFMono-Regular, Menlo, monospace' : sans}`;
-        // Brilho: as palavras de perto ganham halo; as de longe ficam pequenas e nítidas
-        wctx.shadowColor = `rgba(${color}, ${alpha * 0.7})`;
-        wctx.shadowBlur = Math.min(18, p * 2.5);
-        wctx.fillStyle = `rgba(${color}, ${alpha * 0.9})`;
-        wctx.fillText(f.text, x, y);
+        const dist = Math.hypot(x - w / 2, y - h / 2);
+        // Saindo do orbe: invisível dentro dele, aparece ao cruzar a borda
+        const emerge = clamp01((dist - orbR * 0.92) / (orbR * 0.3));
+        const alpha = emerge * (1 - clamp01((f.z - 0.72) / 0.23));
+        if (alpha <= 0.01) continue;
+        const scale = p * 0.34;
+        // Giro 3D falso: a peça vira em torno do próprio eixo (encolhe na largura)
+        const flipX = 0.35 + 0.65 * Math.abs(Math.cos(f.flip + f.z * f.spin * 3));
+        ictx.save();
+        ictx.globalAlpha = alpha;
+        ictx.translate(x, y);
+        ictx.rotate(f.rot + f.spin * f.z * 0.6);
+        ictx.scale(scale * flipX, scale);
+        ictx.shadowColor = 'rgba(120, 180, 255, 0.55)';
+        ictx.shadowBlur = 18;
+        ictx.drawImage(f.s.c, -f.s.w / 2, -f.s.h / 2, f.s.w, f.s.h);
+        ictx.restore();
       }
-      wctx.globalCompositeOperation = 'source-over';
-      wctx.shadowBlur = 0;
     };
 
     // Estado da animação
     const start = performance.now() / 1000;
     let exitAt = start + DOMAIN.close + DOMAIN.void;
-    let frozen = null;
-    let shards = null;
+    let satStart = exitAt - SATURATE.natural;
     let raf = 0;
     let last = start;
     let covered = false;
     let count = 0;
-    // Percurso do túnel: acumulado quadro a quadro (velocidade × tempo daria saltos)
     let travel = 0;
+    let rebuild = null;
+    let targets = null;
+
+    // Elementos que vão ser reconstruídos: escolhidos no começo da saturação e escondidos (o vazio
+    // ainda cobre tudo, ninguém vê); cada um reaparece quando o caco dele encaixa
+    const collectTargets = () => {
+      if (targets) return;
+      const items = [...document.querySelectorAll(TARGETS)]
+        .filter((el) => !el.closest('.dx'))
+        .map((el) => ({ el, rect: el.getBoundingClientRect() }));
+      targets = pickTargets(items, w, h);
+      targets.forEach((t) => t.el.classList.add('dx-hidden'));
+    };
+    const reveal = (el) => {
+      el.classList.remove('dx-hidden');
+      el.animate?.([
+        { opacity: 0, filter: 'blur(10px) brightness(2.2)' },
+        { opacity: 1, filter: 'blur(0px) brightness(1)' },
+      ], { duration: 520, easing: 'cubic-bezier(0.2, 0.7, 0.2, 1)' });
+    };
 
     const leave = () => {
       const now = performance.now() / 1000;
-      if (now > start + DOMAIN.close && !frozen) exitAt = Math.min(exitAt, now);
+      if (now < start + DOMAIN.close || rebuild || now >= satStart) return;
+      satStart = now;
+      exitAt = now + SATURATE.early;
     };
     const onKey = (e) => { if (e.key === 'Escape') leave(); };
     window.addEventListener('keydown', onKey);
     root.addEventListener('pointerdown', leave);
+
+    // Saída: congela o branco, monta os cacos a partir dos elementos e começa a reconstrução
+    const startRebuild = () => {
+      const frozen = document.createElement('canvas');
+      frozen.width = itemsCanvas.width;
+      frozen.height = itemsCanvas.height;
+      const fctx = frozen.getContext('2d');
+      fctx.drawImage(glCanvas, 0, 0, frozen.width, frozen.height);
+      fctx.drawImage(itemsCanvas, 0, 0);
+      layers.forEach((c) => { c.style.visibility = 'hidden'; });
+      gsap.to(q('.dx-type, .dx-dim'), { opacity: 0, duration: 0.15 });
+      journeyStore.getState().setCovered(false);
+      collectTargets();
+      const diag = Math.hypot(w, h);
+      // Um ponto por elemento (no centro dele) e alguns de enchimento para cobrir o resto da tela
+      const sites = targets.map((t) => [
+        Math.min(w - 1, Math.max(1, t.rect.left + t.rect.width / 2)),
+        Math.min(h - 1, Math.max(1, t.rect.top + t.rect.height / 2)),
+      ]);
+      const fillers = Array.from({ length: 14 }, () => [Math.random() * w, Math.random() * h]);
+      const cells = voronoiCells([...sites, ...fillers], w, h).map((c) => {
+        const target = c.index < targets.length ? targets[c.index] : null;
+        const dist = Math.hypot(c.center[0] - origin.x, c.center[1] - origin.y) / diag;
+        return {
+          ...c,
+          target,
+          from: resample(c.poly, POINTS),
+          to: target ? resample(rectPoly(target.rect), POINTS) : null,
+          delay: dist * 0.45 + Math.random() * 0.06,
+          dur: 0.62 + Math.random() * 0.2,
+          vx: (c.center[0] - origin.x) * (0.4 + Math.random() * 0.4),
+          vy: (c.center[1] - origin.y) * (0.4 + Math.random() * 0.4),
+          landed: 0,
+        };
+      });
+      rebuild = { frozen, cells, at: performance.now() / 1000 };
+    };
+
+    const drawRebuild = (now) => {
+      const s = now - rebuild.at;
+      sctx.clearRect(0, 0, w, h);
+      let busy = false;
+      // Rachaduras acesas sobre o branco nos primeiros instantes
+      const crack = clamp01(s / 0.1) * (1 - clamp01((s - 0.12) / 0.2));
+      rebuild.cells.forEach((c) => {
+        const k = ease(clamp01((s - 0.14 - c.delay) / c.dur));
+        let pts;
+        let alpha;
+        if (c.to) {
+          pts = c.from.map((p, i) => [p[0] + (c.to[i][0] - p[0]) * k, p[1] + (c.to[i][1] - p[1]) * k]);
+          // No meio do voo o caco cresce um pouco (vem na direção da câmera) e volta ao tamanho
+          const bulge = 1 + 0.14 * Math.sin(Math.PI * k);
+          const cx = pts.reduce((m, p) => m + p[0], 0) / pts.length;
+          const cy = pts.reduce((m, p) => m + p[1], 0) / pts.length;
+          pts = pts.map(([x, y]) => [cx + (x - cx) * bulge, cy + (y - cy) * bulge]);
+          alpha = 1 - k * 0.85;
+          if (k >= 1 && !c.landed) {
+            c.landed = now;
+            reveal(c.target.el);
+          }
+          if (!c.landed || now - c.landed < 0.4) busy = true;
+        } else {
+          // Enchimento: se desfaz em pó, afastando-se do impacto
+          const ft = Math.max(0, s - 0.14 - c.delay);
+          pts = c.from.map(([x, y]) => [x + c.vx * ft * 0.5, y + c.vy * ft * 0.5 + 300 * ft * ft]);
+          alpha = 1 - clamp01(ft / 0.55);
+          if (alpha > 0) busy = true;
+        }
+        if (alpha > 0.01 && !(c.landed && now - c.landed > 0.4)) {
+          sctx.save();
+          sctx.beginPath();
+          pts.forEach(([x, y], i) => (i ? sctx.lineTo(x, y) : sctx.moveTo(x, y)));
+          sctx.closePath();
+          sctx.save();
+          sctx.clip();
+          sctx.globalAlpha = Math.max(0, alpha);
+          sctx.drawImage(rebuild.frozen, 0, 0, w, h);
+          // Luz no caco enquanto voa
+          sctx.fillStyle = `rgba(215, 235, 255, ${0.3 * alpha})`;
+          sctx.fillRect(0, 0, w, h);
+          sctx.restore();
+          sctx.strokeStyle = `rgba(240, 248, 255, ${Math.max(crack, 0.75 * alpha)})`;
+          sctx.lineWidth = 1.2;
+          sctx.shadowColor = 'rgba(150, 205, 255, 0.9)';
+          sctx.shadowBlur = 8;
+          sctx.stroke();
+          sctx.restore();
+        }
+        // Encaixou: o contorno do elemento acende e apaga
+        if (c.landed && now - c.landed < 0.4) {
+          const r = c.target.rect;
+          const glow = 1 - (now - c.landed) / 0.4;
+          sctx.save();
+          sctx.strokeStyle = `rgba(200, 230, 255, ${0.8 * glow})`;
+          sctx.lineWidth = 1.5;
+          sctx.shadowColor = 'rgba(140, 200, 255, 0.9)';
+          sctx.shadowBlur = 14;
+          sctx.strokeRect(r.left, r.top, r.width, r.height);
+          sctx.restore();
+        }
+      });
+      // O branco da saturação ainda some por cima no começo
+      if (s < 0.35) {
+        sctx.fillStyle = `rgba(240, 246, 255, ${0.85 * (1 - s / 0.35)})`;
+        sctx.fillRect(0, 0, w, h);
+      }
+      return busy || s < 0.5;
+    };
 
     const tick = () => {
       const t = performance.now() / 1000;
@@ -137,106 +293,46 @@ export default function DomainExpansion({ origin, onDone }) {
       last = t;
       const age = t - start;
 
-      if (t < exitAt) {
+      if (!rebuild && t < exitAt) {
+        const sat = reduced ? 0 : clamp01((t - satStart) / (exitAt - satStart));
+        if (sat > 0) collectTargets();
         // Abertura (0.35 s depois do 領域展開), clarão no fim dela e o orbe crescendo
-        const rk = reduced ? 1 : Math.min(1, Math.max(0, (age - 0.35) / (DOMAIN.close - 0.35)));
-        const reveal = ease(rk);
-        const flash = Math.max(0, 1 - Math.abs(age - DOMAIN.close) / 0.25) * 0.35;
-        const ok = Math.min(1, Math.max(0, (age - DOMAIN.close + 0.2) / 0.9));
-        const orb = reduced ? 1 : 1 - (1 - ok) ** 3 * Math.cos(ok * 4);
-        const warp = reduced ? 0 : 0.4 + 2.6 * Math.exp(-((age - DOMAIN.close - 0.9) ** 2) / 0.6);
+        const rk = reduced ? 1 : clamp01((age - 0.35) / (DOMAIN.close - 0.35));
+        const opening = ease(rk);
+        const flash = Math.max(0, 1 - Math.abs(age - DOMAIN.close) / 0.25) * 0.35 + sat ** 2.2 * 1.4;
+        const ok = clamp01((age - DOMAIN.close + 0.2) / 0.9);
+        const orb = reduced ? 1 : Math.max(0, 1 - (1 - ok) ** 3 * Math.cos(ok * 4));
+        const warp = reduced ? 0 : 0.4 + 2.6 * Math.exp(-((age - DOMAIN.close - 0.9) ** 2) / 0.6) + sat * 5;
         travel += dt * (0.15 + warp * 0.45);
-        voidGl?.draw({ time: age, reveal, origin: glOrigin, orb: Math.max(0, orb), warp, flash, travel });
-        if (!covered && reveal >= 1) {
+        voidGl?.draw({ time: age, reveal: opening, origin: glOrigin, orb, warp, flash, travel });
+        if (!covered && opening >= 1) {
           covered = true;
           journeyStore.getState().setCovered(true);
         }
-        drawWords(dt, age > DOMAIN.close + 0.4);
-        // Contador da informação infinita: cresce cada vez mais rápido
+        drawItems(dt, age > DOMAIN.close + 0.3, sat, 0.165 * orb * h);
+        // Tremor da saturação: a tela inteira não aguenta tanta informação
+        const shake = sat * sat * 7;
+        const tx = (Math.random() - 0.5) * shake;
+        const ty = (Math.random() - 0.5) * shake;
+        layers.forEach((c) => { c.style.transform = shake ? `translate(${tx}px, ${ty}px)` : ''; });
+        // Contador da informação infinita: cresce cada vez mais rápido (e dispara na saturação)
         if (age > DOMAIN.close + 0.85) {
-          count += dt * (2000 + count * 2.2);
+          count += dt * (2000 + count * (2.2 + sat * 9));
           counter.textContent = Math.floor(count).toLocaleString(lang === 'en' ? 'en-US' : 'pt-BR');
         }
         raf = requestAnimationFrame(tick);
         return;
       }
 
-      // Saída: congela o vazio + palavras e quebra em cacos
-      if (!frozen) {
-        frozen = document.createElement('canvas');
-        frozen.width = wordsCanvas.width;
-        frozen.height = wordsCanvas.height;
-        const fctx = frozen.getContext('2d');
-        fctx.drawImage(glCanvas, 0, 0, frozen.width, frozen.height);
-        fctx.drawImage(wordsCanvas, 0, 0);
-        glCanvas.style.visibility = 'hidden';
-        wordsCanvas.style.visibility = 'hidden';
-        gsap.to(q('.dx-type, .dx-dim'), { opacity: 0, duration: 0.18 });
-        journeyStore.getState().setCovered(false);
-        shards = voronoiShards(origin.x, origin.y, w, h).map((s) => {
-          const dx = s.center[0] - origin.x;
-          const dy = s.center[1] - origin.y;
-          const len = Math.hypot(dx, dy) || 1;
-          return {
-            ...s,
-            vx: (dx / len) * (80 + Math.random() * 220),
-            vy: (dy / len) * (60 + Math.random() * 160) - 120 * Math.random(),
-            spin: (Math.random() - 0.5) * 3,
-            tilt: Math.random() * Math.PI * 2,
-            delay: s.dist * 0.35 + Math.random() * 0.06,
-          };
-        });
-      }
-      const s = t - exitAt;
-      sctx.clearRect(0, 0, w, h);
-      if (reduced) {
-        sctx.globalAlpha = Math.max(0, 1 - s / 0.5);
-        sctx.drawImage(frozen, 0, 0, w, h);
-        sctx.globalAlpha = 1;
-      } else {
-        const crack = Math.min(1, s / 0.12);
-        shards.forEach((p) => {
-          const ft = Math.max(0, s - 0.22 - p.delay);
-          const ox = p.vx * ft;
-          const oy = p.vy * ft + 1100 * ft * ft;
-          const rot = p.spin * ft;
-          // Inclinação 3D falsa: o caco encolhe num eixo enquanto gira e escurece/clareia
-          const tilt = Math.cos(p.tilt + ft * 5);
-          const sx = 1 + ft * 0.25;
-          const sy = (1 + ft * 0.25) * (0.75 + 0.25 * tilt);
-          const alpha = Math.max(0, 1 - ft / 1.1);
-          if (alpha <= 0) return;
-          sctx.save();
-          sctx.globalAlpha = alpha;
-          sctx.translate(p.center[0] + ox, p.center[1] + oy);
-          sctx.rotate(rot);
-          sctx.scale(sx, sy);
-          sctx.translate(-p.center[0], -p.center[1]);
-          sctx.beginPath();
-          p.poly.forEach(([x, y], i) => (i ? sctx.lineTo(x, y) : sctx.moveTo(x, y)));
-          sctx.closePath();
-          sctx.save();
-          sctx.clip();
-          sctx.drawImage(frozen, 0, 0, w, h);
-          // Luz no vidro: um véu claro ou escuro conforme a inclinação
-          sctx.fillStyle = tilt > 0 ? `rgba(220, 235, 255, ${0.12 * tilt * Math.min(1, ft * 4)})` : `rgba(0, 0, 10, ${-0.3 * tilt * Math.min(1, ft * 4)})`;
-          sctx.fillRect(p.center[0] - w, p.center[1] - h, w * 2, h * 2);
-          sctx.restore();
-          // Rachaduras acesas, depois a quina do vidro brilhando
-          sctx.lineWidth = ft > 0 ? 1.2 : 1.6;
-          sctx.strokeStyle = `rgba(235, 245, 255, ${ft > 0 ? 0.55 * alpha : 0.9 * crack})`;
-          sctx.shadowColor = 'rgba(160, 210, 255, 0.9)';
-          sctx.shadowBlur = ft > 0 ? 0 : 10;
-          sctx.stroke();
-          sctx.restore();
-        });
-        // Clarão no instante da quebra
-        if (s < 0.3) {
-          sctx.fillStyle = `rgba(230, 240, 255, ${0.35 * (1 - s / 0.3) * crack})`;
-          sctx.fillRect(0, 0, w, h);
+      if (!rebuild) {
+        if (reduced) {
+          targets?.forEach((x) => x.el.classList.remove('dx-hidden'));
+          onDone();
+          return;
         }
+        startRebuild();
       }
-      if (s < DOMAIN.shatter + 0.4) raf = requestAnimationFrame(tick);
+      if (drawRebuild(t)) raf = requestAnimationFrame(tick);
       else onDone();
     };
     raf = requestAnimationFrame(tick);
@@ -247,6 +343,8 @@ export default function DomainExpansion({ origin, onDone }) {
       window.removeEventListener('keydown', onKey);
       root.removeEventListener('pointerdown', leave);
       journeyStore.getState().setCovered(false);
+      // Nada fica escondido se o domínio sair no meio
+      targets?.forEach((x) => x.el.classList.remove('dx-hidden'));
       voidGl?.dispose();
     };
   }, [origin, onDone]);
@@ -256,7 +354,7 @@ export default function DomainExpansion({ origin, onDone }) {
     <div ref={rootRef} className="dx" data-domain="" aria-hidden="true">
       <div className="dx-dim" />
       <canvas ref={glRef} className="dx-layer" />
-      <canvas ref={wordsRef} className="dx-layer" />
+      <canvas ref={itemsRef} className="dx-layer" />
       <canvas ref={shardRef} className="dx-layer" />
       <div className="dx-type">
         <div className="dx-intro">

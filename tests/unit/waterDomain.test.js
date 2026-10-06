@@ -109,3 +109,42 @@ describe('水玉 3D: forma no shader', async () => {
     expect(prod[1][0]).toBeCloseTo(0);
   });
 });
+
+describe('無量空処: reconstrução do portfólio', async () => {
+  const { pickTargets, rectPoly, resample, voronoiCells } = await import('../../src/lib/domain');
+  const rect = (x, y, width, height) => ({ x, y, left: x, top: y, width, height, right: x + width, bottom: y + height });
+
+  it('reamostra qualquer polígono no mesmo número de pontos, começando no canto de cima à esquerda', () => {
+    const tri = resample([[50, 0], [100, 100], [0, 100]], 12);
+    const box = resample(rectPoly(rect(10, 20, 80, 40)), 12);
+    expect(tri).toHaveLength(12);
+    expect(box).toHaveLength(12);
+    expect(box[0]).toEqual([10, 20]);
+    // Mesmo sentido (horário): o segundo ponto do retângulo anda para a direita
+    expect(box[1][0]).toBeGreaterThan(box[0][0]);
+  });
+
+  it('cada elemento escolhido ganha a própria célula, e as células cobrem a tela', () => {
+    const sites = [[100, 100], [700, 120], [400, 500]];
+    const cells = voronoiCells(sites, 800, 600);
+    expect(cells).toHaveLength(3);
+    const area = (poly) => Math.abs(poly.reduce((s, p, i) => {
+      const q = poly[(i + 1) % poly.length];
+      return s + p[0] * q[1] - q[0] * p[1];
+    }, 0)) / 2;
+    expect(cells.reduce((s, c) => s + area(c.poly), 0)).toBeCloseTo(800 * 600, -1);
+  });
+
+  it('escolhe só folhas visíveis dentro da tela', () => {
+    const parent = { contains: (o) => o === child.el, id: 'p' };
+    const child = { el: { contains: () => false, id: 'c' }, rect: rect(10, 10, 100, 40) };
+    const items = [
+      { el: parent, rect: rect(0, 0, 400, 300) },
+      child,
+      { el: { contains: () => false }, rect: rect(10, 900, 100, 40) }, // fora da tela
+      { el: { contains: () => false }, rect: rect(10, 10, 5, 5) }, // pequeno demais
+    ];
+    const picked = pickTargets(items, 800, 600);
+    expect(picked).toEqual([child]);
+  });
+});
