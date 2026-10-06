@@ -3619,3 +3619,45 @@ html:not(:lang(en)) [data-lang="en"] { display: none !important; }
 .quality.is-inline .quality-option { text-align: center; }
 .quality.is-inline .quality-option-hint { display: none; }
 .quality.is-inline .quality-title { text-align: center; }
+
+/* --- 無限月読 Tsukuyomi: easter egg da lua (ver lib/journey/tsukuyomi.js). A lua vira o olho, um
+   clarão vermelho sai dela e cobre a tela e, no auge, a página inteira fica vermelha. :root[...]
+   vence os dois temas (especificidade maior que [data-theme]) --- */
+:root[data-tsukuyomi] {
+  --bg-color: #170306;
+  --text-primary: #f3e3e1;
+  --text-secondary: #c9a3a3;
+  --accent: #e8333f;
+  --on-accent: #ffffff;
+  --border: #4a1219;
+  --card-bg: #22070b;
+  --ink: #f3e3e1;
+  --paper: #2a0a0f;
+  --hanko: #ff4d55;
+  --wood: #4a1a14;
+}
+
+@property --tsukuyomi-r {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+.tsukuyomi-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  background: radial-gradient(circle at var(--x) var(--y),
+    rgba(255, 244, 240, 0.95) 0,
+    rgba(255, 60, 60, 0.92) calc(var(--tsukuyomi-r) * 0.45),
+    rgba(150, 0, 12, 0.88) var(--tsukuyomi-r),
+    rgba(90, 0, 8, 0) calc(var(--tsukuyomi-r) * 1.35));
+  animation: tsukuyomi-flash 1.9s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+
+@keyframes tsukuyomi-flash {
+  0% { --tsukuyomi-r: 0px; opacity: 1; }
+  38% { --tsukuyomi-r: 180vmax; opacity: 1; }
+  100% { --tsukuyomi-r: 220vmax; opacity: 0; }
+}

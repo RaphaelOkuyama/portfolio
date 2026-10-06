@@ -34,6 +34,8 @@ export function createJourneyStore() {
     lanternNames: [],
     // Página 404 aberta: a cena fecha a névoa (迷子)
     lost: false,
+    // 無限月読: a lua clicada virou o olho e a página ficou vermelha (easter egg)
+    tsukuyomi: false,
 
     setProgress: (p) => {
       const progress = clamp01(p);
@@ -64,6 +66,7 @@ export function createJourneyStore() {
     releaseLantern: (name = '') =>
       set({ lanternReleases: get().lanternReleases + 1, lanternNames: [...get().lanternNames, lanternLabel(name)] }),
     setLost: (lost) => set({ lost }),
+    setTsukuyomi: (tsukuyomi) => set({ tsukuyomi }),
   }));
 }
 

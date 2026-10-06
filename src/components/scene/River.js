@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { Color, PlaneGeometry, ShaderMaterial, UniformsLib, UniformsUtils, Vector3 } from 'three';
+import { Color, PlaneGeometry, ShaderMaterial, UniformsLib, UniformsUtils, Vector3, Vector4 } from 'three';
 import { journeyStore, effectiveProgress, useJourney } from '../../store/journey';
 import { SCENE_ACCENTS } from '../../lib/palette';
 import { smoothstep } from '../../lib/journey/math';
@@ -9,6 +9,9 @@ import { getCameraCurve } from './useCameraMap';
 import { NOISE, noiseDefines } from './glsl';
 import Lanterns from './Lanterns';
 import Koi from './Koi';
+import { TSUKUYOMI, tsukuyomi } from '../../lib/journey/tsukuyomi';
+import { MAX_RIPPLES, RIPPLE, anyRipple, rippleAge, ripples } from '../../lib/journey/ripples';
+import RedThread from './RedThread';
 import { LANTERNS, RIVER } from './config';
 
 // Máximo de reflexos: lanternas fixas + soltas pelo formulário
@@ -39,6 +42,7 @@ const fragmentShader = /* glsl */ `
   uniform float uOpacity;
   uniform vec3 uLanterns[${MAX_REFLECTIONS}]; // x, y no plano, intensidade
   uniform int uCount;
+  uniform vec4 uRipples[${MAX_RIPPLES}]; // x, y no plano, idade (s), força (0 = vazio)
   varying vec2 vLocal;
   varying float vDepth;
   ${NOISE}
@@ -69,6 +73,19 @@ const fragmentShader = /* glsl */ `
       light += uGlow * l.z * (streak * (0.45 + 0.9 * fine) + pool * 0.35);
     }
     col += light * uReflection;
+
+    // 波紋: anéis abrindo onde as gotas caíram (um anel forte na frente e um fraco atrás)
+    float rings = 0.0;
+    for (int i = 0; i < ${MAX_RIPPLES}; i++) {
+      vec4 r = uRipples[i];
+      if (r.w <= 0.0) continue;
+      float d = length(vLocal - r.xy);
+      float front = r.z * ${RIPPLE.speed.toFixed(2)};
+      float fade = r.w * (1.0 - r.z / ${RIPPLE.life.toFixed(2)}) / (1.0 + front * 0.6);
+      float ring = exp(-pow(d - front, 2.0) / 0.03) + 0.5 * exp(-pow(d - front * 0.62, 2.0) / 0.02);
+      rings += ring * fade;
+    }
+    col = mix(col, mix(uSky, vec3(0.8, 0.9, 1.0), 0.45), clamp(rings, 0.0, 1.0) * 0.85);
 
     // Margens irregulares que se fundem com o chão
     float halfW = ${(RIVER.size[0] / 2).toFixed(1)};
@@ -125,6 +142,7 @@ export default function River() {
           // Compartilhados com as lanternas, que escrevem as posições a cada frame
           uLanterns: reflections.lanterns,
           uCount: reflections.count,
+          uRipples: { value: Array.from({ length: MAX_RIPPLES }, () => new Vector4()) },
         },
       }),
     [quality, reflections],
@@ -149,6 +167,7 @@ export default function River() {
   }, [start, withKoi]);
 
   const target = useMemo(() => new Color(), []);
+  const blood = useMemo(() => new Color(TSUKUYOMI.water), []);
   const init = useRef(false);
 
   useFrame((state, delta) => {
@@ -165,6 +184,7 @@ export default function River() {
     const k = init.current ? 1 - Math.exp(-delta * 4) : 1;
     init.current = true;
     target.set(SCENE_ACCENTS[theme].water);
+    if (tsukuyomi.mix > 0) target.lerp(blood, tsukuyomi.mix);
     u.uWater.value.lerp(target, k);
     if (scene.fog) u.uSky.value.copy(scene.fog.color);
     target.set(SCENE_ACCENTS[theme].lantern);
@@ -173,6 +193,13 @@ export default function River() {
     u.uReflection.value += (LANTERNS.reflection[theme] - u.uReflection.value) * k;
     u.uOpacity.value = opacity;
     if (!journey.reducedMotion) u.uTime.value += delta;
+    // Anéis: do mundo para o plano do rio (x lateral, y = -z do grupo)
+    const nowS = performance.now() / 1000;
+    ripples.items.forEach((r, i) => {
+      const age = rippleAge(r, nowS);
+      u.uRipples.value[i].set(r.x - center[0], -(r.z - center[2]), age ?? 0, age === null ? 0 : r.strength);
+    });
+    if (anyRipple(nowS)) state.invalidate();
   });
 
   return (
@@ -180,6 +207,7 @@ export default function River() {
       <mesh geometry={geometry} material={material} rotation={[-Math.PI / 2, 0, 0]} />
       <Lanterns reflections={reflections} released={released} />
       {withKoi ? <Koi river={material.uniforms} released={released} /> : null}
+      <RedThread released={released} />
     </group>
   );
 }

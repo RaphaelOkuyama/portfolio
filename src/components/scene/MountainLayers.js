@@ -7,6 +7,7 @@ import {
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { journeyStore, useJourney } from '../../store/journey';
 import { SEASONS, SCENE_ACCENTS } from '../../lib/palette';
+import { TSUKUYOMI, tsukuyomi } from '../../lib/journey/tsukuyomi';
 import { sampleSeason, clamp01 } from '../../lib/journey/season';
 import { ridgePoints } from '../../lib/journey/ridge';
 import { ridgeProfile, forestPlacements } from '../../lib/journey/landscape';
@@ -196,6 +197,10 @@ export default function MountainLayers() {
     tones.near.set(near);
     tones.mid.set(mid);
     tones.far.set(far);
+    // 無限月読: as cordilheiras ficam vermelho-sangue
+    if (tsukuyomi.mix > 0) {
+      ['near', 'mid', 'far'].forEach((key, i) => tones[key].lerp(tones.rim.set(TSUKUYOMI.mountains[i]), tsukuyomi.mix));
+    }
     // Primeiro frame aplica a cor direto (sem piscar branco); depois amortece
     const k = state.initialized ? 1 - Math.exp(-delta * 6) : 1;
     state.initialized = true;

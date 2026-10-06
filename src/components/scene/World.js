@@ -22,17 +22,19 @@ import Kasumi from './Kasumi';
 import Birds from './Birds';
 import Festival from './Festival';
 import Bonsai from './Bonsai';
+import Comet from './Comet';
+import KatanaSlash from './KatanaSlash';
 import ShaderWarmup from './ShaderWarmup';
 
 // Grupos montados em sequência (ordem: o que aparece primeiro no hero vem antes)
 const STAGES = [
-  [Atmosphere, JourneyCamera, Sky, Celestial, Birds],
+  [Atmosphere, JourneyCamera, Sky, Celestial, Comet, Birds],
   [MountainLayers],
   [Ground, Kasumi],
   [Torii, Iwakura, Komainu, Festival],
   [StonePaths, StoneLanterns],
   [BambooGrove, Kodama, ShishiOdoshi, Bonsai],
-  [Pagoda, Taikobashi, Katana],
+  [Pagoda, Taikobashi, Katana, KatanaSlash],
   [Tanabata, Momiji, Snow],
   [River, Petals],
 ];

@@ -6,6 +6,7 @@ import { journeyStore } from '../../store/journey';
 import { SEASONS } from '../../lib/palette';
 import { sampleSeason } from '../../lib/journey/season';
 import { SUNSET, startSkyTransition, sunsetGlow, transitionPhase } from '../../lib/journey/skyTransition';
+import { TSUKUYOMI, tsukuyomi } from '../../lib/journey/tsukuyomi';
 import { FOG_RANGE, LOST_FOG } from './config';
 
 const now = () => performance.now() / 1000;
@@ -20,6 +21,7 @@ export default function Atmosphere() {
   const fog = useMemo(() => new Fog('#000000', FOG_RANGE[0], FOG_RANGE[1]), []);
   const target = useMemo(() => ({ sky: new Color(), fog: new Color() }), []);
   const sunset = useMemo(() => ({ horizon: new Color(SUNSET.horizon), zenith: new Color(SUNSET.zenith) }), []);
+  const blood = useMemo(() => ({ sky: new Color(TSUKUYOMI.sky), fog: new Color(TSUKUYOMI.fog) }), []);
 
   useEffect(() => {
     const { theme, seasonMix } = journeyStore.getState();
@@ -42,10 +44,19 @@ export default function Atmosphere() {
   }), []);
 
   useFrame((state, delta) => {
-    const { theme, seasonMix, lost } = journeyStore.getState();
+    const { theme, seasonMix, lost, tsukuyomi: red, reducedMotion } = journeyStore.getState();
     const season = sampleSeason(SEASONS[theme], seasonMix);
     target.sky.set(season.sky);
     target.fog.set(season.fog);
+    // 無限月読: o mundo fica vermelho quando o clarão da lua cobre a tela (as outras peças da
+    // cena leem tsukuyomi.mix). Sobe junto com o clarão, desce rápido ao desligar
+    const waiting = red && !reducedMotion && now() - tsukuyomi.start < TSUKUYOMI.flashAt;
+    const goal = red && !waiting ? 1 : 0;
+    const before = tsukuyomi.mix;
+    tsukuyomi.mix += (goal - tsukuyomi.mix) * (reducedMotion ? 1 : 1 - Math.exp(-delta * (goal ? 3 : 4)));
+    if (Math.abs(tsukuyomi.mix - goal) < 0.001) tsukuyomi.mix = goal;
+    target.sky.lerp(blood.sky, tsukuyomi.mix);
+    target.fog.lerp(blood.fog, tsukuyomi.mix);
     // 迷子 (404): o céu some na névoa e ela fecha bem perto da câmera
     if (lost) target.sky.lerp(target.fog, LOST_FOG.skyMix);
     const [near, far] = lost ? LOST_FOG.range : FOG_RANGE;
@@ -62,7 +73,7 @@ export default function Atmosphere() {
 
     // No frameloop "demand" continua pedindo frames até convergir (e durante o pôr do sol)
     const skyDelta = Math.abs(base.sky.r - target.sky.r) + Math.abs(base.sky.g - target.sky.g) + Math.abs(base.sky.b - target.sky.b);
-    if (glow > 0 || skyDelta > 0.002 || Math.abs(fog.far - far) > 0.05) state.invalidate();
+    if (glow > 0 || waiting || before !== tsukuyomi.mix || skyDelta > 0.002 || Math.abs(fog.far - far) > 0.05) state.invalidate();
   });
 
   return null;

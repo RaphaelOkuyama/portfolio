@@ -277,6 +277,30 @@ export const KOI = {
   brightness: { night: 0.5, day: 0.95 },
 };
 
+// 赤い糸: o fio vermelho que sai da lanterna enviada pelo contato e sobe até o alto da montanha.
+// Coordenadas do grupo do rio; tempos em s (desenha, fica, some)
+export const REDTHREAD = {
+  to: [-3, 17, -30],
+  lift: 5,
+  lanternTop: 1.1,
+  width: 0.22,
+  color: '#ff1426',
+  draw: 2.8,
+  hold: 14,
+  fade: 2.4,
+};
+
+// 刀: o golpe de água ao clicar na katana (respiração da água). Raio do clique e do arco, gotas
+export const KATANA_SLASH = {
+  clickRadius: 1.6,
+  height: 1.1,
+  arc: { radius: 3.1, width: 1.05, angle: 2.9, tilt: -0.6, duration: 0.8 },
+  drops: 170,
+  gravity: 9,
+  // Onde começa a água do rio (|x| no plano do rio; as margens começam em |x| ≈ 14)
+  waterEdge: 13.6,
+};
+
 export const LANTERNS = {
   count: { high: 36, medium: 28, low: 20 },
   maxReleased: 8,
