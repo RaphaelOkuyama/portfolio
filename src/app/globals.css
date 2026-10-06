@@ -564,7 +564,9 @@ p, li { text-wrap: pretty; }
   text-shadow: 0 0 6px var(--bg-color), 0 0 14px var(--bg-color), 0 1px 2px var(--bg-color);
 }
 .hero-name-jp {
-  margin: 0 0 14px;
+  /* Acima da trave do torii (o kasagi escuro ficava atrás das letras e apagava o vermelho no tema
+     claro, com o mouse no centro); o espaço segue a altura da tela, como a cena */
+  margin: 0 0 clamp(48px, 12.5vh, 150px);
   font-size: clamp(0.85rem, 1.3vw, 1.05rem);
   letter-spacing: 0.35em;
   color: var(--accent);
@@ -632,7 +634,7 @@ p, li { text-wrap: pretty; }
 .hero-cta:hover { translate: 0 -2px; }
 .hero-cta:not(.is-primary):hover { border-color: var(--text-primary); }
 @media (max-width: 560px) {
-  .hero-name-jp { letter-spacing: 0.2em; }
+  .hero-name-jp { letter-spacing: 0.2em; margin-bottom: 18px; }
   /* Empilhadas no celular: o "·" no começo da linha quebrada fica solto */
   .hero-roles { flex-direction: column; gap: 4px; letter-spacing: 0.1em; }
   .hero-role + .hero-role::before { content: none; }
