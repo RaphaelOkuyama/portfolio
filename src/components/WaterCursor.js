@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   WATER, createBall, gather, kick, lensMap, shapeMatrix, spray, stepBall, stepDrops,
 } from '../lib/cursor/waterBall';
+import { createDrop, inverseShape } from './water/dropShader';
 
 // 水玉: depois do golpe da katana o pontinho de tinta some e o cursor vira uma gota d'água de
 // verdade: uma lente que refrata a própria página por trás dela (backdrop-filter com o mapa de
@@ -13,6 +14,8 @@ import {
 // Navegadores sem filtro SVG no backdrop caem num desfoque com saturação (ainda parece vidro)
 
 const S = WATER.size;
+// O canvas 3D tem o dobro do diâmetro: sobra lugar para a gota esticar e tremer
+const L = S * 2;
 const isInteractive = (el) => Boolean(el?.closest?.('a, button, input, textarea, select, [role="button"]'));
 
 // Borda orgânica: os oito raios do border-radius oscilam um pouco (mais quando ela corre)
@@ -26,6 +29,7 @@ export default function WaterCursor({ initial = null }) {
   const canvasRef = useRef(null);
   const ballRef = useRef(null);
   const shadowRef = useRef(null);
+  const glRef = useRef(null);
 
   // Mapa da lente (uma vez): vira um PNG para o feImage do filtro
   const map = useMemo(() => {
@@ -56,7 +60,14 @@ export default function WaterCursor({ initial = null }) {
     const canvas = canvasRef.current;
     const el = ballRef.current;
     const shadow = shadowRef.current;
+    const glCanvas = glRef.current;
     const ctx = canvas.getContext('2d');
+    const glDpr = Math.min(window.devicePixelRatio || 1, 2);
+    glCanvas.width = Math.round(L * glDpr);
+    glCanvas.height = Math.round(L * glDpr);
+    const drop3d = createDrop(glCanvas);
+    // Sem WebGL: fica a lente com o brilho de CSS (classe no-gl)
+    if (!drop3d) el.classList.add('no-gl');
     const root = document.documentElement;
     const mouse = { x: -200, y: -200 };
     let ball = null;
@@ -92,6 +103,7 @@ export default function WaterCursor({ initial = null }) {
     const hide = () => {
       el.classList.remove('is-on');
       shadow.classList.remove('is-on');
+      glCanvas.classList.remove('is-on');
     };
 
     const burst = (now) => {
@@ -179,6 +191,13 @@ export default function WaterCursor({ initial = null }) {
           // Sombra: abaixo e à direita (a luz vem de cima, à esquerda), mais longe quando ela corre
           shadow.style.transform = `translate3d(${ball.x - S / 2 + 5}px, ${ball.y - S / 2 + 15 + Math.min(8, speed / 300)}px, 0) matrix(${a}, ${b}, ${c}, ${d}, 0, 0) scale(${scale * 1.05})`;
           shadow.style.opacity = String(opacity);
+          if (drop3d) {
+            // Mesma posição e escala da lente; a forma (alongar, tremer) é feita no shader
+            glCanvas.style.transform = `translate3d(${ball.x - L / 2}px, ${ball.y - L / 2}px, 0) scale(${scale})`;
+            glCanvas.style.opacity = String(opacity);
+            const jiggle = Math.min(1, Math.abs(ball.sv) * 0.35 + Math.abs(ball.squashV) * 0.06 + speed / 2600);
+            drop3d.draw({ time: t, inv: inverseShape([a, b, c, d]), jiggle });
+          }
           // Correndo: pinga
           if (!burstAt && speed > WATER.dripSpeed && Math.random() < dt * 12) {
             drops.push(...spray(ball, 1, { speed: 50, inherit: 0.15, size: [1.4, 2.8] }));
@@ -215,6 +234,7 @@ export default function WaterCursor({ initial = null }) {
       }
       el.classList.add('is-on');
       shadow.classList.add('is-on');
+      glCanvas.classList.add('is-on');
       root.setAttribute('data-cursor-mode', 'water');
       if (!raf) raf = requestAnimationFrame(tick);
     };
@@ -236,6 +256,7 @@ export default function WaterCursor({ initial = null }) {
       window.removeEventListener('katana-slash', onSlash);
       observer.disconnect();
       cancelAnimationFrame(raf);
+      drop3d?.dispose();
       root.removeAttribute('data-cursor-mode');
     };
   }, [enabled, initial]);
@@ -266,6 +287,7 @@ export default function WaterCursor({ initial = null }) {
       <div ref={ballRef} className="water-ball" data-cursor="water" aria-hidden="true">
         <span className="water-ball-rim" />
       </div>
+      <canvas ref={glRef} className="water-gl" aria-hidden="true" style={{ width: L, height: L }} />
     </>
   );
 }

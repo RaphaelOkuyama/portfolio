@@ -91,3 +91,21 @@ describe('領域展開: Vazio Infinito', () => {
     expect(mean(near)).toBeLessThan(mean(far));
   });
 });
+
+describe('水玉 3D: forma no shader', async () => {
+  const { inverseShape } = await import('../../src/components/water/dropShader');
+  it('a inversa desfaz a forma (no espaço do shader, y para cima)', () => {
+    const ball = createBall(0, 0);
+    for (let i = 0; i < 8; i += 1) stepBall(ball, { x: 300, y: 200 }, 1 / 60);
+    const [a, b, c, d] = shapeMatrix(ball);
+    const inv = inverseShape([a, b, c, d]);
+    // M no espaço y-para-cima: [[a, -c], [-b, d]]; inv em ordem de coluna
+    const M = [[a, -c], [-b, d]];
+    const I = [[inv[0], inv[2]], [inv[1], inv[3]]];
+    const prod = [0, 1].map((i) => [0, 1].map((j) => M[i][0] * I[0][j] + M[i][1] * I[1][j]));
+    expect(prod[0][0]).toBeCloseTo(1);
+    expect(prod[1][1]).toBeCloseTo(1);
+    expect(prod[0][1]).toBeCloseTo(0);
+    expect(prod[1][0]).toBeCloseTo(0);
+  });
+});
