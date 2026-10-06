@@ -10,9 +10,9 @@ describe('参道: o caminho de pedra', () => {
   const g = sandoGeometry();
   const pos = g.attributes.position;
 
-  it('nunca pisa na areia do jardim zen (contorna pela direita)', () => {
-    const halfX = GARDEN.size[0] / 2 + GARDEN.border;
-    const halfZ = GARDEN.size[1] / 2 + GARDEN.border;
+  it('nunca pisa na clareira dos bambus de Tanabata (contorna pela direita)', () => {
+    const halfX = GARDEN.size[0] / 2;
+    const halfZ = GARDEN.size[1] / 2;
     for (let i = 0; i < pos.count; i += 1) {
       const inside = Math.abs(pos.getX(i)) < halfX && Math.abs(pos.getZ(i) - GARDEN.z) < halfZ;
       expect(inside).toBe(false);

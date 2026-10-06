@@ -1,13 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import { CatmullRomCurve3, Vector3 } from 'three';
-import { CAMERA_PATH, MOUNTAIN_LAYERS, FOREST, GARDEN, GROUND } from '../../src/components/scene/config';
+import { CAMERA_PATH, MOUNTAIN_LAYERS, FOREST, GARDEN, GROUND, TANABATA } from '../../src/components/scene/config';
+import { tanzakuLayout } from '../../src/lib/journey/tanabata';
+import { resumeData } from '../../src/data/resume';
 import { ridgePoints } from '../../src/lib/journey/ridge';
 import { ridgeHeightAt, forestPlacements } from '../../src/lib/journey/landscape';
 import { groundHeight } from '../../src/lib/journey/ground';
 
-// Nada da montanha pode passar por cima do jardim zen: de qualquer ponto do caminho da câmera,
-// a linha até cada ponto da areia (e o topo de cada pedra) não pode cruzar uma silhueta de
-// camada, uma árvore dela, nem o próprio chão do vale.
+// Nada da montanha pode esconder as tiras de Tanabata da clareira do Stack: de qualquer ponto do
+// caminho da câmera, a linha até cada tira não pode cruzar uma silhueta de camada, uma árvore
+// dela, nem o próprio chão do vale.
 
 const curve = new CatmullRomCurve3(CAMERA_PATH.map((p) => new Vector3(...p)));
 const layers = MOUNTAIN_LAYERS.map((layer) => {
@@ -36,27 +38,13 @@ function silhouetteAt({ layer, points, trees }, x, index) {
   return top;
 }
 
-// Pontos do jardim para um centro (x, z): grade na areia + moldura + topo das pedras
-function gardenPoints(cx, cz) {
-  const cy = groundHeight(cx, cz, GROUND);
-  const [w, d] = GARDEN.size;
-  const hw = w / 2 + GARDEN.border;
-  const hd = d / 2 + GARDEN.border;
-  const pts = [];
-  for (let i = 0; i <= 16; i++) {
-    for (let j = 0; j <= 8; j++) {
-      const x = cx - hw + (2 * hw * i) / 16;
-      const z = cz - hd + (2 * hd * j) / 8;
-      pts.push(new Vector3(x, groundHeight(x, z, GROUND), z));
-    }
-  }
-  GARDEN.stones.forEach((s) => {
-    const x = cx + s.x;
-    const z = cz + s.z;
-    pts.push(new Vector3(x, groundHeight(x, z, GROUND) + s.r * (0.5 - GARDEN.sink) + s.r * 0.56, z));
-  });
-  return { pts, cy };
-}
+// Pontos das tiras de Tanabata (o alto de cada uma, onde amarra no galho, e a ponta de baixo)
+const bamboos = TANABATA.bamboos.map((bb) => ({ ...bb, y: groundHeight(bb.x, bb.z, GROUND), height: TANABATA.height }));
+const counts = resumeData.pt.techSection.categories.map((c) => c.items.length);
+const stripPoints = tanzakuLayout(counts, bamboos).flatMap((st) => [
+  new Vector3(st.x, st.y, st.z),
+  new Vector3(st.x, st.y - TANABATA.strip[1] - 0.1, st.z),
+]);
 
 // Primeiro obstáculo entre a câmera e o ponto, ou null se a linha estiver livre
 function blocker(cam, p) {
@@ -76,29 +64,24 @@ function blocker(cam, p) {
     const x = cam.x + (p.x - cam.x) * s;
     const y = cam.y + (p.y - cam.y) * s;
     const z = cam.z + (p.z - cam.z) * s;
-    // Perto do ponto o raio encosta no próprio chão do jardim: ignora o último trecho
+    // Perto do ponto o raio pode encostar no chão em volta: ignora o último trecho
     if (Math.hypot(x - p.x, z - p.z) < 0.6) continue;
     if (y < groundHeight(x, z, GROUND) - 1e-3) return `chão em z=${z.toFixed(2)} x=${x.toFixed(2)}`;
   }
   return null;
 }
 
-describe('jardim zen sem nada da montanha por cima', () => {
-  // Posição real (GARDEN.z) e uma folga de 3 unidades para cada lado, para um ajuste futuro
-  // não colocar o jardim atrás de uma encosta sem o teste avisar
-  const centers = [GARDEN.z - 3, GARDEN.z - 1.5, GARDEN.z, GARDEN.z + 1.5, GARDEN.z + 3];
-
-  it.each(centers)('centro em z = %s: nenhum raio da câmera é bloqueado', (cz) => {
-    const { pts } = gardenPoints(0, cz);
+describe('七夕: nenhuma tira escondida atrás da montanha', () => {
+  it('da câmera chegando à clareira, nenhum raio até as tiras é bloqueado', () => {
     const problems = [];
     for (let t = 0; t <= 1.0001; t += 0.01) {
       const cam = curve.getPointAt(Math.min(1, t));
-      // Só importa enquanto o jardim está à frente da câmera
-      if (cam.z <= cz) continue;
-      for (const p of pts) {
+      // Só importa enquanto os bambus estão à frente da câmera (e não ao lado dela)
+      if (cam.z <= GARDEN.z + 3) continue;
+      for (const p of stripPoints) {
         const hit = blocker(cam, p);
         if (hit) {
-          problems.push(`t=${t.toFixed(2)} cam z=${cam.z.toFixed(1)} → ponto (${p.x.toFixed(1)}, ${p.z.toFixed(1)}): ${hit}`);
+          problems.push(`t=${t.toFixed(2)} cam z=${cam.z.toFixed(1)} → tira (${p.x.toFixed(1)}, ${p.y.toFixed(1)}, ${p.z.toFixed(1)}): ${hit}`);
           break;
         }
       }

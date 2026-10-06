@@ -179,7 +179,7 @@ export default function River() {
     <group ref={groupRef} position={center}>
       <mesh geometry={geometry} material={material} rotation={[-Math.PI / 2, 0, 0]} />
       <Lanterns reflections={reflections} released={released} />
-      {withKoi ? <Koi water={material.uniforms.uWater} released={released} /> : null}
+      {withKoi ? <Koi river={material.uniforms} released={released} /> : null}
     </group>
   );
 }

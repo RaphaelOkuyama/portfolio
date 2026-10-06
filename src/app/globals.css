@@ -1083,103 +1083,123 @@ p, li { text-wrap: pretty; }
   gap: 48px;
   align-items: start;
 }
-/* 盆栽: o desenho ocupa a coluna e cada botão de área fica na ponta do seu galho (--pad-x/y) */
-.zen-stones.bonsai {
-  --bonsai-wood: #6e4c33;
-  --bonsai-grain: #8d6a4c;
-  --bonsai-leaf-0: #4f7d4b;
-  --bonsai-leaf-1: #6e9b5f;
-  --bonsai-pot: #2c3a5a;
-  --bonsai-moss: #6f8f4e;
+/* 七夕: as áreas são tiras de papel (短冊) penduradas em duas varas de bambu, três em cada uma,
+   na cor das tiras da área nos bambus de Tanabata da cena (--tz-color, --tz-ink) */
+.zen-stones.tanabata {
+  --tz-row: 236px;
+  --tz-gap: 26px;
   position: relative;
-  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: var(--tz-row);
+  gap: var(--tz-gap) 18px;
   max-width: 540px;
-  aspect-ratio: 400 / 430;
-  margin: 0 auto;
+  padding: 0 12px;
 }
-[data-theme='night'] .zen-stones.bonsai {
-  --bonsai-wood: #8b6b52;
-  --bonsai-grain: #a88a6f;
-  --bonsai-leaf-0: #5f8f62;
-  --bonsai-leaf-1: #7fae78;
-  --bonsai-pot: #3b4c74;
-  --bonsai-moss: #6e9157;
-}
-.bonsai-art { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.bonsai-trunk { fill: none; stroke: var(--bonsai-wood); stroke-width: 15; stroke-linecap: round; }
-.bonsai-grain { fill: none; stroke: var(--bonsai-grain); stroke-width: 3; stroke-linecap: round; opacity: 0.7; }
-.bonsai-branch { fill: none; stroke: var(--bonsai-wood); stroke-width: 7; stroke-linecap: round; }
-.bonsai-crown { fill: var(--bonsai-leaf-0); }
-.bonsai-crown ellipse:nth-child(2) { fill: var(--bonsai-leaf-1); }
-.bonsai-leaf { fill: var(--bonsai-leaf-0); transition: fill 0.2s; }
-.bonsai-leaf.is-tone-1 { fill: var(--bonsai-leaf-1); }
-.bonsai-leaf:hover { fill: var(--accent); }
-.bonsai-pot { fill: var(--bonsai-pot); }
-.bonsai-moss { fill: var(--bonsai-moss); }
-.bonsai-shadow { fill: rgb(0 0 0 / 0.22); }
-
-/* Copa: o botão da área, verde-musgo com contorno irregular, centrado na ponta do galho */
-.zen-stone {
+.tanabata-pole {
   position: absolute;
-  left: var(--pad-x);
-  top: var(--pad-y);
-  width: 31%;
-  translate: -50% -50%;
+  top: 0;
+  left: -6px;
+  right: -6px;
+  height: 12px;
+  border-radius: 6px;
+  /* Colmo verde com os nós marcados */
+  background:
+    repeating-linear-gradient(90deg, transparent 0 86px, rgb(0 0 0 / 0.22) 86px 89px),
+    linear-gradient(180deg, #c3cf98 0%, #8aa463 55%, #627d47 100%);
+  box-shadow: 0 3px 8px rgb(0 0 0 / 0.25);
+}
+.tanabata-pole.is-second { top: calc(var(--tz-row) + var(--tz-gap)); }
+
+.zen-stone {
+  position: relative;
+  height: calc(var(--tz-row) - 22px);
+  margin-top: 22px;
   padding: 0;
   border: none;
   background: none;
-  color: var(--text-primary);
+  color: var(--tz-ink);
   font: inherit;
   cursor: pointer;
-  isolation: isolate;
+}
+/* O fio que amarra a tira na vara */
+.zen-stone::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -22px;
+  width: 1.5px;
+  height: 24px;
+  background: color-mix(in srgb, var(--text-primary) 55%, transparent);
 }
 .zen-stone-face {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 3px;
-  min-height: 82px;
-  padding: 10px 10px;
-  border: 1px solid color-mix(in srgb, var(--bonsai-leaf-0) 70%, var(--border));
-  border-radius: var(--stone-shape);
-  background: radial-gradient(120% 95% at 35% 25%,
-    color-mix(in srgb, var(--bonsai-leaf-1) 55%, var(--card-bg)) 0%,
-    color-mix(in srgb, var(--bonsai-leaf-0) 40%, var(--card-bg)) 60%,
-    color-mix(in srgb, var(--bonsai-leaf-0) 30%, #000) 100%);
-  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.08), inset 0 -10px 16px rgb(0 0 0 / 0.2);
-  transition: translate 0.3s ease, border-color 0.3s, box-shadow 0.3s;
+  gap: 8px;
+  height: 100%;
+  padding: 24px 10px 14px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--tz-color) 88%, #fff 12%), var(--tz-color));
+  box-shadow: 0 6px 14px rgb(0 0 0 / 0.22);
+  isolation: isolate;
+  transition: translate 0.3s ease, box-shadow 0.3s;
+  /* O papel balança preso pelo fio, no ritmo de cada tira (o botão em si fica parado) */
+  transform-origin: 50% -22px;
+  animation: tz-sway 3.4s ease-in-out var(--tz-delay, 0s) infinite alternate;
 }
-.zen-stone-icon { display: inline-flex; color: var(--text-primary); }
+/* Furo do fio e a fibra do papel */
+.zen-stone-face::before {
+  content: '';
+  position: absolute;
+  top: 7px;
+  left: 50%;
+  width: 7px;
+  height: 7px;
+  margin-left: -3.5px;
+  border-radius: 50%;
+  background: color-mix(in srgb, #000 35%, var(--tz-color));
+}
+.zen-stone-face::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--washi);
+  opacity: 0.35;
+  pointer-events: none;
+}
+.zen-stone-kanji { font-size: 2.3rem; line-height: 1; font-weight: 700; }
+.zen-stone-icon { display: inline-flex; opacity: 0.9; }
 .zen-stone-icon svg { width: 20px; height: 20px; }
 .zen-stone-name {
-  font-size: 0.82rem;
+  margin-top: auto;
+  font-size: 0.8rem;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.25;
   text-align: center;
 }
-.zen-stone-count {
-  font-size: 0.68rem;
-  letter-spacing: 0.18em;
-  color: color-mix(in srgb, var(--text-primary) 70%, transparent);
-}
+.zen-stone-count { font-size: 0.68rem; letter-spacing: 0.18em; opacity: 0.8; }
+.zen-stone:hover .zen-stone-face { animation: tz-flutter 0.5s ease-in-out infinite alternate; }
 .zen-stone:hover .zen-stone-face,
-.zen-stone:focus-visible .zen-stone-face {
-  translate: 0 -3px;
-  border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
-}
+.zen-stone:focus-visible .zen-stone-face { translate: 0 3px; }
 .zen-stone:focus-visible { outline: none; }
-.zen-stone:focus-visible .zen-stone-face {
-  outline: 2px solid var(--accent);
-  outline-offset: 4px;
-}
+.zen-stone:focus-visible .zen-stone-face { outline: 2px solid var(--text-primary); outline-offset: 4px; }
+/* A escolhida desce um pouco, ganha sombra e um contorno de luz */
 .zen-stone[data-active='true'] .zen-stone-face {
-  border-color: var(--accent);
-  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.1), inset 0 -10px 16px rgb(0 0 0 / 0.2),
-    0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent),
-    0 10px 30px color-mix(in srgb, var(--accent) 22%, transparent);
+  translate: 0 6px;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--tz-color) 40%, #fff), 0 12px 28px rgb(0 0 0 / 0.32);
 }
-.zen-stone[data-active='true'] .zen-stone-name { color: var(--accent); }
+@keyframes tz-sway { from { rotate: -2.2deg; } to { rotate: 2.2deg; } }
+@keyframes tz-flutter { from { rotate: -4deg; } to { rotate: 4deg; } }
+@media (prefers-reduced-motion: reduce) {
+  .zen-stone-face, .zen-stone:hover .zen-stone-face { animation: none; }
+}
+/* O painel aberto ganha a cor da área no kanji e na linha */
+.zen-panel .zen-panel-kanji { -webkit-text-stroke-color: color-mix(in srgb, var(--tz-color) 75%, var(--text-primary)); }
+.zen-panel .zen-panel-rule { background: linear-gradient(90deg, var(--tz-color), transparent 80%); }
 
 /* A altura da caixa anima entre as áreas (ZenStack): sem pulo e sem vazio */
 .zen-panels {
@@ -1287,9 +1307,14 @@ p, li { text-wrap: pretty; }
     opacity: var(--washi-strength);
     pointer-events: none;
   }
-  /* O bonsai vira uma ilustração pequena no topo; as copas viram as linhas do acordeão */
-  .bonsai-art { position: static; order: -1; width: 62%; height: auto; margin: 0 auto 6px; }
-  .zen-stone { position: static; translate: none; order: var(--order); width: 100%; }
+  /* As tiras viram as linhas do acordeão (papel colorido deitado); as varas somem. Mesma
+     especificidade da regra do desktop (.zen-stones.tanabata), senão a grade dela ganharia */
+  .zen-layout .zen-stones.tanabata { display: contents; }
+  .tanabata-pole { display: none; }
+  .zen-stone { order: var(--order); width: 100%; height: auto; margin: 0; }
+  .zen-stone-face, .zen-stone:hover .zen-stone-face { animation: none; }
+  .zen-stone::before, .zen-stone-face::before { display: none; }
+  .zen-stone-kanji { font-size: 1.4rem; }
   .zen-stone-face {
     width: 100%;
     flex-direction: row;

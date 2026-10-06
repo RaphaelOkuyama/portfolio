@@ -7,6 +7,7 @@ import { SCENE_ACCENTS } from '../../lib/palette';
 import { CELESTIAL } from './config';
 import { smoothstep } from '../../lib/journey/math';
 import { NOISE } from './glsl';
+import { SUNSET, celestialAt, transitionPhase } from '../../lib/journey/skyTransition';
 
 // Intensidade do disco, do halo e das manchas (mares da lua) por tema
 const LOOK = { night: { disc: 1, halo: 0.42, maria: 1 }, day: { disc: 0.6, halo: 0.3, maria: 0 } };
@@ -50,6 +51,8 @@ const fragmentShader = /* glsl */ `
 // Sol (昼) / lua (夜): disco com halo pintado, fora da névoa
 export default function Celestial() {
   const target = useMemo(() => new Color(), []);
+  const low = useMemo(() => new Color(SUNSET.sunLow), []);
+  const meshRef = useRef(null);
   const initialized = useRef(false);
   const material = useMemo(
     () =>
@@ -73,14 +76,32 @@ export default function Celestial() {
 
   useFrame((state, delta) => {
     const store = journeyStore.getState();
-    const look = LOOK[store.theme];
     // Some do hero em diante (e nas rotas congeladas, onde o progresso efetivo é 0.7)
     const visible = 1 - smoothstep(0.08, 0.18, effectiveProgress(store));
+    const u = material.uniforms;
+    const mesh = meshRef.current;
+
+    // 日の入り: na troca de tema o astro antigo desce atrás das montanhas e o novo sobe. O sol
+    // avermelha perto do horizonte, como o disco das gravuras
+    const transit = celestialAt(transitionPhase(performance.now() / 1000));
+    if (transit) {
+      const look = LOOK[transit.theme];
+      u.uColor.value.set(SCENE_ACCENTS[transit.theme].celestial);
+      if (transit.theme === 'day') u.uColor.value.lerp(low, Math.min(1, transit.sink * 1.4));
+      u.uDisc.value = look.disc * visible;
+      u.uHalo.value = look.halo * visible * (1 + transit.sink * 0.8);
+      u.uMaria.value = look.maria;
+      if (mesh) mesh.position.y = CELESTIAL.position[1] - transit.sink * SUNSET.drop;
+      state.invalidate();
+      return;
+    }
+    if (mesh) mesh.position.y = CELESTIAL.position[1];
+
+    const look = LOOK[store.theme];
     target.set(SCENE_ACCENTS[store.theme].celestial);
     const k = initialized.current ? 1 - Math.exp(-delta * 4) : 1;
     initialized.current = true;
 
-    const u = material.uniforms;
     u.uColor.value.lerp(target, k);
     u.uDisc.value += (look.disc * visible - u.uDisc.value) * k;
     u.uHalo.value += (look.halo * visible - u.uHalo.value) * k;
@@ -90,7 +111,7 @@ export default function Celestial() {
   });
 
   return (
-    <mesh position={CELESTIAL.position} material={material}>
+    <mesh ref={meshRef} position={CELESTIAL.position} material={material}>
       <planeGeometry args={[CELESTIAL.radius * EXTENT, CELESTIAL.radius * EXTENT]} />
     </mesh>
   );

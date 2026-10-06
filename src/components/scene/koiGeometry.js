@@ -1,75 +1,98 @@
-import { LatheGeometry, Shape, ShapeGeometry, Vector2 } from 'three';
-import { assemble, paint } from './lowpoly';
+import { BufferAttribute, LatheGeometry, Shape, ShapeGeometry, SphereGeometry, Vector2 } from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
-// 鯉: carpa low-poly com o comprimento 1 ao longo de z (cabeça em +z, cauda em -z), base em y = 0.
-// O desenho (manchas) fica nas cores dos vértices; a variedade "plain" sai lisa e é tingida pela
-// cor da instância (ogon dourada, platina). Em cache: as mesmas em toda a cena
+// 鯉: carpa com comprimento 1 ao longo de z (cabeça em +z, cauda em -z), dorso em +y. Corpo liso
+// (normais suavizadas, o sombreado é feito no shader) e nadadeiras finas. O atributo aPart marca a
+// parte: 0 corpo, 1 nadadeira (translúcida, mais clara), 2 olho. As manchas são pintadas no shader
+// (Koi.js), não na geometria. Em cache: uma só para todas as carpas
 
-const WHITE = [0.97, 0.95, 0.9];
-const RED = [0.86, 0.24, 0.11];
-const INK = [0.13, 0.12, 0.14];
-const FIN = [0.93, 0.9, 0.84];
+let cache = null;
 
-// Manchas por variedade: faixas ao longo do corpo [z0, z1, deslocamento lateral, cor], só no dorso
-const PATTERNS = {
-  // 紅白 kohaku: branca com manchas vermelhas, uma delas na cabeça
-  kohaku: [[0.24, 0.44, 0.02, RED], [-0.06, 0.14, -0.04, RED], [-0.3, -0.18, 0.05, RED]],
-  // 昭和 showa: vermelho e preto sobre o branco
-  showa: [[0.22, 0.42, -0.03, RED], [0.02, 0.16, 0.06, INK], [-0.12, 0.0, -0.05, RED], [-0.34, -0.2, 0.0, INK]],
-  plain: [],
-};
-
-const cache = new Map();
-
-function colorBody(geometry, pattern) {
-  const pos = geometry.attributes.position;
-  const colors = geometry.attributes.color;
-  for (let i = 0; i < pos.count; i += 1) {
-    const x = pos.getX(i);
-    const y = pos.getY(i);
-    const z = pos.getZ(i);
-    let c = WHITE;
-    // Só o dorso (y acima do meio) leva mancha; a borda da mancha ondula pela posição lateral
-    if (y > -0.01) {
-      for (const [z0, z1, shift, color] of pattern) {
-        const wobble = Math.sin(x * 22 + z * 9) * 0.03;
-        if (z > z0 + wobble && z < z1 + wobble && Math.abs(x - shift) < 0.13) c = color;
-      }
-    }
-    colors.setXYZ(i, c[0], c[1], c[2]);
-  }
-  return geometry;
+function withPart(geometry, part) {
+  const g = geometry.index ? geometry.toNonIndexed() : geometry;
+  g.deleteAttribute('uv');
+  g.setAttribute('aPart', new BufferAttribute(new Float32Array(g.attributes.position.count).fill(part), 1));
+  return g;
 }
 
-function fin(points) {
-  const shape = new Shape(points.map(([x, y]) => new Vector2(x, y)));
-  // A forma é desenhada em XY; deitada no plano da água (y → z)
-  return paint(new ShapeGeometry(shape).rotateX(Math.PI / 2), FIN);
+// Nadadeira plana desenhada em XY a partir de curvas, deitada no plano da água (y → -z)
+function finShape(draw, segments = 12) {
+  const shape = new Shape();
+  draw(shape);
+  const g = new ShapeGeometry(shape, segments);
+  g.rotateX(Math.PI / 2);
+  g.computeVertexNormals();
+  return g;
 }
 
-export function koiGeometry(variant = 'kohaku') {
-  if (cache.has(variant)) return cache.get(variant);
-  // Corpo: perfil girado (lathe) em volta do eixo, achatado na vertical. t: 0 = cauda, 1 = focinho
+export function koiGeometry() {
+  if (cache) return cache;
+
+  // Corpo: perfil da cauda (t = 0) ao focinho (t = 1). Ombro largo a ~60%, pedúnculo fino
   const profile = [];
-  for (let i = 0; i <= 12; i += 1) {
-    const t = i / 12;
-    const r = 0.155 * Math.pow(Math.sin(Math.PI * Math.pow(t, 0.72)), 0.85);
-    profile.push(new Vector2(Math.max(r, i === 0 ? 0.025 : 0), t - 0.5));
+  const steps = 22;
+  for (let i = 0; i <= steps; i += 1) {
+    const t = i / steps;
+    const body = Math.pow(Math.sin(Math.PI * Math.pow(t, 0.68)), 0.72);
+    const r = Math.max(0.028, 0.15 * body) * (i === steps ? 0 : 1);
+    profile.push(new Vector2(r, t - 0.5));
   }
-  const body = new LatheGeometry(profile, 8);
+  const body = new LatheGeometry(profile, 16);
   body.rotateX(Math.PI / 2);
-  body.scale(1, 0.62, 1);
-  colorBody(paint(body), PATTERNS[variant] ?? PATTERNS.kohaku);
+  // Achatado, com a barriga um pouco mais reta que o dorso
+  body.scale(1, 0.68, 1);
+  body.computeVertexNormals();
 
-  // Cauda em leque (bifurcada) atrás do corpo e as duas nadadeiras peitorais abertas
-  const tail = fin([[0, 0.02], [-0.17, -0.2], [-0.05, -0.13], [0, -0.17], [0.05, -0.13], [0.17, -0.2]]);
-  tail.translate(0, 0, -0.48);
-  const right = fin([[0, 0], [0.16, -0.07], [0.1, -0.14]]);
-  right.translate(0.1, -0.01, 0.2);
-  const left = fin([[0, 0], [-0.16, -0.07], [-0.1, -0.14]]);
-  left.translate(-0.1, -0.01, 0.2);
+  // Cauda longa em dois lobos (a da koi "borboleta"), presa no fim do pedúnculo
+  const tail = finShape((s) => {
+    s.moveTo(0, 0.02);
+    s.quadraticCurveTo(-0.12, -0.08, -0.22, -0.3);
+    s.quadraticCurveTo(-0.1, -0.24, 0, -0.16);
+    s.quadraticCurveTo(0.1, -0.24, 0.22, -0.3);
+    s.quadraticCurveTo(0.12, -0.08, 0, 0.02);
+  });
+  tail.translate(0, 0, -0.47);
 
-  const geometry = assemble([body, tail, right, left]);
-  cache.set(variant, geometry);
-  return geometry;
+  // Peitorais em leque, abertas para os lados logo atrás da cabeça
+  const pectoral = (side) => {
+    const g = finShape((s) => {
+      s.moveTo(0, 0);
+      s.quadraticCurveTo(side * 0.2, 0.02, side * 0.22, -0.12);
+      s.quadraticCurveTo(side * 0.1, -0.1, 0, -0.06);
+      s.quadraticCurveTo(side * 0.02, -0.02, 0, 0);
+    });
+    g.translate(side * 0.1, -0.03, 0.2);
+    return g;
+  };
+
+  // Dorsal: uma vela baixa em pé ao longo do dorso
+  const dorsal = (() => {
+    const shape = new Shape();
+    shape.moveTo(-0.22, 0);
+    shape.quadraticCurveTo(-0.05, 0.09, 0.14, 0.04);
+    shape.lineTo(0.16, 0);
+    shape.lineTo(-0.22, 0);
+    const g = new ShapeGeometry(shape, 8);
+    g.rotateY(Math.PI / 2);
+    g.translate(0, 0.095, -0.02);
+    g.computeVertexNormals();
+    return g;
+  })();
+
+  const eye = (side) => {
+    const g = new SphereGeometry(0.018, 6, 5);
+    g.translate(side * 0.075, 0.035, 0.38);
+    return g;
+  };
+
+  cache = mergeGeometries([
+    withPart(body, 0),
+    withPart(tail, 1),
+    withPart(pectoral(1), 1),
+    withPart(pectoral(-1), 1),
+    withPart(dorsal, 1),
+    withPart(eye(1), 2),
+    withPart(eye(-1), 2),
+  ]);
+  return cache;
 }

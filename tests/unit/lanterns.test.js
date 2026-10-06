@@ -66,8 +66,15 @@ describe('lanternLabel', () => {
 });
 
 describe('labelLayout', () => {
-  it('vertical até 5 letras, horizontal acima', () => {
-    expect(labelLayout('Ana').mode).toBe('vertical');
+  it('vertical só para nomes curtos em japonês; latim sempre na horizontal', () => {
+    expect(labelLayout('奥山').mode).toBe('vertical');
+    expect(labelLayout('はなこ').mode).toBe('vertical');
+    expect(labelLayout('Ana').mode).toBe('horizontal');
     expect(labelLayout('Raphael').mode).toBe('horizontal');
+  });
+
+  it('nomes compostos longos quebram em duas linhas', () => {
+    expect(labelLayout('Ana').lines).toEqual(['Ana']);
+    expect(labelLayout('Maria Eduarda Souza').lines).toEqual(['Maria', 'Eduarda Souza']);
   });
 });

@@ -154,6 +154,20 @@ export function sensuGeometry(colors = [C.red, C.paper]) {
   });
 }
 
+// 桟橋: deque de tábuas sobre estacas, onde a barraca fica quando a margem está debaixo d'água
+export function deckGeometry() {
+  return cached('deck', () => {
+    const parts = [];
+    for (let i = 0; i < 8; i += 1) {
+      parts.push(box(3.3, 0.1, 0.33, i % 2 ? C.wood : C.darkWood, { y: -0.05, z: -1.2 + i * 0.34 }));
+    }
+    for (const x of [-1.5, 1.5]) {
+      for (const z of [-1.15, 1.15]) parts.push(box(0.14, 1.4, 0.14, C.darkWood, { x, y: -0.75, z }));
+    }
+    return assemble(parts);
+  });
+}
+
 // 団扇: leque redondo com cabo, o sol vermelho (日の丸) no papel claro
 export function uchiwaGeometry() {
   return cached('uchiwa', () => assemble([

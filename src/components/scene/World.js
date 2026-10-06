@@ -12,7 +12,7 @@ import Iwakura from './Iwakura';
 import { Katana, Komainu, Pagoda, ShishiOdoshi, StoneLanterns, StonePaths, Taikobashi } from './ShrineProps';
 import { BambooGrove, Kodama } from './BambooGrove';
 import Celestial from './Celestial';
-import ZenGarden from './ZenGarden';
+import Tanabata from './Tanabata';
 import Ground from './Ground';
 import Momiji from './Momiji';
 import Snow from './Snow';
@@ -32,7 +32,7 @@ const STAGES = [
   [StonePaths, StoneLanterns],
   [BambooGrove, Kodama, ShishiOdoshi],
   [Pagoda, Taikobashi, Katana],
-  [ZenGarden, Momiji, Snow],
+  [Tanabata, Momiji, Snow],
   [River, Petals],
 ];
 

@@ -1,8 +1,9 @@
 import { CanvasTexture, SRGBColorSpace } from 'three';
 import { labelLayout } from '../../lib/journey/lanterns';
 
-// Papel da lanterna na proporção da face (largura x altura)
-const SIZE = [136, 160];
+// Papel da lanterna na proporção da face (largura x altura), em resolução alta: com 136 × 160 o
+// nome ficava borrado assim que a lanterna se afastava
+const SIZE = [544, 640];
 const cache = new Map();
 
 // Família da fonte de display (next/font expõe em --font-display), com mincho de reserva
@@ -11,10 +12,14 @@ function brushFont(px) {
   return `800 ${px}px ${family || 'serif'}, 'Yu Mincho', 'Hiragino Mincho ProN', serif`;
 }
 
-// Tinta de pincel: várias passadas leves e deslocadas deixam a borda irregular
-function inkText(ctx, text, x, y) {
-  const passes = [[0, 0, 0.7], [0.8, -0.4, 0.35], [-0.6, 0.5, 0.3], [0.3, 0.9, 0.25]];
-  passes.forEach(([dx, dy, alpha]) => {
+// Tinta de pincel: um contorno escuro grosso (legível sobre o papel aceso) e o preenchimento com
+// duas passadas um pouco deslocadas, que deixam a borda irregular
+function inkText(ctx, text, x, y, px) {
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = Math.max(4, px * 0.1);
+  ctx.strokeStyle = 'rgba(20, 10, 4, 0.55)';
+  ctx.strokeText(text, x, y);
+  [[0, 0, 1], [px * 0.02, -px * 0.015, 0.45]].forEach(([dx, dy, alpha]) => {
     ctx.globalAlpha = alpha;
     ctx.fillText(text, x + dx, y + dy);
   });
@@ -29,28 +34,33 @@ export function labelTexture(label) {
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#2b1a0e';
+  ctx.fillStyle = '#140a04';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
-  const { mode, chars } = labelLayout(label);
+  const { mode, chars, lines } = labelLayout(label);
   if (mode === 'vertical') {
-    const step = Math.min(34, (h - 24) / chars.length);
+    const step = Math.min(136, (h - 96) / chars.length);
     ctx.font = brushFont(step * 0.92);
     const top = h / 2 - (step * (chars.length - 1)) / 2;
-    chars.forEach((c, i) => inkText(ctx, c, w / 2, top + i * step));
+    chars.forEach((c, i) => inkText(ctx, c, w / 2, top + i * step, step));
   } else {
-    let px = 40;
+    // Maior letra que cabe na largura, para todas as linhas
+    let px = lines.length > 1 ? 120 : 150;
     ctx.font = brushFont(px);
-    while (ctx.measureText(label).width > w - 16 && px > 12) {
-      px -= 2;
+    const widest = () => Math.max(...lines.map((line) => ctx.measureText(line).width));
+    while (widest() > w - 56 && px > 40) {
+      px -= 4;
       ctx.font = brushFont(px);
     }
-    inkText(ctx, label, w / 2, h / 2);
+    const gap = px * 1.12;
+    const top = h / 2 - (gap * (lines.length - 1)) / 2;
+    lines.forEach((line, i) => inkText(ctx, line, w / 2, top + i * gap, px));
   }
 
   const texture = new CanvasTexture(canvas);
   texture.colorSpace = SRGBColorSpace;
+  texture.anisotropy = 4;
   cache.set(label, texture);
   return texture;
 }

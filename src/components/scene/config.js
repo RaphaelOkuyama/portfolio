@@ -124,13 +124,12 @@ export const RIVERSIDE = {
 };
 
 // 祭り: barraca de máscaras (お面屋) à esquerda do caminho, logo depois do torii e entre as
-// lanternas de pedra; o tengu grande num painel à esquerda do jardim zen; leques (扇子) expostos
-// ao lado da katana. rotY gira a frente (+z) de cada peça
+// lanternas de pedra, e leques (扇子) expostos ao lado da katana. rotY gira a frente (+z) de cada peça
 export const FESTIVAL = {
   stall: { x: -6.7, z: 1.2, rotY: Math.PI / 2, scale: 1.1 },
-  tengu: { x: -10.6, z: -15.2, rotY: 0.55, scale: 1.25 },
   fans: { x: 17.2, z: -81.6, rotY: -0.85, scale: 1.4 },
 };
+
 
 // 刀掛け: o par de espadas (大小) num suporte na margem direita do rio, virado para quem desce
 // o vale. Aparece na Experiência, do lado oposto ao caminho e aos cartões
@@ -183,30 +182,30 @@ export const GROUND = {
   segments: [96, 160],
 };
 
-// Jardim zen (枯山水) visto de cima durante o "Stack": areia rastelada + 6 pedras
+// Clareira do Stack, no meio das camadas z = -7 e z = -18 (antes era o jardim zen de areia). O
+// caminho de pedra contorna ela pela direita; os vaga-lumes voam em volta à noite. size: a área
+// livre (largura x profundidade), que o caminho não pisa
 export const GARDEN = {
-  // Área de areia rastelada pintada no chão do vale (largura x profundidade) e a moldura
-  // de pedra em volta dela
   size: [16, 9],
-  border: 0.35,
-  // Posição fixa no mundo, no meio da clareira das camadas z = -7 e z = -18. Antes seguia a
-  // faixa medida do Stack e no celular (seção bem mais alta) ia parar em z = -32, fora da clareira
+  // Posição fixa no mundo (no celular a seção é bem mais alta e a faixa medida ia para fora)
   z: -14.5,
   fallbackRange: [0.3, 0.55],
-  // Uma pedra por área do Stack (mesma ordem); afundam um pouco na areia
-  stones: [
-    { x: -4.6, z: -0.5, r: 1.05 },
-    { x: -2.7, z: 1.4, r: 0.65 },
-    { x: -0.9, z: -1.5, r: 0.8 },
-    { x: 1.0, z: 0.9, r: 1.15 },
-    { x: 2.9, z: -1.2, r: 0.72 },
-    { x: 4.7, z: 0.9, r: 0.9 },
-  ],
-  sink: 0.15,
-  // A pedra escolhida acende os anéis de areia em volta dela com a cor de acento
-  activeRingGlow: 0.4,
-  activeStoneTint: 0.15,
-  fireflyVolume: { x: [-11, 11], y: [0.3, 3], z: [-4.5, 4.5] },
+  fireflyVolume: { x: [-11, 11], y: [0.3, 4.5], z: [-4.5, 4.5] },
+};
+
+// 七夕: dois bambus de Tanabata, um de cada lado do caminho na clareira, com as tiras de papel
+// (短冊), uma por ferramenta do Stack, nas cores das áreas. Uma corda liga as copas por cima do
+// caminho, com três 吹き流し (bolas com serpentinas). sway: balanço das tiras (rad), que cresce com
+// o vento do scroll; a área escolhida no Stack balança mais e brilha
+export const TANABATA = {
+  bamboos: [{ x: -3.9, z: -15.2, side: -1 }, { x: 3.9, z: -14.8, side: 1 }],
+  height: 9.5,
+  strip: [0.17, 0.52],
+  sway: 0.13,
+  active: { sway: 1.9, scale: 1.12, bright: 1.18, dim: 0.72 },
+  rope: 8.1,
+  streamers: [-1.6, 0, 1.6],
+  streamerLength: 2.3,
 };
 
 // Momiji (紅葉) caindo em volta da câmera durante os Projetos (outono)
@@ -245,21 +244,21 @@ export const RIVER = {
 // ele passa sobre a água e acompanham a lanterna solta pelo formulário
 export const KOI = {
   school: [
-    { variant: 'kohaku', tint: '#ffffff', size: 1.95 },
-    { variant: 'showa', tint: '#ffffff', size: 1.7 },
-    { variant: 'plain', tint: '#e9b54c', size: 1.8 }, // 黄金 ogon
-    { variant: 'kohaku', tint: '#ffffff', size: 1.55 },
-    { variant: 'plain', tint: '#d6dbe2', size: 1.6 }, // プラチナ platina
-    { variant: 'showa', tint: '#ffffff', size: 2.05 },
-    { variant: 'kohaku', tint: '#ffffff', size: 1.45 },
+    { variant: 'kohaku', tint: '#fbf7ef', size: 1.6 },
+    { variant: 'showa', tint: '#f6f0e4', size: 1.45 },
+    { variant: 'plain', tint: '#e8a83a', size: 1.5 }, // 黄金 ogon
+    { variant: 'tancho', tint: '#fbf8f2', size: 1.3 }, // 丹頂: só o círculo vermelho na cabeça
+    { variant: 'plain', tint: '#d9dee6', size: 1.35 }, // プラチナ platina
+    { variant: 'kohaku', tint: '#fbf7ef', size: 1.7 },
+    { variant: 'showa', tint: '#f6f0e4', size: 1.25 },
   ],
   // Perto da câmera (que fica em z ≈ 56–61 no contato): a faixa de água que aparece embaixo do
   // conteúdo e no vão até o rodapé
   zone: { x: [-4.5, 4.5], z: [41, 56.5] },
   // Cursor um pouco fora da zona ainda atrai: elas vão até a borda mais próxima
   lureMargin: 4,
-  // Logo acima do plano da água (que é transparente e não escreve profundidade)
-  y: 0.03,
+  // Abaixo da superfície (o shader mistura a cor com a da água e passa as marolas por cima)
+  y: -0.16,
   speed: [0.45, 0.85],
   // Multiplicador da velocidade quando vão atrás do cursor ou da lanterna
   dash: 1.8,
@@ -271,8 +270,8 @@ export const KOI = {
   orbit: { pointer: 1.2, lantern: 1.6 },
   followLantern: 14,
   // Mergulho: mistura com a cor da água; à noite as cores apagam um pouco
-  submerge: 0.28,
-  brightness: { night: 0.62, day: 1 },
+  submerge: 0.42,
+  brightness: { night: 0.5, day: 0.95 },
 };
 
 export const LANTERNS = {
@@ -285,8 +284,10 @@ export const LANTERNS = {
   // z local da câmera no fim do caminho (= -RIVER.offsetZ) e abertura lateral por unidade de distância
   viewZ: 56,
   // Lanterna solta pelo formulário: distância à frente da câmera e tamanho
-  releaseAhead: 8,
-  releasedScale: 1.6,
+  releaseAhead: 7,
+  releasedScale: 2.1,
+  // Fração da correnteza para a lanterna soltada (o nome dela fica legível por mais tempo)
+  releasedSpeed: 0.5,
   spread: 0.55,
   speed: 0.35,
   // Intensidade da luz: > 1 dispara o bloom (só em qualidade alta)

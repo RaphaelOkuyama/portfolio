@@ -163,6 +163,8 @@ export default function Lanterns({ reflections, released }) {
         const label = journey.lanternNames[releasesSeen.current - 1] || '';
         // Nasce na faixa de água visível abaixo do conteúdo, maior que as outras: é a lanterna da pessoa
         const item = { ...spawn(lerp(-1.2, 1.2, rand()), LANTERNS.viewZ - LANTERNS.releaseAhead), released: true, label };
+        // A lanterna da pessoa desce o rio mais devagar: o nome fica legível por mais tempo
+        item.speed *= LANTERNS.releasedSpeed;
         items.push(item);
         // As carpas (Koi) vêm atrás da lanterna nova; o relógio é o das carpas (só avança em movimento)
         if (released) Object.assign(released, { item, at: released.clock?.() ?? 0 });
@@ -257,7 +259,7 @@ export default function Lanterns({ reflections, released }) {
           matrixAutoUpdate={false}
           visible={false}
           frustumCulled={false}
-          renderOrder={1}
+          renderOrder={3}
         />
       ))}
     </group>

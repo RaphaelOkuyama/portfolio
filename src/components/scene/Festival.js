@@ -39,20 +39,6 @@ function MaskStall({ material }) {
   );
 }
 
-// 大天狗: o tengu grande no painel de madeira com a corda sagrada
-function TenguBoard({ material }) {
-  const { x, z, rotY, scale } = FESTIVAL.tengu;
-  return (
-    <group position={[x, groundHeight(x, z, GROUND), z]} rotation={[0, rotY, 0]} scale={scale}>
-      <Piece geometry={maskBoardGeometry()} material={material} />
-      <Piece geometry={maskGeometry('tengu')} material={material} position={[0, 2.05, 0.2]} scale={1.35} />
-      {/* Dois leques abertos dos lados, como nos santuários de Takao */}
-      <Piece geometry={sensuGeometry(SENSU_RED)} material={material} position={[-0.62, 1.55, 0.06]} rotation={[0, 0, 0.5]} scale={0.38} />
-      <Piece geometry={sensuGeometry(SENSU_RED)} material={material} position={[0.62, 1.55, 0.06]} rotation={[0, 0, -0.5]} scale={0.38} />
-    </group>
-  );
-}
-
 // 扇子: dois leques abertos num suporte baixo, ao lado da katana na margem
 function FanDisplay({ material }) {
   const { x, z, rotY, scale } = FESTIVAL.fans;
@@ -71,7 +57,6 @@ export default function Festival() {
   return (
     <>
       <MaskStall material={craft} />
-      <TenguBoard material={craft} />
       <FanDisplay material={craft} />
     </>
   );

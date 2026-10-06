@@ -39,5 +39,11 @@ export function lanternLabel(name) {
 // Escrita do papel: vertical (tategaki) para nomes curtos, horizontal para os longos
 export function labelLayout(label) {
   const chars = Array.from(label);
-  return chars.length <= 5 ? { mode: 'vertical', chars } : { mode: 'horizontal', chars };
+  // Tategaki só para nomes curtos em kanji/kana: letras latinas empilhadas ficavam ilegíveis
+  const japanese = chars.every((c) => /[぀-ヿ㐀-鿿々ー]/.test(c));
+  if (japanese && chars.length <= 5) return { mode: 'vertical', chars, lines: [label] };
+  // Nomes compostos: duas linhas (primeiro nome em cima) em vez de encolher a letra
+  const words = label.trim().split(/\s+/);
+  const lines = words.length > 1 && label.length > 9 ? [words[0], words.slice(1).join(' ')] : [label];
+  return { mode: 'horizontal', chars, lines };
 }
