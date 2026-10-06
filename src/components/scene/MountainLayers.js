@@ -46,7 +46,7 @@ function sugiGeometry() {
   lower.translate(0, 0.5, 0);
   const upper = new ConeGeometry(0.3, 0.8, 5);
   upper.translate(0, 1.05, 0);
-  const merged = mergeGeometries([lower.toNonIndexed(), upper.toNonIndexed()]);
+  const merged = mergeGeometries([lower, upper].map((g) => (g.index ? g.toNonIndexed() : g)));
   lower.dispose();
   upper.dispose();
   return merged;

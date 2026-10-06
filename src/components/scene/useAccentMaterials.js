@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Color, DoubleSide, MeshBasicMaterial } from 'three';
+import { Color, DoubleSide, FrontSide, MeshBasicMaterial } from 'three';
 import { journeyStore } from '../../store/journey';
 import { SCENE_ACCENTS } from '../../lib/palette';
 
@@ -13,7 +13,7 @@ export function useAccentMaterials(parts) {
   const materials = useMemo(
     () => Object.fromEntries(keys.map((k) => [k, new MeshBasicMaterial({
       vertexColors: true,
-      side: parts[k].double ? DoubleSide : undefined,
+      side: parts[k].double ? DoubleSide : FrontSide,
       toneMapped: !parts[k].glow,
     })])),
     // As peças são fixas por componente

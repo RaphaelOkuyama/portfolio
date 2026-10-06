@@ -37,7 +37,7 @@ function frameGeometry() {
   parts.push(new BoxGeometry(PAPER.w + 0.04, 0.03, 0.03).translate(0, top, -half));
   parts.push(new BoxGeometry(0.03, 0.03, PAPER.w + 0.04).translate(half, top, 0));
   parts.push(new BoxGeometry(0.03, 0.03, PAPER.w + 0.04).translate(-half, top, 0));
-  const merged = mergeGeometries(parts.map((p) => p.toNonIndexed()));
+  const merged = mergeGeometries(parts.map((p) => (p.index ? p.toNonIndexed() : p)));
   parts.forEach((p) => p.dispose());
   return merged;
 }

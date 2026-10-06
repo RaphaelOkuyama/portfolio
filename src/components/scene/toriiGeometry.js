@@ -95,8 +95,8 @@ export function toriiGeometry(spec) {
   dark.push(placed(curvedBeam(span + pillarRadius * 7, pillarRadius * 1.3, pillarRadius * 2, lift), 0, kasagiY - pillarRadius * 0.55));
 
   const result = {
-    body: bakeShade(mergeGeometries(body.map((g) => g.toNonIndexed()))),
-    dark: bakeShade(mergeGeometries(dark.map((g) => g.toNonIndexed()))),
+    body: bakeShade(mergeGeometries(body.map((g) => (g.index ? g.toNonIndexed() : g)))),
+    dark: bakeShade(mergeGeometries(dark.map((g) => (g.index ? g.toNonIndexed() : g)))),
   };
   body.concat(dark).forEach((g) => g.dispose());
   cache.set(spec, result);

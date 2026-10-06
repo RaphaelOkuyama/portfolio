@@ -106,6 +106,9 @@ export const KODAMA = {
 };
 
 // 鹿威し no canto do jardim zen, fora da moldura de areia
+// 盆栽: o pinheiro na mesinha, à direita do caminho entre as lanternas de pedra
+export const BONSAI = { x: 8.2, z: -30.2, rotY: -0.45, scale: 2.2 };
+
 export const SHISHI_ODOSHI = { x: -9.5, z: -8.6, rotY: 0.9, scale: 1.4, cycle: 5.5 };
 
 // 五重塔 na outra margem do rio, no alto do barranco: o destino da jornada, do outro lado da ponte

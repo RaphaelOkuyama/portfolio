@@ -30,8 +30,8 @@ export default function AboutSection({ about }) {
       autoSplit: true,
       // Sem aria-label no <p> (proibido em parágrafo): as linhas mantêm o texto legível
       aria: 'none',
-      onSplit: (self) =>
-        gsap.from(self.lines, {
+      // Sem linhas (texto ainda sem layout) não há o que animar: evita o aviso "GSAP target not found"
+      onSplit: (self) => self.lines.length > 0 && gsap.from(self.lines, {
           yPercent: 110,
           opacity: 0,
           stagger: 0.05,
