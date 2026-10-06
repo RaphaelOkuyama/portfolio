@@ -5,6 +5,8 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import SocialSidebar from '../components/SocialSidebar';
 import InkCursor from '../components/InkCursor';
+import WaterCursor from '../components/WaterCursor';
+import DomainExpansion from '../components/DomainExpansion';
 import JourneySync from '../components/journey/JourneySync';
 import SmoothScroll from '../components/journey/SmoothScroll';
 import SceneCanvas from '../components/scene/SceneCanvas';
@@ -81,6 +83,8 @@ export default function RootLayout({ children }) {
           <Suminagashi />
           <Senbazuru />
           <InkCursor />
+          <WaterCursor />
+          <DomainExpansion />
           <Navbar />
           
           <SocialSidebar />

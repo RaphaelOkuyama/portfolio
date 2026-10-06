@@ -146,6 +146,8 @@ export default function KatanaSlash() {
       const hit = projectSphere(center, KATANA_SLASH.clickRadius, camera, size.width, size.height, scratch);
       if (!hit || !insideCircle(e.clientX, e.clientY, hit.x, hit.y, hit.r)) return;
       slash.current = { start: performance.now() / 1000, pending: true };
+      // O cursor vira uma bola d'água (WaterCursor)
+      window.dispatchEvent(new CustomEvent('katana-slash'));
     };
     window.addEventListener('click', onClick);
     return () => window.removeEventListener('click', onClick);
