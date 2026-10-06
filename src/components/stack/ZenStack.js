@@ -4,12 +4,13 @@ import { gsap, useGSAP } from '../../lib/gsap';
 import { journeyStore } from '../../store/journey';
 import { toolKey } from '../../lib/stack/tools';
 import { TOOL_ICONS } from './toolIcons';
+import { GRAIN, PADS, TRUNK, VIEW, leavesAround } from './bonsaiLayout';
 import Section from '../journey/Section';
 import Ruby from '../Ruby';
-import Tate from '../Tate';
+import StationSign from '../journey/StationSign';
 
-// Formas irregulares de pedra, alternadas entre os botões
-const STONE_SHAPES = [
+// Copas de folhagem com contorno irregular, alternadas entre as áreas
+const PAD_SHAPES = [
   '46% 54% 50% 50% / 55% 45% 55% 45%',
   '58% 42% 38% 62% / 52% 60% 40% 48%',
   '40% 60% 55% 45% / 45% 55% 45% 55%',
@@ -17,8 +18,6 @@ const STONE_SHAPES = [
   '44% 56% 42% 58% / 58% 42% 58% 42%',
   '60% 40% 48% 52% / 48% 52% 46% 54%',
 ];
-// Cada pedra assenta num ângulo próprio na areia
-const STONE_TILT = [-3, 2, -1.5, 2.5, -2, 1];
 const pad = (n) => String(n).padStart(2, '0');
 
 // `withIcon` falso: só a caixa do ícone (painel ainda fechado). Os logos dos 6 painéis somavam
@@ -71,6 +70,30 @@ export default function ZenStack({ techData, icons }) {
   }, [active]);
 
   // Painel entra ao trocar de pedra: o kanji assenta, a linha de tinta corre e as ferramentas sobem
+  // 盆栽 cresce com a rolagem: o tronco se desenha, depois os galhos, as copas brotam e as folhas
+  // aparecem uma a uma. Movimento reduzido: já crescido
+  useGSAP(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const root = rootRef.current;
+    const art = root.querySelector('.bonsai-art');
+    if (!art) return;
+    gsap.timeline({
+      defaults: { ease: 'none' },
+      scrollTrigger: { trigger: art, start: 'top 90%', end: 'center 45%', scrub: 0.6 },
+    })
+      .from(art.querySelectorAll('.bonsai-pot, .bonsai-moss, .bonsai-shadow'), { opacity: 0, y: 8, duration: 0.12 }, 0)
+      .fromTo(art.querySelectorAll('.bonsai-trunk, .bonsai-grain'), { drawSVG: '0%' }, { drawSVG: '100%', duration: 0.4 }, 0.05)
+      .fromTo(art.querySelectorAll('.bonsai-branch'), { drawSVG: '0%' }, { drawSVG: '100%', duration: 0.18, stagger: 0.04 }, 0.3)
+      // No celular os botões são as linhas do acordeão: só brotam como copas no desktop
+      .from(window.matchMedia('(min-width: 561px)').matches ? root.querySelectorAll('.zen-stone') : [], {
+        scale: 0.2, opacity: 0, duration: 0.15, stagger: 0.04, ease: 'back.out(2)',
+      }, 0.42)
+      .from(art.querySelectorAll('.bonsai-crown'), { scale: 0, opacity: 0, transformOrigin: '50% 50%', duration: 0.15, stagger: 0.04, ease: 'back.out(2)' }, 0.42)
+      .from(art.querySelectorAll('.bonsai-leaf'), {
+        scale: 0, opacity: 0, transformOrigin: '50% 50%', duration: 0.08, stagger: { each: 0.006, from: 'random' },
+      }, 0.5);
+  }, { scope: rootRef });
+
   useGSAP(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const panel = rootRef.current.querySelector('.zen-panel[data-active="true"]');
@@ -83,16 +106,54 @@ export default function ZenStack({ techData, icons }) {
 
   return (
     <Section id="stack" ref={rootRef} className="zen-section">
-      <h2 className="section-title">
-        <span className="section-kanji font-jp" aria-hidden="true"><Ruby>技</Ruby></span>
-        <span className="section-title-text">{techData.title}<Tate>技術</Tate></span>
-      </h2>
+      <StationSign id="stack" kanji="技" title={techData.title} tate="技術" />
       <p className="zen-hint">{techData.hint}</p>
 
       {/* No celular .zen-stones e .zen-panels somem do layout (display: contents) e cada painel
           entra logo abaixo da sua pedra, como acordeão */}
       <div className="zen-layout">
-        <div className="zen-stones" role="tablist" aria-label={techData.title} aria-orientation="horizontal">
+        <div className="zen-stones bonsai" role="tablist" aria-label={techData.title} aria-orientation="horizontal">
+          {/* 盆栽: tronco, galhos, vaso e as folhas (uma por ferramenta); as copas são os botões */}
+          <svg className="bonsai-art" viewBox={`0 0 ${VIEW.w} ${VIEW.h}`} aria-hidden="true">
+            <ellipse className="bonsai-shadow" cx="200" cy="424" rx="110" ry="6" />
+            <path className="bonsai-trunk" d={TRUNK} />
+            <path className="bonsai-grain" d={GRAIN} />
+            {PADS.map((p) => <path key={p.branch} className="bonsai-branch" d={p.branch} />)}
+            {/* Copas desenhadas: no desktop ficam atrás dos botões; no celular (os botões viram
+                linhas do acordeão) são elas que vestem os galhos */}
+            {PADS.map((p) => (
+              <g key={`crown-${p.x}`} className="bonsai-crown">
+                <ellipse cx={p.x - 18} cy={p.y + 4} rx="34" ry="20" />
+                <ellipse cx={p.x + 16} cy={p.y + 2} rx="36" ry="22" />
+                <ellipse cx={p.x} cy={p.y - 10} rx="32" ry="20" />
+              </g>
+            ))}
+            {categories.map((cat, i) => (
+              <g key={cat.name} className="bonsai-leaves" data-pad={i}>
+                {leavesAround(PADS[i % PADS.length], cat.items.length, i).map((leaf, k) => (
+                  <ellipse
+                    key={cat.items[k]}
+                    className={`bonsai-leaf is-tone-${leaf.tone}`}
+                    cx={leaf.x}
+                    cy={leaf.y}
+                    rx="11"
+                    ry="5"
+                    transform={`rotate(${leaf.rotate} ${leaf.x} ${leaf.y})`}
+                  >
+                    <title>{cat.items[k]}</title>
+                  </ellipse>
+                ))}
+              </g>
+            ))}
+            {/* Vaso: borda, corpo, pés e o musgo na terra */}
+            <g className="bonsai-pot">
+              <rect x="112" y="392" width="176" height="12" rx="3" />
+              <path d="M124 404 L276 404 L264 422 L136 422 Z" />
+              <rect x="146" y="422" width="18" height="5" rx="1" />
+              <rect x="236" y="422" width="18" height="5" rx="1" />
+            </g>
+            <ellipse className="bonsai-moss" cx="200" cy="393" rx="80" ry="5" />
+          </svg>
           {categories.map((cat, i) => (
             <button
               key={cat.name}
@@ -105,8 +166,10 @@ export default function ZenStack({ techData, icons }) {
               className="zen-stone"
               data-active={active === i}
               style={{
-                '--stone-shape': STONE_SHAPES[i % STONE_SHAPES.length],
-                '--stone-tilt': `${STONE_TILT[i % STONE_TILT.length]}deg`,
+                '--stone-shape': PAD_SHAPES[i % PAD_SHAPES.length],
+                // Ponta do galho desta área, em % do desenho (no celular não vale: vira linha)
+                '--pad-x': `${(PADS[i % PADS.length].x / VIEW.w) * 100}%`,
+                '--pad-y': `${(PADS[i % PADS.length].y / VIEW.h) * 100}%`,
                 '--order': i * 2,
               }}
               onClick={() => setActive(i)}

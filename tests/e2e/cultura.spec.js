@@ -240,8 +240,9 @@ test.describe('縦書き e 伝統色', () => {
     const tate = page.locator('.section-tate');
     await expect(tate).toHaveText(['自己紹介', '技術', '作品', '経歴', 'ご縁']);
     await expect(tate.first()).toHaveCSS('writing-mode', 'vertical-rl');
-    // Fora do fluxo: o título do contato (coluna estreita) continua numa linha só
-    const title = page.locator('#contato h2.section-title');
+    // Fora do fluxo: o título do contato (coluna estreita) continua numa linha só. Mede a linha do
+    // texto: o h2 agora fica dentro da placa de estação (駅名標), com padding próprio
+    const title = page.locator('#contato h2.section-title .section-title-text');
     const lineHeight = await title.evaluate((el) => parseFloat(getComputedStyle(el).fontSize) * 1.6);
     expect((await title.boundingBox()).height).toBeLessThan(lineHeight);
   });

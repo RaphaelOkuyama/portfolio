@@ -27,7 +27,7 @@ export function ridgeProfile(points) {
 }
 
 // Sugi (杉) nas cristas: aglomerados, fora do vale por onde a câmera passa.
-// Retorna [x, y, escala] com a base um pouco abaixo do cume (a árvore "nasce" da encosta)
+// Retorna [x, y, escala] com a base logo abaixo do cume (a árvore "nasce" da encosta)
 export function forestPlacements(points, { seed, count, halfWidth, valleyHalf, valleyCenter = 0, heightRange = [1.4, 3] }) {
   const rand = mulberry32(seed);
   // Densidade em faixas: bosques e clareiras ao longo do cume
@@ -40,7 +40,9 @@ export function forestPlacements(points, { seed, count, halfWidth, valleyHalf, v
     if (Math.abs(x - valleyCenter) < valleyHalf) continue;
     if (rand() > density(x)) continue;
     const scale = heightRange[0] + rand() * (heightRange[1] - heightRange[0]);
-    const sink = 0.15 + rand() * 0.9;
+    // Base logo abaixo do cume, só para não flutuar no declive. Antes afundava até 1,05: os sugi
+    // menores (2 de altura) ficavam pela metade e viravam calombos da cor da montanha
+    const sink = 0.05 + rand() * 0.25;
     trees.push([x, ridgeHeightAt(points, x) - sink, scale]);
   }
   return trees;

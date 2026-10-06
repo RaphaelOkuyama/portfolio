@@ -65,7 +65,7 @@ export const resumeData = {
     },
     techSection: {
       title: "Tecnologias & Ferramentas",
-      hint: "Cada pedra do jardim é uma área. Escolha uma para ver as ferramentas.",
+      hint: "Cada galho do bonsai é uma área e cada folha, uma ferramenta. Escolha um galho para ver o que tem nele.",
       toolsCount: "ferramentas",
       // kanji: 言 palavra · 表 a face · 裏 o avesso · 蔵 o depósito · 守 proteger · 流 o fluxo
       categories: [
@@ -437,7 +437,7 @@ export const resumeData = {
     },
     techSection: {
       title: "Technologies & Tools",
-      hint: "Each stone in the garden is an area. Pick one to see the tools.",
+      hint: "Each branch of the bonsai is an area and each leaf, a tool. Pick a branch to see what grows on it.",
       toolsCount: "tools",
       categories: [
         { name: "Languages", kanji: "言", items: ["TypeScript", "JavaScript", "Python", "SQL", "GLSL"] },

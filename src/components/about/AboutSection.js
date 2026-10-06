@@ -6,7 +6,7 @@ import { ArrowRight, Download } from 'lucide-react';
 import { gsap, SplitText, useGSAP } from '../../lib/gsap';
 import Section from '../journey/Section';
 import Ruby from '../Ruby';
-import Tate from '../Tate';
+import StationSign from '../journey/StationSign';
 
 function prefersReducedMotion() {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -77,10 +77,7 @@ export default function AboutSection({ about }) {
     <Section id="about" ref={rootRef} className="about-section">
       <div className="about-grid">
         <div className="about-copy">
-          <h2 className="section-title">
-            <span className="section-kanji font-jp" aria-hidden="true"><Ruby>人</Ruby></span>
-            <span className="section-title-text">{about.title}<Tate>自己紹介</Tate></span>
-          </h2>
+          <StationSign id="about" kanji="人" title={about.title} tate="自己紹介" />
           <p className="about-lead">{about.lead}</p>
           <div ref={textRef} key={about.lead} className="about-text">
             {about.paragraphs.map((text) => (

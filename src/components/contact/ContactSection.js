@@ -10,8 +10,7 @@ import Section from '../journey/Section';
 import { lanternLabel } from '../../lib/journey/lanterns';
 import { resumeData } from '../../data/resume';
 import Meishi from './Meishi';
-import Ruby from '../Ruby';
-import Tate from '../Tate';
+import StationSign from '../journey/StationSign';
 
 const EMPTY = { name: '', email: '', message: '' };
 const EMAIL = 'raphaelokuyama123@gmail.com';
@@ -172,10 +171,7 @@ export default function ContactSection({ contact }) {
     <Section id="contato" className="contact-section">
       <div className="contact-grid">
         <div className="contact-intro">
-          <h2 className="section-title">
-            <span className="section-kanji font-jp" aria-hidden="true"><Ruby>縁</Ruby></span>
-            <span className="section-title-text">{contact.title}<Tate>ご縁</Tate></span>
-          </h2>
+          <StationSign id="contato" kanji="縁" title={contact.title} tate="ご縁" />
           <p className="contact-subtitle">{contact.subtitle}</p>
           <div className="contact-availability">
             <span className="contact-availability-label">{contact.availabilityLabel}</span>

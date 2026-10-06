@@ -9,8 +9,7 @@ import { kanjiNumber } from '../../lib/kanji';
 import KeepHyphenated from '../KeepHyphenated';
 import { startMorph } from '../../lib/panelMorph';
 import { homeProjects } from '../../lib/projects';
-import Ruby from '../Ruby';
-import Tate from '../Tate';
+import StationSign from '../journey/StationSign';
 
 
 // Modos do rolo: pin horizontal no desktop, arrastar no celular, grade estática com movimento reduzido
@@ -211,10 +210,7 @@ export default function EmakiProjects({ projects, labels }) {
     <Section id="projects" ref={rootRef} className="emaki-section">
       <div ref={pinRef} className="emaki-pin">
         <header className="emaki-header">
-          <h2 className="section-title">
-            <span className="section-kanji font-jp" aria-hidden="true"><Ruby>作</Ruby></span>
-            <span className="section-title-text">{labels.title}<Tate>作品</Tate></span>
-          </h2>
+          <StationSign id="projects" kanji="作" title={labels.title} tate="作品" />
           {/* No celular o rolo é arrastado, não rolado */}
           <p className="zen-hint">
             <span className="emaki-hint-scroll">{labels.hint}</span>

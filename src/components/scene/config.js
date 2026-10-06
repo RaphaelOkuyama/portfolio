@@ -123,6 +123,15 @@ export const RIVERSIDE = {
   lanterns: [[-19.6, -92.6], [-19.6, -99.4], [19.6, -92.6], [19.6, -99.4]],
 };
 
+// 祭り: barraca de máscaras (お面屋) à esquerda do caminho, logo depois do torii e entre as
+// lanternas de pedra; o tengu grande num painel à esquerda do jardim zen; leques (扇子) expostos
+// ao lado da katana. rotY gira a frente (+z) de cada peça
+export const FESTIVAL = {
+  stall: { x: -6.7, z: 1.2, rotY: Math.PI / 2, scale: 1.1 },
+  tengu: { x: -10.6, z: -15.2, rotY: 0.55, scale: 1.25 },
+  fans: { x: 17.2, z: -81.6, rotY: -0.85, scale: 1.4 },
+};
+
 // 刀掛け: o par de espadas (大小) num suporte na margem direita do rio, virado para quem desce
 // o vale. Aparece na Experiência, do lado oposto ao caminho e aos cartões
 export const KATANA = { x: 14.8, z: -80, rotY: -0.7, scale: 2.6 };

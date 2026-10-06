@@ -20,6 +20,7 @@ import River from './River';
 import Sky from './Sky';
 import Kasumi from './Kasumi';
 import Birds from './Birds';
+import Festival from './Festival';
 import ShaderWarmup from './ShaderWarmup';
 
 // Grupos montados em sequência (ordem: o que aparece primeiro no hero vem antes)
@@ -27,7 +28,7 @@ const STAGES = [
   [Atmosphere, JourneyCamera, Sky, Celestial, Birds],
   [MountainLayers],
   [Ground, Kasumi],
-  [Torii, Iwakura, Komainu],
+  [Torii, Iwakura, Komainu, Festival],
   [StonePaths, StoneLanterns],
   [BambooGrove, Kodama, ShishiOdoshi],
   [Pagoda, Taikobashi, Katana],
