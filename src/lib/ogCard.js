@@ -89,6 +89,7 @@ export async function ogCard({ eyebrow, title, subtitle, kanji, signature = 'Rap
         </div>
       </div>
     ),
-    { ...OG_SIZE, fonts },
+    // Sem a fonte japonesa, nada de `fonts: []` (o next/og exige ao menos uma): fica a fonte padrão
+    jp ? { ...OG_SIZE, fonts } : OG_SIZE,
   );
 }
