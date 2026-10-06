@@ -1,39 +1,51 @@
 import { describe, it, expect } from 'vitest';
-import { WATER, createBall, outline, spray, stepBall, stepDrops } from '../../src/lib/cursor/waterBall';
-import { DOMAIN, domainWords, shards, typedSecret } from '../../src/lib/domain';
+import { WATER, createBall, gather, kick, lensMap, shapeMatrix, spray, stepBall, stepDrops } from '../../src/lib/cursor/waterBall';
+import { DOMAIN, domainWords, typedSecret, voronoiShards } from '../../src/lib/domain';
 
 describe('水玉: bola d\'água do cursor', () => {
-  it('a bola cresce até o raio de repouso e segue o mouse', () => {
+  it('a bola segue o mouse e fica redonda quando para', () => {
     const ball = createBall(0, 0);
-    for (let i = 0; i < 240; i += 1) stepBall(ball, { x: 100, y: 50 }, 1 / 60);
+    for (let i = 0; i < 300; i += 1) stepBall(ball, { x: 100, y: 50 }, 1 / 60);
     expect(ball.x).toBeCloseTo(100, 0);
     expect(ball.y).toBeCloseTo(50, 0);
-    const mean = ball.r.reduce((s, r) => s + r, 0) / ball.r.length;
-    expect(mean).toBeGreaterThan(WATER.radius * 0.85);
-    expect(mean).toBeLessThan(WATER.radius * 1.2);
+    expect(Math.abs(ball.s)).toBeLessThan(0.02);
   });
 
-  it('correndo, ela estica na direção do movimento', () => {
+  it('correndo, a forma alonga no rumo do movimento sem mudar a área', () => {
     const ball = createBall(0, 0);
-    for (let i = 0; i < 120; i += 1) stepBall(ball, { x: 0, y: 0 }, 1 / 60);
-    // Puxa para a direita: a gota corre e alonga no eixo x, sem passar de ~2x o tamanho
-    let widest = 0;
-    let tallest = 0;
-    for (let i = 0; i < 10; i += 1) {
-      stepBall(ball, { x: 400, y: 0 }, 1 / 60);
-      const pts = outline(ball);
-      const xs = pts.map((p) => p[0]);
-      const ys = pts.map((p) => p[1]);
-      widest = Math.max(widest, Math.max(...xs) - Math.min(...xs));
-      tallest = Math.max(tallest, Math.max(...ys) - Math.min(...ys));
-    }
-    expect(widest).toBeGreaterThan(tallest);
-    expect(widest).toBeLessThan(WATER.radius * 2 * 2.2);
+    for (let i = 0; i < 8; i += 1) stepBall(ball, { x: 400, y: 0 }, 1 / 60);
+    const [a, b, c, d] = shapeMatrix(ball);
+    expect(a).toBeGreaterThan(d);
+    expect(a * d - b * c).toBeCloseTo(1, 1);
+    expect(ball.s).toBeLessThanOrEqual(0.8);
+  });
+
+  it('o tapa achata e a gelatina volta ao lugar', () => {
+    const ball = createBall(0, 0);
+    kick(ball, 9);
+    stepBall(ball, { x: 0, y: 0 }, 1 / 60);
+    expect(ball.squash).toBeGreaterThan(0);
+    for (let i = 0; i < 400; i += 1) stepBall(ball, { x: 0, y: 0 }, 1 / 60);
+    expect(Math.abs(ball.squash)).toBeLessThan(0.01);
+  });
+
+  it('o mapa da lente é neutro fora do círculo e dobra para dentro na borda', () => {
+    const size = 32;
+    const map = lensMap(size);
+    expect(map[0]).toBe(128);
+    // Pixel perto da borda direita, na linha do meio: olha para a esquerda (R < 128)
+    const o = ((size / 2) * size + size - 3) * 4;
+    expect(map[o]).toBeLessThan(110);
+  });
+
+  it('as gotas da formação vão para o centro e somem ao chegar', () => {
+    let drops = gather(100, 100, 6, 70, () => 0.5);
+    for (let i = 0; i < 60; i += 1) drops = stepDrops(drops, 1 / 60);
+    expect(drops).toHaveLength(0);
   });
 
   it('gotas caem com a gravidade e somem depois de um tempo', () => {
     const ball = createBall(0, 0);
-    ball.r = ball.r.map(() => WATER.radius);
     let drops = spray(ball, 5, {}, () => 0.5);
     expect(drops).toHaveLength(5);
     const y0 = drops[0].y;
@@ -63,11 +75,19 @@ describe('領域展開: Vazio Infinito', () => {
     expect(words).toEqual(expect.arrayContaining(['TypeScript', 'GLSL', '42+', '無量空処', '言']));
   });
 
-  it('os cacos cobrem a tela inteira a partir do ponto de impacto', () => {
-    const list = shards(400, 300, 800, 600, { rays: 10, rings: 3 }, () => 0.5);
-    expect(list).toHaveLength(30);
-    // Os cacos de fora chegam além dos cantos da tela
-    const far = Math.max(...list.flatMap((s) => s.poly.map(([x, y]) => Math.hypot(x - 400, y - 300))));
-    expect(far).toBeGreaterThanOrEqual(500);
+  it('os cacos de Voronoi cobrem a tela inteira, menores perto do impacto', () => {
+    let seed = 1;
+    const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const list = voronoiShards(300, 200, 800, 600, 30, rand);
+    const area = (poly) => Math.abs(poly.reduce((s, p, i) => {
+      const q = poly[(i + 1) % poly.length];
+      return s + p[0] * q[1] - q[0] * p[1];
+    }, 0)) / 2;
+    const total = list.reduce((s, c) => s + area(c.poly), 0);
+    expect(total).toBeCloseTo(800 * 600, -2);
+    const near = list.filter((c) => c.dist < 0.15).map((c) => area(c.poly));
+    const far = list.filter((c) => c.dist > 0.4).map((c) => area(c.poly));
+    const mean = (xs) => xs.reduce((s, x) => s + x, 0) / xs.length;
+    expect(mean(near)).toBeLessThan(mean(far));
   });
 });

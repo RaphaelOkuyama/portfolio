@@ -24,25 +24,46 @@ export function domainWords(categories, numbers = []) {
   return [...tools, ...numbers, '無量空処', '情報', '∞', '領域展開', ...categories.map((c) => c.kanji)];
 }
 
-// Cacos: raios saindo do ponto de impacto, cortados em anéis. Cada caco é um polígono (px) com
-// centro, para girar e cair. `rand` injetável (testes)
-export function shards(cx, cy, w, h, { rays = 14, rings = 4 } = {}, rand = Math.random) {
-  const reach = Math.hypot(Math.max(cx, w - cx), Math.max(cy, h - cy)) * 1.05;
-  const angles = Array.from({ length: rays }, (_, i) => ((i + 0.3 + rand() * 0.4) / rays) * Math.PI * 2);
-  const radii = [0, ...Array.from({ length: rings }, (_, i) => reach * ((i + 1) / rings) ** 1.35 * (0.9 + rand() * 0.2))];
-  radii[radii.length - 1] = reach;
-  const at = (a, r) => [cx + Math.cos(a) * r, cy + Math.sin(a) * r];
-  const list = [];
-  for (let i = 0; i < rays; i += 1) {
-    const a0 = angles[i];
-    const a1 = angles[(i + 1) % rays] + (i === rays - 1 ? Math.PI * 2 : 0);
-    for (let j = 0; j < rings; j += 1) {
-      const r0 = radii[j];
-      const r1 = radii[j + 1];
-      const poly = r0 === 0 ? [at(a0, 0), at(a0, r1), at(a1, r1)] : [at(a0, r0), at(a0, r1), at(a1, r1), at(a1, r0)];
-      const center = poly.reduce((s, p) => [s[0] + p[0] / poly.length, s[1] + p[1] / poly.length], [0, 0]);
-      list.push({ poly, center, ring: j });
+// Corta um polígono convexo pelo semiplano dos pontos mais perto de `a` do que de `b`
+function clipCloser(poly, a, b) {
+  const mx = (a[0] + b[0]) / 2;
+  const my = (a[1] + b[1]) / 2;
+  const nx = b[0] - a[0];
+  const ny = b[1] - a[1];
+  const side = (p) => (p[0] - mx) * nx + (p[1] - my) * ny; // <= 0: lado de a
+  const out = [];
+  for (let i = 0; i < poly.length; i += 1) {
+    const p = poly[i];
+    const q = poly[(i + 1) % poly.length];
+    const sp = side(p);
+    const sq = side(q);
+    if (sp <= 0) out.push(p);
+    if ((sp < 0 && sq > 0) || (sp > 0 && sq < 0)) {
+      const t = sp / (sp - sq);
+      out.push([p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]);
     }
   }
-  return list;
+  return out;
+}
+
+// Cacos irregulares (células de Voronoi): pequenos perto do impacto, grandes longe dele, como vidro
+// de verdade. Cada caco: { poly, center, dist } com dist = distância do impacto (0..1 da diagonal)
+export function voronoiShards(cx, cy, w, h, count = 38, rand = Math.random) {
+  const diag = Math.hypot(w, h);
+  const sites = Array.from({ length: count }, (_, i) => {
+    const a = (i / count) * Math.PI * 2 * 2.618 + rand() * 0.8;
+    const r = diag * 0.75 * (0.03 + 0.97 * ((i + rand()) / count) ** 1.7);
+    return [cx + Math.cos(a) * r, cy + Math.sin(a) * r];
+  });
+  const rect = [[0, 0], [w, 0], [w, h], [0, h]];
+  return sites.map((s) => {
+    let poly = rect;
+    for (const o of sites) {
+      if (o === s || poly.length < 3) continue;
+      poly = clipCloser(poly, s, o);
+    }
+    if (poly.length < 3) return null;
+    const center = poly.reduce((m, p) => [m[0] + p[0] / poly.length, m[1] + p[1] / poly.length], [0, 0]);
+    return { poly, center, dist: Math.hypot(center[0] - cx, center[1] - cy) / diag };
+  }).filter(Boolean);
 }

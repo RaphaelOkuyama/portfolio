@@ -1,127 +1,149 @@
-// 水玉: a bola d'água que vira o cursor depois do golpe da katana. Física de corpo mole em px:
-// o centro persegue o mouse numa mola (atrasa e passa um pouco do ponto) e o contorno é um anel de
-// nós com raio próprio, cada um preso por mola ao raio de repouso e aos vizinhos (tensão
-// superficial). A aceleração do centro empurra o lado de trás para fora (inércia), a velocidade
-// estica a gota na direção do movimento e a gravidade pesa a parte de baixo. Funções puras
+// 水玉: a bola d'água que vira o cursor depois do golpe da katana. Física em px, funções puras:
+// o centro persegue o mouse numa mola (atrasa e passa um pouco do ponto); a forma é uma gelatina:
+// estica no rumo do movimento (e afina de lado) com uma mola pouco amortecida, que balança quando
+// o mouse para ou quando leva um tapa (clique). Gotas soltas caem com a gravidade
 
 export const WATER = {
-  nodes: 28,
-  radius: 17,
-  follow: { k: 420, damping: 26 },
-  surface: { k: 380, damping: 13, neighbors: 220 },
-  inertia: 0.018,
-  stretch: { max: 0.42, per: 1 / 2400 },
-  sag: 0.07,
-  // Gotas: gravidade (px/s²) e quanto vivem (s)
-  gravity: 1500,
-  dropLife: 1.3,
-  // Cada clique espirra gotas e a bola encolhe; abaixo de `burstAt` do tamanho ela estoura
-  splashShrink: 0.86,
-  burstAt: 0.45,
-  // Some sozinha depois desse tempo (s): estoura e o pontinho de tinta volta
+  // Diâmetro da lente (px)
+  size: 46,
+  follow: { k: 360, damping: 24 },
+  // Mola da deformação: baixa amortecida = gelatina
+  jelly: { k: 260, damping: 9 },
+  stretch: { max: 0.36, per: 1 / 2800 },
+  gravity: 1700,
+  dropLife: 1.4,
+  splashShrink: 0.84,
+  burstAt: 0.5,
   life: 24,
-  // Correndo acima disso (px/s) ela pinga
-  dripSpeed: 950,
+  dripSpeed: 1100,
 };
 
-export function createBall(x, y, w = WATER) {
+export function createBall(x, y) {
   return {
-    x, y, vx: 0, vy: 0, ax: 0, ay: 0,
+    x, y, vx: 0, vy: 0,
+    // Deformação: s = alongamento (0 = redonda), angle = eixo do alongamento, e as velocidades
+    s: 0, sv: 0, angle: 0,
+    // Aperto do tapa (positivo achata no eixo vertical), com a própria mola
+    squash: 0, squashV: 0,
     size: 1,
-    r: Array.from({ length: w.nodes }, () => 0),
-    rv: Array.from({ length: w.nodes }, () => 0),
-    born: 0,
   };
 }
 
-const dirOf = (i, n) => {
-  const a = (i / n) * Math.PI * 2;
-  return [Math.cos(a), Math.sin(a)];
-};
+// Menor diferença entre ângulos de um eixo (mod π: o eixo de 0 e o de π são o mesmo)
+function axisDelta(from, to) {
+  let d = (to - from) % Math.PI;
+  if (d > Math.PI / 2) d -= Math.PI;
+  if (d < -Math.PI / 2) d += Math.PI;
+  return d;
+}
 
-// Um passo da física (dt em s). `grow` multiplica o raio (entrada elástica, hover sobre links)
-export function stepBall(ball, target, dt, { grow = 1, time = 0 } = {}, w = WATER) {
+export function stepBall(ball, target, dt, w = WATER) {
   const { k, damping } = w.follow;
-  const ax = (target.x - ball.x) * k - ball.vx * damping;
-  const ay = (target.y - ball.y) * k - ball.vy * damping;
-  ball.vx += ax * dt;
-  ball.vy += ay * dt;
+  ball.vx += ((target.x - ball.x) * k - ball.vx * damping) * dt;
+  ball.vy += ((target.y - ball.y) * k - ball.vy * damping) * dt;
   ball.x += ball.vx * dt;
   ball.y += ball.vy * dt;
-  ball.ax = ax;
-  ball.ay = ay;
 
   const speed = Math.hypot(ball.vx, ball.vy);
-  const heading = Math.atan2(ball.vy, ball.vx);
-  const stretch = Math.min(w.stretch.max, speed * w.stretch.per);
-  const rest = w.radius * ball.size * grow;
-  const n = ball.r.length;
-  const s = w.surface;
-  const next = ball.r.slice();
-  for (let i = 0; i < n; i += 1) {
-    const [dx, dy] = dirOf(i, n);
-    const angle = (i / n) * Math.PI * 2;
-    // Alongada no rumo do movimento (e mais fina de lado), pesada embaixo, tremendo de leve
-    let goal = rest * (1 + stretch * Math.cos(2 * (angle - heading)));
-    goal += rest * w.sag * Math.max(0, dy);
-    goal += rest * 0.025 * Math.sin(time * 7 + i * 1.7);
-    const prev = ball.r[(i - 1 + n) % n];
-    const after = ball.r[(i + 1) % n];
-    let force = (goal - ball.r[i]) * s.k - ball.rv[i] * s.damping + (prev + after - 2 * ball.r[i]) * s.neighbors;
-    // Inércia: o centro acelera para um lado, a água fica para trás (o lado oposto incha). Com
-    // teto: num tranco forte do mouse a gota deforma, mas não explode
-    const push = -(ax * dx + ay * dy) * w.inertia * s.k / 60;
-    const cap = rest * s.k * 0.35;
-    force += Math.max(-cap, Math.min(cap, push));
-    ball.rv[i] += force * dt;
-    next[i] = Math.min(rest * 1.9, Math.max(rest * 0.45, ball.r[i] + ball.rv[i] * dt));
-  }
-  ball.r = next;
+  const goal = Math.min(w.stretch.max, speed * w.stretch.per);
+  const j = w.jelly;
+  ball.sv += ((goal - ball.s) * j.k - ball.sv * j.damping) * dt;
+  ball.s += ball.sv * dt;
+  ball.s = Math.max(-0.35, Math.min(0.8, ball.s));
+  // O eixo gira para o rumo do movimento (só quando está andando de verdade)
+  if (speed > 40) ball.angle += axisDelta(ball.angle, Math.atan2(ball.vy, ball.vx)) * Math.min(1, dt * 14);
+  ball.squashV += (-ball.squash * j.k * 1.4 - ball.squashV * j.damping * 0.8) * dt;
+  ball.squash += ball.squashV * dt;
   return ball;
 }
 
-// Pontos do contorno no mundo (px)
-export function outline(ball) {
-  const n = ball.r.length;
-  return ball.r.map((r, i) => {
-    const [dx, dy] = dirOf(i, n);
-    return [ball.x + dx * r, ball.y + dy * r];
+// Tapa (clique): a gota achata e volta balançando
+export function kick(ball, amount) {
+  ball.squashV += amount;
+  return ball;
+}
+
+// Matriz 2x2 da forma [a, b, c, d] (para CSS matrix): alonga no eixo do movimento e afina no
+// outro mantendo a área; o tapa achata na vertical. Sem girar o conteúdo (o brilho fica no lugar)
+export function shapeMatrix(ball) {
+  const along = 1 + ball.s;
+  const across = 1 / along;
+  const c = Math.cos(ball.angle);
+  const s = Math.sin(ball.angle);
+  // R · diag(along, across) · Rᵀ
+  let a = c * c * along + s * s * across;
+  const b = c * s * (along - across);
+  let d = s * s * along + c * c * across;
+  const q = Math.max(-0.4, Math.min(0.4, ball.squash));
+  a *= 1 + q * 0.6;
+  d *= 1 - q;
+  return [a, b, b, d];
+}
+
+// Gotas que saem da borda: velocidade radial + parte da velocidade da bola
+export function spray(ball, count, { speed = 380, spread = 1, inherit = 0.35, size = [2, 4.5] } = {}, rand = Math.random) {
+  const r = (WATER.size / 2) * ball.size;
+  return Array.from({ length: count }, () => {
+    const a = rand() * Math.PI * 2;
+    const v = speed * (0.5 + rand() * spread);
+    return {
+      x: ball.x + Math.cos(a) * r,
+      y: ball.y + Math.sin(a) * r,
+      vx: Math.cos(a) * v + ball.vx * inherit,
+      vy: Math.sin(a) * v + ball.vy * inherit - 140 * rand(),
+      size: size[0] + rand() * (size[1] - size[0]),
+      age: 0,
+    };
   });
 }
 
-// Um tapa na superfície (clique): cada nó ganha uma velocidade radial ao acaso
-export function slosh(ball, amount, rand = Math.random) {
-  ball.rv = ball.rv.map((v) => v + (rand() - 0.5) * amount);
-  return ball;
+// Gotas que vêm de fora e se juntam no centro (a bola se formando)
+export function gather(x, y, count, radius = 70, rand = Math.random) {
+  return Array.from({ length: count }, () => {
+    const a = rand() * Math.PI * 2;
+    const r = radius * (0.7 + rand() * 0.6);
+    const t = 0.35 + rand() * 0.15;
+    return {
+      x: x + Math.cos(a) * r, y: y + Math.sin(a) * r,
+      vx: -Math.cos(a) * r / t, vy: -Math.sin(a) * r / t,
+      size: 1.5 + rand() * 2.5, age: 0, life: t, gathering: true,
+    };
+  });
 }
 
-// Gotas que saem do contorno: `count` gotas, velocidade base + espalhamento
-export function spray(ball, count, { speed = 380, spread = 1, inherit = 0.35, size = [2, 4.5] } = {}, rand = Math.random) {
-  const drops = [];
-  const n = ball.r.length;
-  for (let c = 0; c < count; c += 1) {
-    const i = Math.floor(rand() * n);
-    const [dx, dy] = dirOf(i, n);
-    const v = speed * (0.5 + rand() * spread);
-    drops.push({
-      x: ball.x + dx * ball.r[i],
-      y: ball.y + dy * ball.r[i],
-      vx: dx * v + ball.vx * inherit,
-      vy: dy * v + ball.vy * inherit - 120 * rand(),
-      size: size[0] + rand() * (size[1] - size[0]),
-      age: 0,
-    });
-  }
-  return drops;
-}
-
-// Avança as gotas; devolve só as que ainda vivem
 export function stepDrops(drops, dt, w = WATER) {
   return drops.filter((d) => {
-    d.vy += w.gravity * dt;
+    if (!d.gathering) d.vy += w.gravity * dt;
     d.x += d.vx * dt;
     d.y += d.vy * dt;
     d.age += dt;
-    return d.age < w.dropLife;
+    return d.age < (d.life ?? w.dropLife);
   });
+}
+
+// Mapa de deslocamento da lente (RGBA, size x size): R e G guardam para onde cada pixel olha.
+// Perfil de gota: o meio aumenta um pouco, a borda dobra forte para dentro (a água "vira" a
+// imagem perto da beirada). Fora do círculo fica neutro (128)
+export function lensMap(size) {
+  const data = new Uint8ClampedArray(size * size * 4);
+  for (let j = 0; j < size; j += 1) {
+    for (let i = 0; i < size; i += 1) {
+      const x = ((i + 0.5) / size) * 2 - 1;
+      const y = ((j + 0.5) / size) * 2 - 1;
+      const r = Math.hypot(x, y);
+      let ox = 0;
+      let oy = 0;
+      if (r < 1) {
+        const bend = 0.18 + 0.82 * r ** 3;
+        ox = -x * bend * 0.5;
+        oy = -y * bend * 0.5;
+      }
+      const o = (j * size + i) * 4;
+      data[o] = Math.round(128 + ox * 255);
+      data[o + 1] = Math.round(128 + oy * 255);
+      data[o + 2] = 128;
+      data[o + 3] = 255;
+    }
+  }
+  return data;
 }

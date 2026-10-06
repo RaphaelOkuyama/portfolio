@@ -3683,3 +3683,186 @@ html:not(:lang(en)) [data-lang="en"] { display: none !important; }
   from { text-shadow: 0 0 0 rgba(140, 190, 255, 0); }
   to { text-shadow: 0 0 6px #fff, 0 0 18px rgba(140, 190, 255, 0.95), 0 0 36px rgba(90, 80, 255, 0.8); transform: scale(1.08); }
 }
+
+/* 水玉: a gota do cursor (WaterCursor). A lente refrata o fundo (filtro #water-lens); sem suporte
+   a filtro SVG no backdrop, fica o desfoque com saturação da primeira declaração */
+.water-ball,
+.water-shadow {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  transform-origin: 50% 50%;
+  /* Fora de cena enquanto não há gota: o filtro do backdrop não custa nada */
+  display: none;
+}
+.water-ball.is-on,
+.water-shadow.is-on {
+  display: block;
+  will-change: transform, border-radius;
+}
+.water-ball {
+  z-index: 10005;
+  -webkit-backdrop-filter: blur(1.2px) saturate(1.7) brightness(1.08);
+  backdrop-filter: blur(1.2px) saturate(1.7) brightness(1.08);
+  backdrop-filter: url(#water-lens) saturate(1.45) brightness(1.1) contrast(1.05);
+  /* Corpo: quase transparente, mais azul e denso na borda (onde a luz atravessa mais água) */
+  background:
+    radial-gradient(circle at 50% 50%, rgba(160, 210, 255, 0) 55%, rgba(60, 130, 220, 0.16) 88%, rgba(30, 90, 180, 0.28) 100%),
+    radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0) 45%);
+  box-shadow:
+    inset 0 0 0 0.75px rgba(255, 255, 255, 0.55),
+    inset -6px -8px 12px -2px rgba(8, 36, 90, 0.38),
+    inset 6px 7px 10px -3px rgba(255, 255, 255, 0.4),
+    inset 0 -3px 5px -1px rgba(200, 235, 255, 0.45),
+    0 1px 1px rgba(0, 20, 50, 0.08);
+}
+/* Reflexo principal (uma janela no alto, à esquerda) e um ponto pequeno do outro lado */
+.water-ball::before {
+  content: '';
+  position: absolute;
+  left: 17%;
+  top: 11%;
+  width: 36%;
+  height: 22%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 45%, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.65) 35%, rgba(255, 255, 255, 0) 72%);
+  transform: rotate(-32deg);
+}
+.water-ball::after {
+  content: '';
+  position: absolute;
+  right: 20%;
+  bottom: 17%;
+  width: 11%;
+  height: 8%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.7);
+  filter: blur(0.4px);
+  transform: rotate(-32deg);
+}
+/* Cáustica: a luz que atravessa a gota e se junta em crescente embaixo */
+.water-ball-rim {
+  position: absolute;
+  inset: 48% 12% 6% 18%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 55% 85%, rgba(225, 248, 255, 0.6), rgba(225, 248, 255, 0) 68%);
+  mix-blend-mode: screen;
+}
+/* Sombra projetada: escura em volta e clara no meio (a gota foca a luz como uma lente) */
+.water-shadow {
+  z-index: 10004;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(220, 245, 255, 0.4) 0%, rgba(220, 245, 255, 0) 26%),
+    radial-gradient(circle at 50% 50%, rgba(5, 20, 45, 0.3) 30%, rgba(5, 20, 45, 0.14) 55%, rgba(5, 20, 45, 0) 72%);
+  filter: blur(3px);
+}
+
+/* 領域展開 · 無量空処: camada do Vazio Infinito (components/domain/DomainExpansion) */
+.dx {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  cursor: none;
+  color: #f2f6ff;
+  overflow: hidden;
+}
+.dx-dim,
+.dx-layer,
+.dx-type {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.dx-dim {
+  opacity: 0;
+  background: radial-gradient(ellipse at 50% 50%, rgba(4, 6, 20, 0.55), rgba(1, 1, 6, 0.85));
+}
+.dx-type { pointer-events: none; }
+.dx-intro {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2rem;
+}
+.dx-intro-jp {
+  margin: 0;
+  font-size: clamp(64px, 12vw, 190px);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  text-shadow: 0 0 18px rgba(255, 255, 255, 0.55), 0 0 60px rgba(120, 170, 255, 0.55);
+}
+.dx-intro-char,
+.dx-name-char {
+  display: inline-block;
+  will-change: transform, filter, opacity;
+}
+.dx-intro-sub {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.6em;
+  text-transform: uppercase;
+  opacity: 0;
+}
+.dx-name {
+  position: absolute;
+  left: 6vw;
+  bottom: 9vh;
+}
+.dx-name-jp {
+  margin: 0 0 0.9rem;
+  font-size: clamp(46px, 7vw, 112px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 24px rgba(140, 190, 255, 0.55);
+}
+.dx-line {
+  display: block;
+  width: min(260px, 40vw);
+  height: 1px;
+  margin-bottom: 0.9rem;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.9), rgba(140, 190, 255, 0));
+  transform-origin: 0 50%;
+}
+.dx-label {
+  margin: 0 0 0.35rem;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.38em;
+  text-transform: uppercase;
+}
+.dx-label-dim { opacity: 0.55; }
+.dx-meta {
+  position: absolute;
+  right: 6vw;
+  bottom: 9vh;
+  text-align: right;
+}
+.dx-count {
+  margin: 0.2rem 0 0.4rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: clamp(22px, 2.6vw, 40px);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 16px rgba(140, 200, 255, 0.6);
+}
+.dx-hint {
+  position: absolute;
+  top: 4vh;
+  right: 6vw;
+}
+@media (max-width: 767px) {
+  .dx-name { left: 20px; bottom: 120px; }
+  .dx-meta { right: 20px; bottom: 40px; }
+  .dx-hint { right: 20px; }
+}

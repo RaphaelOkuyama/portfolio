@@ -21,6 +21,8 @@ export default function Canvas3D() {
   const quality = useJourney((s) => s.quality);
   const route = useJourney((s) => s.route);
   const loaderDone = useJourney((s) => s.loaderDone);
+  // Uma camada cobre a tela inteira (o domínio do 無量空処): a cena para de desenhar
+  const covered = useJourney((s) => s.covered);
   const [hidden, setHidden] = useState(false);
   const [warmedUp, setWarmedUp] = useState(false);
 
@@ -53,7 +55,7 @@ export default function Canvas3D() {
   // Parada (sem interação há 2s): "demand" a 30 fps em vez de 60 (ver idleFrames)
   const idle = useSceneIdle();
   const halfRate = idle && route !== 'frozen';
-  const frameloop = hidden || compiledKey !== contextKey ? 'never' : route === 'frozen' || halfRate ? 'demand' : 'always';
+  const frameloop = hidden || covered || compiledKey !== contextKey ? 'never' : route === 'frozen' || halfRate ? 'demand' : 'always';
 
   return (
     <Canvas

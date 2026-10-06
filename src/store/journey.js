@@ -36,6 +36,8 @@ export function createJourneyStore() {
     lost: false,
     // 無限月読: a lua clicada virou o olho e a página ficou vermelha (easter egg)
     tsukuyomi: false,
+    // Algo cobre a tela inteira (Expansão de Domínio): a cena 3D para de desenhar
+    covered: false,
 
     setProgress: (p) => {
       const progress = clamp01(p);
@@ -67,6 +69,7 @@ export function createJourneyStore() {
       set({ lanternReleases: get().lanternReleases + 1, lanternNames: [...get().lanternNames, lanternLabel(name)] }),
     setLost: (lost) => set({ lost }),
     setTsukuyomi: (tsukuyomi) => set({ tsukuyomi }),
+    setCovered: (covered) => set({ covered }),
   }));
 }
 
