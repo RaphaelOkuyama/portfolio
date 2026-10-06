@@ -11,7 +11,7 @@ export const TSUKUYOMI = {
   mountains: ['#100103', '#3a070c', '#7a1a20'],
   water: '#160204',
   // Cor do olho (íris) e da lua por trás dele
-  iris: '#c8101e',
+  iris: '#cf3b3d',
   // Quanto a lua cresce com o olho aberto
   moonScale: 2.1,
   glow: '#ff3a3a',

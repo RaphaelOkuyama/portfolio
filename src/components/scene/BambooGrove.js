@@ -56,11 +56,12 @@ export function BambooGrove() {
       tilt.setFromAxisAngle(axis, angle);
       gustTilt.setFromAxisAngle(GUST_AXIS, -wind.gust * 0.1);
       tilt.premultiply(gustTilt);
-      matrix.compose(s.base, tilt, scale.set(1.4, s.height, 1.4));
+      matrix.compose(s.base, tilt, scale.set(1.7, s.height, 1.7));
       stalkRef.current.setMatrixAt(i, matrix);
       // Ponta do caule inclinado: o tufo de folhas vai junto
       tip.copy(up).multiplyScalar(s.height).applyQuaternion(tilt).add(s.base);
-      matrix.compose(tip, tilt, scale.set(2.4, 2.4, 2.4));
+      // A copa já vem no tamanho da cena (galhos e folhas descendo pelo terço de cima do caule)
+      matrix.compose(tip, tilt, scale.set(1.25, 1.25, 1.25));
       leafRef.current.setMatrixAt(i, matrix);
     });
     stalkRef.current.instanceMatrix.needsUpdate = true;

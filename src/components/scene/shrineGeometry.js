@@ -3,6 +3,7 @@ import {
   Float32BufferAttribute, Shape, SphereGeometry, TubeGeometry, Vector3,
 } from 'three';
 import { assemble, paint, placed } from './lowpoly';
+import { segment } from './tanabataGeometry';
 
 // Peças de santuário da cena, low-poly como o torii: cada função devolve geometrias com o tom de
 // luz já pintado nos vértices (a cor vem do material, pela paleta). Base em y = 0, frente em +z.
@@ -305,30 +306,86 @@ export function pagodaGeometry() {
   });
 }
 
-// 竹 (take): caule de bambu de altura 1 (a instância estica), com os nós marcados
+// 竹: caule com altura 1 (a instância estica em y até a altura de cada um). Afina da base ao topo,
+// com nós de verdade: o gomo incha de leve logo abaixo do nó, o nó é um anel claro e cada gomo
+// tem o próprio tom (mais escuro embaixo, mais claro no meio)
+const STALK_NODES = 11;
 export function bambooStalkGeometry() {
   return cached('bamboo', () => {
-    const parts = [cyl(0.085, 0.1, 1, 6, { y: 0.5 })];
-    for (let i = 1; i < 7; i += 1) parts.push(cyl(0.105, 0.105, 0.012, 6, { y: i / 7 }));
+    const parts = [];
+    const radius = (t) => 0.1 - 0.042 * t;
+    for (let i = 0; i < STALK_NODES; i += 1) {
+      const t0 = i / STALK_NODES;
+      const t1 = (i + 1) / STALK_NODES;
+      const tone = 0.82 + 0.22 * Math.sin(Math.PI * (i + 0.5) / STALK_NODES) + (i % 2) * 0.04;
+      const seg = placed(paint(new CylinderGeometry(radius(t1) * 1.03, radius(t0), t1 - t0, 8), [tone * 0.96, tone, tone * 0.9]), { y: (t0 + t1) / 2 });
+      parts.push(seg);
+      // Nó: anel um pouco mais largo e claro (amarelado), fino
+      if (i > 0) parts.push(placed(paint(new CylinderGeometry(radius(t0) * 1.14, radius(t0) * 1.14, 0.005, 8), [1.22, 1.2, 1.0]), { y: t0 }));
+    }
     return assemble(parts);
   });
 }
 
-// Tufo de folhas de bambu: lâminas finas abertas em leque, presas no topo do caule
+// Folha de bambu: lâmina longa e estreita, deitada ao longo de +x (larga perto da base e com a
+// ponta fina), já caída `droop` rad para baixo e girada `yaw` em volta do galho
+function bambooLeaf(at, yaw, droop, length, width, tone) {
+  const L = length;
+  const w = width / 2;
+  const pts = [0, 0, 0, L * 0.28, 0, w, L, 0, 0, L * 0.28, 0, -w, L * 0.62, 0, w * 0.55, L * 0.62, 0, -w * 0.55];
+  const g = new BufferGeometry();
+  // Dois triângulos largos na base e a ponta fina em dois triângulos
+  const index = [0, 1, 4, 0, 4, 2, 0, 2, 5, 0, 5, 3];
+  const flat = [];
+  index.forEach((k) => flat.push(pts[k * 3], pts[k * 3 + 1], pts[k * 3 + 2]));
+  g.setAttribute('position', new Float32BufferAttribute(flat, 3));
+  g.rotateZ(-droop);
+  g.rotateY(yaw);
+  g.translate(at.x, at.y, at.z);
+  return paint(g, tone);
+}
+
+// Copa do bambu, em unidades da cena com a origem na ponta do caule (y negativo desce pelo caule):
+// galhos finos saem dos nós do terço de cima, alternando de lado, e cada um termina em leques de
+// folhas caídas; no topo, um penacho. Tons de folha variados (a cor final vem da paleta)
 export function bambooLeavesGeometry() {
   return cached('bamboo-leaves', () => {
-    const blades = [];
-    for (let i = 0; i < 9; i += 1) {
-      const a = (i / 9) * Math.PI * 2;
-      const blade = paint(new ConeGeometry(0.08, 1.1, 3));
-      blade.scale(1, 1, 0.25);
-      placed(blade, { y: -0.55, rotX: 0 });
-      blade.rotateZ(Math.PI / 2 + 0.5 + (i % 3) * 0.18);
-      blade.rotateY(a);
-      blade.translate(0, -0.1 * (i % 3), 0);
-      blades.push(blade);
+    const parts = [];
+    let seed = 7;
+    const rand = () => {
+      seed = (seed * 16807) % 2147483647;
+      return seed / 2147483647;
+    };
+    const tones = [[0.78, 0.95, 0.8], [0.92, 1.05, 0.88], [1.05, 1.12, 0.92], [0.85, 1.0, 0.95], [1.12, 1.18, 1.0]];
+    const tone = () => tones[Math.floor(rand() * tones.length)];
+    const fan = (origin, dir, count, size) => {
+      for (let k = 0; k < count; k += 1) {
+        const yaw = dir + (k - (count - 1) / 2) * 0.42 + (rand() - 0.5) * 0.25;
+        const droop = 0.35 + rand() * 0.55;
+        parts.push(bambooLeaf(origin, yaw, droop, size * (0.75 + rand() * 0.4), size * 0.17, tone()));
+      }
+    };
+    const branches = 11;
+    for (let i = 0; i < branches; i += 1) {
+      const t = i / (branches - 1);
+      const y = -3.6 + t * 3.3;
+      const dir = i * 2.39996 + rand() * 0.4;
+      // Galhos de baixo mais compridos (a copa se abre como um cone de ponta-cabeça bem largo)
+      const length = 1.2 - t * 0.7 + rand() * 0.25;
+      const rise = 0.5 + rand() * 0.25;
+      const end = new Vector3(Math.cos(dir) * length, y + Math.sin(rise) * length * 0.55, -Math.sin(dir) * length);
+      const twig = segment(new Vector3(0, y, 0), end, 0.014, 3);
+      parts.push(paint(twig, [1.0, 0.95, 0.8]));
+      // Leques: um no meio do galho e outro na ponta
+      const mid = new Vector3(0, y, 0).lerp(end, 0.55);
+      fan(mid, dir + 0.5, 4, 0.72);
+      fan(end, dir, 6, 0.82);
     }
-    return assemble(blades);
+    // Penacho no topo: folhas mais curtas, quase em pé, abertas para todos os lados
+    for (let k = 0; k < 7; k += 1) {
+      parts.push(bambooLeaf(new Vector3(0, 0, 0), (k / 7) * Math.PI * 2 + rand() * 0.3, -0.6 + rand() * 0.5, 0.45, 0.07, tone()));
+    }
+    return assemble(parts);
   });
 }
 
