@@ -7,6 +7,7 @@ import { QUALITY_SETTINGS } from '../../lib/journey/quality';
 import { CAMERA_PATH } from './config';
 import World from './World';
 import { HalfRateFrames, useSceneIdle } from './idleFrames';
+import { setOffscreenWarmup } from './warmup';
 // Pós-processamento só é baixado quando a qualidade alta pede
 const Effects = lazy(() => import('./Effects'));
 import { trackPointer } from '../../lib/pointer';
@@ -41,6 +42,8 @@ export default function Canvas3D() {
   useEffect(() => trackPointer(), []);
 
   const settings = QUALITY_SETTINGS[quality];
+  // O aquecimento dos shaders compila também a variação usada pelo pós-processamento (ver warmup)
+  setOffscreenWarmup(Boolean(settings.postprocessing));
   // Antialias só existe na criação do contexto: trocar de nível com ele recria o canvas
   const contextKey = settings.antialias ? 'aa' : 'plain';
 
@@ -62,6 +65,9 @@ export default function Canvas3D() {
       key={contextKey}
       flat
       onCreated={(state) => {
+        // Em produção o three não confere o log de cada shader: essa conferência obriga a esperar a
+        // compilação na hora (e era parte da travada ao rolar rápido)
+        state.gl.debug.checkShaderErrors = process.env.NODE_ENV !== 'production';
         // ?perf na URL: expõe o renderer para medir programas, draw calls e triângulos
         if (new URLSearchParams(window.location.search).has('perf')) window.__r3f = state;
       }}

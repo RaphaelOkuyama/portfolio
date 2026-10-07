@@ -11,6 +11,7 @@ import { clampToZone, insideZone, orbitPoint, separation, swimStep } from '../..
 import { pointer } from '../../lib/pointer';
 import { NOISE, noiseDefines } from './glsl';
 import { koiGeometry } from './koiGeometry';
+import { revealWhenCompiled } from './warmup';
 import { KOI } from './config';
 
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -265,8 +266,9 @@ export default function Koi({ river, released }) {
   const gl = useThree((s) => s.gl);
   const camera = useThree((s) => s.camera);
   const scene = useThree((s) => s.scene);
+  // Escondidas até o shader compilar: desenhar antes faria a página esperar a compilação (travada)
   useEffect(() => {
-    if (meshRef.current) gl.compileAsync(meshRef.current, camera, scene).catch(() => {});
+    if (meshRef.current) revealWhenCompiled(gl, meshRef.current, camera, scene);
   }, [gl, camera, scene]);
 
   const dummy = useMemo(() => new Object3D(), []);
@@ -371,6 +373,7 @@ export default function Koi({ river, released }) {
       args={[geometry, material, school.length]}
       frustumCulled={false}
       renderOrder={2}
+      visible={false}
     />
   );
 }

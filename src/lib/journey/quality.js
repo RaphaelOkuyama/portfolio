@@ -8,7 +8,9 @@ export const QUALITY_KEY = 'oku-quality';
 export const QUALITY_SETTINGS = {
   low: { dpr: 1, particles: 300, postprocessing: false, antialias: false },
   medium: { dpr: [1, 1.25], particles: 800, postprocessing: false, antialias: true },
-  high: { dpr: [1, 1.5], particles: 1500, postprocessing: true, antialias: true },
+  // Com o bloom a cena é desenhada numa textura antes da tela: o antialias vai nela (multisampling
+  // do EffectComposer) e não no canvas, onde só pagaria a conta sem efeito nenhum
+  high: { dpr: [1, 1.5], particles: 1500, postprocessing: true, antialias: false, multisampling: 2 },
 };
 
 export function isQuality(value) {

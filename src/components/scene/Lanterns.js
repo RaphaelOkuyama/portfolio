@@ -240,7 +240,8 @@ export default function Lanterns({ reflections, released }) {
     geometries.glow.needsUpdate = true;
     if (reflections) reflections.count.value = items.length;
 
-    if (moving || items.some((l) => l.released)) state.invalidate();
+    // Sem pedir quadros extras: parada, a cena anda a 30 fps (HalfRateFrames) e as lanternas
+    // continuam descendo o rio; pedir aqui mantinha o contato a 60 fps para sempre
   });
 
   return (

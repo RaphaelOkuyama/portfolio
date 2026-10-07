@@ -1,5 +1,5 @@
 'use client';
-import { memo, useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { journeyStore } from '../../store/journey';
 import { stepWind } from '../../lib/journey/wind';
@@ -24,7 +24,7 @@ import Festival from './Festival';
 import Bonsai from './Bonsai';
 import Comet from './Comet';
 import KatanaSlash from './KatanaSlash';
-import ShaderWarmup from './ShaderWarmup';
+import ShaderWarmup, { LateWarmup } from './ShaderWarmup';
 
 // Grupos montados em sequência (ordem: o que aparece primeiro no hero vem antes)
 const STAGES = [
@@ -74,6 +74,12 @@ export default function World({ onReady }) {
   // Monta um grupo por vez, cada um numa tarefa curta (a cena inteira de uma vez travava a
   // thread ~600ms num celular); por último compila os shaders de tudo
   const [mounted, setMounted] = useState(1);
+  // Cena pronta: daqui em diante o que nascer depois compila em segundo plano (LateWarmup)
+  const [ready, setReady] = useState(false);
+  const handleReady = useCallback(() => {
+    setReady(true);
+    onReady();
+  }, [onReady]);
   useEffect(() => {
     if (mounted >= STAGES.length) return undefined;
     const id = setTimeout(() => setMounted((n) => n + 1), 0);
@@ -83,7 +89,8 @@ export default function World({ onReady }) {
   return (
     <>
       {STAGES.slice(0, mounted).map((_, i) => <Stage key={i} index={i} />)}
-      {mounted >= STAGES.length ? <ShaderWarmup onReady={onReady} /> : null}
+      {mounted >= STAGES.length ? <ShaderWarmup onReady={handleReady} /> : null}
+      {ready ? <LateWarmup /> : null}
     </>
   );
 }

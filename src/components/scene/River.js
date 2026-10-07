@@ -12,6 +12,7 @@ import Koi from './Koi';
 import { TSUKUYOMI, tsukuyomi } from '../../lib/journey/tsukuyomi';
 import { MAX_RIPPLES, RIPPLE, anyRipple, rippleAge, ripples } from '../../lib/journey/ripples';
 import RedThread from './RedThread';
+import { warm } from './warmup';
 import { LANTERNS, RIVER } from './config';
 
 // Máximo de reflexos: lanternas fixas + soltas pelo formulário
@@ -149,6 +150,15 @@ export default function River() {
   );
   useEffect(() => () => geometry.dispose(), [geometry]);
   useEffect(() => () => material.dispose(), [material]);
+  // Material novo (troca de qualidade): o rio só aparece de novo depois do shader compilado
+  const gl = useThree((s) => s.gl);
+  const camera = useThree((s) => s.camera);
+  const compiling = useRef(false);
+  useEffect(() => {
+    if (!groupRef.current) return;
+    compiling.current = true;
+    warm(gl, groupRef.current, camera, scene).then(() => { compiling.current = false; });
+  }, [material, gl, camera, scene]);
   // Lanterna solta pelo formulário mais recente: as lanternas escrevem, as carpas seguem
   const released = useMemo(() => ({ item: null, at: 0 }), []);
   // As carpas só aparecem no fim da jornada: montam quando a rolagem se aproxima do rio (antes,
@@ -177,7 +187,7 @@ export default function River() {
     // O rio faz parte da paisagem (margens, ponte, pagode): surge no fim dos Projetos, bem antes
     // do contato, para o vale nunca aparecer como uma planície vazia no lugar da água
     const opacity = smoothstep(start - 0.4, start - 0.24, effectiveProgress(journey));
-    group.visible = opacity > 0.001;
+    group.visible = opacity > 0.001 && !compiling.current;
     if (!group.visible) return;
     const { theme } = journey;
     const u = material.uniforms;

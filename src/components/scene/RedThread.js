@@ -143,7 +143,8 @@ export default function RedThread({ released }) {
     u.uA.value.set(item.x, REDTHREAD.lanternTop, item.z);
     u.uC.value.addVectors(u.uA.value, u.uB.value).multiplyScalar(0.5);
     u.uC.value.y += REDTHREAD.lift;
-    state.invalidate();
+    // Fluido (60 fps) só enquanto o fio é desenhado; depois tremula bem a 30
+    if (age < draw) state.invalidate();
   });
 
   return <mesh ref={meshRef} geometry={geometry} material={material} frustumCulled={false} renderOrder={3} visible={false} />;

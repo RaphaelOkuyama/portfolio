@@ -81,10 +81,11 @@ export default function Comet() {
   const tmp = useMemo(() => new Vector3(), []);
 
   useFrame((state, delta) => {
-    const { theme, reducedMotion } = journeyStore.getState();
+    const { theme, reducedMotion, route } = journeyStore.getState();
     night.current += ((theme === 'night' ? 1 : 0) - night.current) * (1 - Math.exp(-delta * 2));
     if (!reducedMotion) clock.current += Math.min(delta, 1 / 20);
-    const pieces = reducedMotion || night.current < 0.02 ? [] : cometPieces(cometPhase(clock.current));
+    // Fora da home (cena congelada) o céu não anda: nada de cometa parado no meio do caminho
+    const pieces = reducedMotion || route === 'frozen' || night.current < 0.02 ? [] : cometPieces(cometPhase(clock.current));
     // Some no céu vermelho do tsukuyomi
     const strength = night.current * (1 - tsukuyomi.mix);
     const { camera } = state;
@@ -107,7 +108,7 @@ export default function Comet() {
       mu.uBurn.value = i === 1 ? Math.min(1, piece.fade * 1.2) : 0;
       mu.uTime.value = clock.current;
     });
-    if (pieces.length) state.invalidate();
+    // Sem pedir quadros: a 30 fps (cena parada) o cometa passa igual, e assim não segura os 60 fps
   });
 
   return [0, 1].map((i) => (

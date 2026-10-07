@@ -48,11 +48,13 @@ export default function AboutSection({ about }) {
     const scroll = scrollRef.current;
     const photo = scroll.querySelector('.kakejiku-photo');
     const rod = scroll.querySelector('.kakejiku-rod-bottom');
+    const shadow = scroll.querySelector('.kakejiku-shadow');
     if (prefersReducedMotion()) return;
     gsap
       .timeline({ scrollTrigger: { trigger: scroll, start: 'top 80%', once: true } })
       .fromTo(photo, { clipPath: 'inset(0 0 100% 0)' }, { clipPath: 'inset(0 0 0% 0)', duration: 1.2, ease: 'power2.inOut' }, 0)
       .fromTo(rod, { y: () => -photo.offsetHeight }, { y: 0, duration: 1.2, ease: 'power2.inOut' }, 0)
+      .fromTo(shadow, { scaleY: 0 }, { scaleY: 1, duration: 1.2, ease: 'power2.inOut' }, 0)
       .from('.about-name', { opacity: 0, y: 10, duration: 0.6, stagger: 0.12, ease: 'power2.out' }, 0.9);
   }, { scope: rootRef });
 
@@ -109,6 +111,7 @@ export default function AboutSection({ about }) {
 
         <figure className="about-portrait">
           <div ref={scrollRef} className="kakejiku" data-kakejiku="">
+            <div className="kakejiku-shadow" aria-hidden="true" />
             <div className="kakejiku-rod" />
             <div className="kakejiku-photo photo-tilt">
               <Image src="/profile.jpg" alt="Raphael Okuyama" fill sizes="(max-width: 768px) 60vw, 320px" />

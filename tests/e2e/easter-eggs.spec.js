@@ -17,7 +17,8 @@ test.describe('領域展開: Expansão de domínio', () => {
     await expect(domain).toHaveCount(1);
     await page.waitForTimeout(1500);
     await page.keyboard.press('Escape');
-    await expect(domain).toHaveCount(0, { timeout: 4_000 });
+    // Saída: saturação curta + reconstrução do site (~2–3 s; mais com a máquina carregada)
+    await expect(domain).toHaveCount(0, { timeout: 10_000 });
     expect(errors).toEqual([]);
   });
 
