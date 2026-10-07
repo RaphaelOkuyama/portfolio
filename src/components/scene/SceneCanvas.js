@@ -9,12 +9,46 @@ import StaticBackdrop from './StaticBackdrop';
 const loadCanvas = () => import('./Canvas3D');
 const Canvas3D = dynamic(loadCanvas, { ssr: false, loading: () => null });
 
-// O download do three (~240KB) começa assim que este módulo roda no navegador, em paralelo com a
-// hidratação; só a montagem espera a ociosidade. Antes ele começava depois do idle e, no 4G,
-// segurava o ensō ~2s a mais. Sem WebGL o fundo estático assume e o chunk nem é pedido
-if (typeof window !== 'undefined' && hasWebGL()) loadCanvas().catch(() => {});
-
 const wrapperStyle = { position: 'fixed', inset: 0, zIndex: -1, pointerEvents: 'none' };
+
+// A cena 3D (three.js ~240 KB, geometrias e shaders) é o trabalho mais pesado da página: feita no
+// carregamento, segurava a thread por segundos num celular. Agora a página abre com o cenário
+// pintado (StaticBackdrop: as mesmas montanhas, céu e rio) e a cena 3D só começa quando a pessoa
+// interage (mexe o mouse, rola, toca, tecla) ou, se ninguém interagir, um pouco depois do
+// carregamento terminar. Ela entra num fade por cima do fundo estático
+const START_EVENTS = ['pointermove', 'pointerdown', 'wheel', 'scroll', 'touchstart', 'keydown'];
+// Sem interação, a cena começa este tempo depois do carregamento (a pessoa só lendo a hero)
+export const SCENE_AUTOSTART_MS = 8000;
+
+function useSceneStart(enabled) {
+  const [start, setStart] = useState(false);
+  useEffect(() => {
+    if (!enabled) return undefined;
+    let timer = 0;
+    let idleId = 0;
+    const go = () => {
+      cleanup();
+      performance.mark('scene-start');
+      setStart(true);
+    };
+    const idle = window.requestIdleCallback ?? ((fn) => setTimeout(fn, 1));
+    const cancelIdle = window.cancelIdleCallback ?? clearTimeout;
+    const afterLoad = () => {
+      timer = setTimeout(() => { idleId = idle(go, { timeout: 2000 }); }, SCENE_AUTOSTART_MS);
+    };
+    const cleanup = () => {
+      START_EVENTS.forEach((type) => window.removeEventListener(type, go));
+      window.removeEventListener('load', afterLoad);
+      clearTimeout(timer);
+      cancelIdle(idleId);
+    };
+    START_EVENTS.forEach((type) => window.addEventListener(type, go, { passive: true, once: true }));
+    if (document.readyState === 'complete') afterLoad();
+    else window.addEventListener('load', afterLoad, { once: true });
+    return cleanup;
+  }, [enabled]);
+  return start;
+}
 
 // Se o chunk falhar ou o renderer lançar erro, avisa o pai para trocar pelo fundo estático
 class SceneErrorBoundary extends Component {
@@ -40,27 +74,27 @@ export default function SceneCanvas() {
   const theme = useJourney((s) => s.theme);
   const mix = useJourney((s) => Math.round(s.seasonMix));
   const sceneReady = useJourney((s) => s.sceneReady);
+  // Depois do fade da cena, o fundo estático sai do DOM (não fica pintando por baixo)
+  const [backdropGone, setBackdropGone] = useState(false);
 
-  // Só monta a cena 3D quando o navegador fica ocioso: o texto e o loader pintam antes
-  // do three.js (parse + shaders) ocupar a thread principal
-  const [idle, setIdle] = useState(false);
+  // O teste de WebGL cria um contexto de GPU: feito no carregamento, segurava a primeira pintura
+  // (o quadro esperava o processo da GPU acordar). Agora só acontece quando a cena vai começar;
+  // até lá o cenário pintado já está na tela
+  const start = useSceneStart(!failed);
   useEffect(() => {
-    setWebgl(hasWebGL());
-    if ('requestIdleCallback' in window) {
-      const id = window.requestIdleCallback(() => {
-        performance.mark('scene-idle');
-        setIdle(true);
-      }, { timeout: 1200 });
-      return () => window.cancelIdleCallback(id);
-    }
-    const id = setTimeout(() => setIdle(true), 200);
-    return () => clearTimeout(id);
-  }, []);
+    if (start && webgl === null) setWebgl(hasWebGL());
+  }, [start, webgl]);
 
-  // O fundo estático também conta como cena pronta para o loader
+  // Sem WebGL (ou se a cena falhar), o fundo estático é a cena
   useEffect(() => {
     if (webgl === false || failed) journeyStore.getState().setSceneReady();
   }, [webgl, failed]);
+
+  useEffect(() => {
+    if (!sceneReady || webgl !== true || failed) return undefined;
+    const id = setTimeout(() => setBackdropGone(true), 1200);
+    return () => clearTimeout(id);
+  }, [sceneReady, webgl, failed]);
 
   if (webgl === false || failed) {
     return (
@@ -73,9 +107,11 @@ export default function SceneCanvas() {
 
   return (
     <div aria-hidden="true" data-scene="webgl" style={wrapperStyle}>
-      {webgl && quality && idle ? (
+      {/* Até a cena 3D chegar: o mesmo cenário, pintado (some depois do fade da cena) */}
+      {backdropGone ? null : <StaticBackdrop theme={theme} mix={mix} />}
+      {webgl && quality && start ? (
         <SceneErrorBoundary onError={() => setFailed(true)}>
-          {/* Em rede lenta a cena pode ficar pronta depois do ensō: entra num fade, sem estalo */}
+          {/* A cena entra num fade por cima do fundo estático, sem estalo */}
           <div style={{ position: 'absolute', inset: 0, opacity: sceneReady ? 1 : 0, transition: 'opacity 0.9s ease' }}>
             <Canvas3D />
           </div>

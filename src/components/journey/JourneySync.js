@@ -5,7 +5,6 @@ import { useSettings } from '../../context/SettingsContext';
 import { journeyStore, useJourney } from '../../store/journey';
 import { seasonNameFromMix } from '../../lib/journey/season';
 import { useQuality } from '../../hooks/useQuality';
-import { ScrollTrigger } from '../../lib/gsap';
 
 // Liga o mundo React (rota, tema, preferências) à store e espelha o estado no <html>
 export default function JourneySync() {
@@ -45,7 +44,10 @@ export default function JourneySync() {
       firstLanguage.current = false;
       return undefined;
     }
-    const id = requestAnimationFrame(() => ScrollTrigger.refresh());
+    // O ScrollTrigger vem sob demanda (os plugins não entram no carregamento; ver lib/gsapCore)
+    const id = requestAnimationFrame(() => {
+      import('../../lib/gsap').then(({ ScrollTrigger }) => ScrollTrigger.refresh()).catch(() => {});
+    });
     return () => cancelAnimationFrame(id);
   }, [language]);
 

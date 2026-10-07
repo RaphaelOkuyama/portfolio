@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
-import { gsap } from '../../lib/gsap';
+import { gsap } from '../../lib/gsapCore';
 import { useSettings } from '../../context/SettingsContext';
 import { drawOmikuji } from '../../lib/omikuji';
 import { hitsTorii } from '../../lib/toriiHit';

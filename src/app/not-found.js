@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { gsap, useGSAP } from '../lib/gsap';
+import { gsap, prepareStroke, strokeOffset, useGSAP } from '../lib/gsapCore';
 import { ArrowLeft } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
 import { journeyStore } from '../store/journey';
@@ -67,7 +67,10 @@ export default function NotFound() {
         duration: 1.1,
         ease: 'power3.inOut',
       })
-      .fromTo('.kintsugi-gold', { drawSVG: '0%' }, { drawSVG: '100%', duration: 1.3, ease: 'power2.inOut', stagger: 0.25 }, '+=0.15')
+      // O ouro corre pelas rachaduras (tracejado deslocado: núcleo do GSAP, sem o DrawSVG)
+      .fromTo('.kintsugi-gold', {
+        strokeDashoffset: (i, el) => { prepareStroke(el); return strokeOffset(el, 0); },
+      }, { strokeDashoffset: 0, duration: 1.3, ease: 'power2.inOut', stagger: 0.25 }, '+=0.15')
       .to('.kintsugi-svg', { '--gold-glow': 1, duration: 0.6 }, '-=0.3');
 
     // "404" de fundo segue o mouse em sentido oposto

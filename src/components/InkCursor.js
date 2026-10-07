@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { gsap } from '../lib/gsap';
+import { gsap } from '../lib/gsapCore';
 import { pruneTrail, trailWidth } from '../lib/cursor/trail';
 
 const DOT_SIZE = 10;

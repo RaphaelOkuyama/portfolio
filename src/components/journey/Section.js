@@ -1,6 +1,6 @@
 'use client';
 import { useRef } from 'react';
-import { ScrollTrigger, useGSAP } from '../../lib/gsap';
+import { useGSAP } from '../../lib/gsapCore';
 import { journeyStore } from '../../store/journey';
 
 // Seção da jornada: informa à store quando está ativa (topo passou do centro da tela)
@@ -13,7 +13,18 @@ export default function Section({ id, as: Tag = 'section', ref: externalRef, chi
     else if (externalRef) externalRef.current = node;
   };
 
-  useGSAP(() => {
+  // O ScrollTrigger vem sob demanda: a hero também é uma Section, e o plugin não entra no
+  // JavaScript do carregamento (ver lib/gsapCore)
+  useGSAP((context) => {
+    let cancelled = false;
+    import('../../lib/gsap').then(({ ScrollTrigger }) => {
+      if (cancelled) return;
+      context.add(() => track(ScrollTrigger));
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, { dependencies: [id] });
+
+  function track(ScrollTrigger) {
     const report = (self) => {
       if (self.isActive) journeyStore.getState().setSection(id, self.progress);
     };
@@ -31,7 +42,7 @@ export default function Section({ id, as: Tag = 'section', ref: externalRef, chi
       onRefresh: reportRange,
     });
     reportRange(trigger);
-  }, { dependencies: [id] });
+  }
 
   return (
     <Tag id={id} ref={setRefs} {...rest}>

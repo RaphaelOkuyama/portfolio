@@ -180,17 +180,18 @@ test.describe('書道 Shodō no loader', () => {
     // 奥 tem 12 traços e 山 tem 3
     await expect(shodo.locator('[data-shodo-stroke]')).toHaveCount(15);
     // Acompanha o pincel a cada frame até o loader sair: o último traço (o 3º de 山) aparece
-    // vazio e termina desenhado antes do ensō sumir. O DrawSVG desenha pelo dasharray: o primeiro
-    // valor é o trecho visível (0 = vazio, o comprimento do caminho = inteiro)
+    // vazio e termina desenhado antes do ensō sumir. O traço é desenhado deslocando o tracejado
+    // (stroke-dashoffset): trecho visível = comprimento − deslocamento
     const brush = await page.evaluate(() => new Promise((resolve) => {
       const seen = { lastStartedEmpty: false, lastFinished: false };
       const tick = () => {
         const strokes = document.querySelectorAll('[data-loader="enso"] [data-shodo-stroke]');
         if (!strokes.length) return resolve(seen);
         const last = strokes[strokes.length - 1];
-        const visible = parseFloat(getComputedStyle(last).strokeDasharray) || 0;
+        const length = last.getTotalLength();
+        const visible = length - (parseFloat(getComputedStyle(last).strokeDashoffset) || 0);
         if (visible < 0.5) seen.lastStartedEmpty = true;
-        if (seen.lastStartedEmpty && visible >= last.getTotalLength() - 0.5) seen.lastFinished = true;
+        if (seen.lastStartedEmpty && visible >= length - 0.5) seen.lastFinished = true;
         requestAnimationFrame(tick);
       };
       tick();

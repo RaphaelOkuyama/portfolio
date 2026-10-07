@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { gsap } from '../lib/gsap';
+import { gsap } from '../lib/gsapCore';
 import Kamon from './Kamon';
 
 const COVER = 0.6;

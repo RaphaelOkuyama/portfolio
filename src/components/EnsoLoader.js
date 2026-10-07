@@ -1,6 +1,6 @@
 'use client';
 import { useRef } from 'react';
-import { gsap, useGSAP } from '../lib/gsap';
+import { gsap, prepareStroke, strokeOffset, useGSAP } from '../lib/gsapCore';
 import { journeyStore, useJourney } from '../store/journey';
 import { loaderProgress, isReturningVisit, markVisited } from '../lib/loader';
 import { ensoShapes } from '../lib/enso';
@@ -39,16 +39,19 @@ export default function EnsoLoader() {
     let shown = 0;
     let finished = false;
 
-    gsap.set(path, { drawSVG: '0%', visibility: 'visible' });
+    // O traço é "desenhado" deslocando o tracejado (núcleo do GSAP, sem o plugin DrawSVG)
+    prepareStroke(path);
+    gsap.set(path, { strokeDashoffset: strokeOffset(path, 0), visibility: 'visible' });
 
     // O pincel escreve 奥 e depois 山, na ordem dos traços
     // (escondido no HTML do servidor: sem isso os traços apareceriam prontos e sumiriam)
     const strokes = rootRef.current.querySelectorAll('[data-shodo-stroke]');
-    gsap.set(strokes, { drawSVG: reduced ? '100%' : '0%' });
+    strokes.forEach((s) => prepareStroke(s));
+    gsap.set(strokes, { strokeDashoffset: (i, el) => strokeOffset(el, reduced ? 1 : 0) });
     gsap.set(rootRef.current.querySelector('[data-shodo]'), { visibility: 'visible' });
     if (!reduced) {
       gsap.to(strokes, {
-        drawSVG: '100%', duration: STROKE_SECONDS, ease: 'power1.in', stagger: STROKE_SECONDS * 1.1, delay: 0.15,
+        strokeDashoffset: 0, duration: STROKE_SECONDS, ease: 'power1.in', stagger: STROKE_SECONDS * 1.1, delay: 0.15,
       });
     }
 
@@ -58,14 +61,16 @@ export default function EnsoLoader() {
         elapsed: performance.now() - start,
         // performance.now() começa na navegação
         waited: performance.now(),
-        sceneReady: journeyStore.getState().sceneReady,
+        // O cenário pintado (StaticBackdrop) já está atrás do loader: não espera a cena 3D, que
+        // começa depois (ver SceneCanvas). Fecha no tempo do traço
+        sceneReady: true,
         ...(reduced ? { minMs: 0 } : {}),
       });
 
       if (progress < 1) {
         if (progress - shown >= MIN_STEP) {
           shown = progress;
-          gsap.to(path, { drawSVG: `${progress * 100}%`, duration: 0.3, ease: 'power1.out', overwrite: true });
+          gsap.to(path, { strokeDashoffset: strokeOffset(path, progress), duration: 0.3, ease: 'power1.out', overwrite: true });
         }
         return;
       }
@@ -80,9 +85,9 @@ export default function EnsoLoader() {
             journeyStore.getState().setLoaderDone();
           },
         })
-        .to(path, { drawSVG: '100%', duration: reduced ? 0 : 0.35, ease: 'power2.out', overwrite: true })
+        .to(path, { strokeDashoffset: 0, duration: reduced ? 0 : 0.35, ease: 'power2.out', overwrite: true })
         // Num aparelho lento o ensō pode fechar antes do pincel: 奥山 termina de ser escrito antes de sumir
-        .to(strokes, { drawSVG: '100%', duration: reduced ? 0 : 0.25, ease: 'power1.out', overwrite: true }, '<')
+        .to(strokes, { strokeDashoffset: 0, duration: reduced ? 0 : 0.25, ease: 'power1.out', overwrite: true }, '<')
         .to(rootRef.current, { opacity: 0, duration: reduced ? 0 : 0.6, ease: 'power2.inOut' });
     };
 
@@ -98,7 +103,11 @@ export default function EnsoLoader() {
       data-loader="enso"
       aria-hidden="true"
       style={{
-        position: 'fixed', inset: 0, zIndex: 10000, background: 'var(--bg-color)',
+        // Transparente: a hero (nome, texto, cenário) aparece por trás desde o primeiro instante
+        // e o pincel escreve o ensō por cima. Com fundo opaco a página só "existia" quando o
+        // loader sumia (LCP e Speed Index de ~5–8s num celular)
+        position: 'fixed', inset: 0, zIndex: 10000,
+        background: 'radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--bg-color) 70%, transparent) 0, transparent 150px)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}
     >

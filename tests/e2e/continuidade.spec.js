@@ -95,7 +95,8 @@ test.describe('Fundo pintado sem WebGL', () => {
 
   test('tem névoa, cedros e o rio, e acompanha o tema', async ({ page }) => {
     await openHome(page);
-    const backdrop = page.locator('[data-scene="fallback"] .static-backdrop');
+    // O cenário pintado aparece desde o início (a cena 3D só tenta começar na primeira interação)
+    const backdrop = page.locator('[data-scene] .static-backdrop');
     await expect(backdrop).toBeVisible();
     await expect(backdrop.locator('.backdrop-mist')).toHaveCount(2);
     await expect(backdrop.locator('[data-trees="near"]')).toHaveAttribute('d', /M/);
@@ -108,7 +109,7 @@ test.describe('Fundo pintado sem WebGL', () => {
 
   test('as cores seguem a estação conforme rola', async ({ page }) => {
     await openHome(page);
-    const backdrop = page.locator('[data-scene="fallback"] .static-backdrop');
+    const backdrop = page.locator('[data-scene] .static-backdrop');
     await expect(backdrop).toHaveAttribute('data-season-mix', '0');
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
     await expect(backdrop).not.toHaveAttribute('data-season-mix', '0', { timeout: 5_000 });

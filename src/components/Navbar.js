@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useRef } from 'react';
-import { gsap, useGSAP } from '../lib/gsap';
+import { gsap, useGSAP } from '../lib/gsapCore';
 import { Sun, Moon, Globe, Menu, X, Github, Linkedin, Mail } from 'lucide-react'; // Importei os ícones sociais
 import { useSettings } from '../context/SettingsContext';
 import Kamon from './Kamon';

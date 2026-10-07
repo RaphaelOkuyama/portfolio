@@ -1,23 +1,24 @@
 import './globals.css';
+import { Suspense } from 'react';
 import { Inter } from 'next/font/google';
 import localFont from 'next/font/local';
 import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
-import SocialSidebar from '../components/SocialSidebar';
 import InkCursor from '../components/InkCursor';
 import EasterEggs from '../components/EasterEggs';
 import JourneySync from '../components/journey/JourneySync';
-import SmoothScroll from '../components/journey/SmoothScroll';
 import SceneCanvas from '../components/scene/SceneCanvas';
 import EnsoLoader from '../components/EnsoLoader';
 import NorenTransition from '../components/NorenTransition';
-import Suminagashi from '../components/Suminagashi';
-import Senbazuru from '../components/Senbazuru';
 import { SettingsProvider } from '../context/SettingsContext';
 import { THEME_BOOT_SCRIPT } from '../lib/themeBoot';
 import { SITE_URL, personJsonLd, jsonLdScript } from '../lib/site';
 import { Analytics } from "@vercel/analytics/react";
 import { LazyToaster } from '../lib/toast';
+import Footer from '../components/Footer';
+import SocialSidebar from '../components/SocialSidebar';
+import SmoothScroll from '../components/journey/SmoothScroll';
+import Suminagashi from '../components/Suminagashi';
+import Senbazuru from '../components/Senbazuru';
 
 // Texto em Inter; títulos em Shippori Mincho (serifa japonesa)
 const sans = Inter({ subsets: ['latin'], display: 'swap', variable: '--font-sans' });
@@ -76,25 +77,28 @@ export default function RootLayout({ children }) {
         <SettingsProvider>
           <JourneySync />
           <SmoothScroll />
-          <SceneCanvas />
-          <EnsoLoader />
-          <NorenTransition />
-          <Suminagashi />
-          <Senbazuru />
-          <InkCursor />
-          <EasterEggs />
+          {/* Cada <Suspense> é hidratado à parte (hidratação seletiva do React): o essencial (barra,
+              conteúdo) primeiro e os enfeites depois, em tarefas curtas. Num commit só, o layout
+              inteiro com os efeitos de animação travava a thread por centenas de ms no celular */}
+          <Suspense fallback={null}><SceneCanvas /></Suspense>
+          <Suspense fallback={null}><EnsoLoader /></Suspense>
+          <Suspense fallback={null}><NorenTransition /></Suspense>
+          <Suspense fallback={null}><Suminagashi /></Suspense>
+          <Suspense fallback={null}><Senbazuru /></Suspense>
+          <Suspense fallback={null}><InkCursor /></Suspense>
+          <Suspense fallback={null}><EasterEggs /></Suspense>
           <Navbar />
-          
-          <SocialSidebar />
-          
+
+          <Suspense fallback={null}><SocialSidebar /></Suspense>
+
           <main style={{ paddingTop: '80px', minHeight: '100vh' }}>
             {children}
             <Analytics />
           </main>
 
-          <LazyToaster position="bottom-right" richColors />
-          
-          <Footer />
+          <Suspense fallback={null}><LazyToaster position="bottom-right" richColors /></Suspense>
+
+          <Suspense fallback={null}><Footer /></Suspense>
         </SettingsProvider>
       </body>
     </html>
