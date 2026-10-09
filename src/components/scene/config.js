@@ -362,7 +362,7 @@ export const FOREST = {
   // Fração de matsu (pinheiro em nuvens) no meio dos sugi
   matsuShare: 0.3,
   // Além desta distância (em z) da câmera, a camada usa as árvores leves (LOD)
-  lodDistance: 30,
+  lodDistance: 24,
   // Camadas além deste z (a cordilheira atrás do rio) levam metade das árvores
   farZ: -100,
 };
