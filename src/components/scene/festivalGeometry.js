@@ -19,7 +19,7 @@ const box = (w, h, d, color, at) => placed(paint(new BoxGeometry(w, h, d), color
 const cyl = (top, bottom, h, sides, color, at) => placed(paint(new CylinderGeometry(top, bottom, h, sides), color), at);
 const cone = (r, h, sides, color, at) => placed(paint(new ConeGeometry(r, h, sides), color), at);
 const ball = (r, scale, color, at) => {
-  const g = paint(new SphereGeometry(r, 10, 8), color);
+  const g = paint(new SphereGeometry(r, r < 0.1 ? 7 : 10, r < 0.1 ? 5 : 8), color);
   g.scale(...scale);
   return placed(g, at);
 };
@@ -73,7 +73,7 @@ const tileUV = (tile, u, v) => [
 
 function maskFace({ kind, w, h, depth, sculpt = () => 0, color }) {
   MASK_PAINT[kind] = color;
-  const g = new SphereGeometry(0.5, 28, 22, 0, Math.PI);
+  const g = new SphereGeometry(0.5, 20, 16, 0, Math.PI);
   const pos = g.attributes.position;
   const uv = g.attributes.uv;
   const lift = (u, v) => Math.sqrt(Math.max(0, 1 - u * u - v * v));
@@ -382,10 +382,10 @@ export function chochinGeometry() {
   return cached('chochin', () => {
     const parts = [ball(0.5, [1, 1.3, 1], C.red, {})];
     // Costelas: anéis finos mais escuros, seguindo a curva do papel
-    for (let i = 1; i < 8; i += 1) {
-      const t = -1 + (i / 8) * 2;
+    for (let i = 1; i < 6; i += 1) {
+      const t = -1 + (i / 6) * 2;
       const r = 0.5 * Math.sqrt(1 - t * t) + 0.004;
-      parts.push(placed(paint(new TorusGeometry(r, 0.012, 3, 16), C.deepRed), { y: t * 0.65, rotX: Math.PI / 2 }));
+      parts.push(placed(paint(new TorusGeometry(r, 0.012, 3, 12), C.deepRed), { y: t * 0.65, rotX: Math.PI / 2 }));
     }
     parts.push(cyl(0.28, 0.3, 0.12, 12, C.black, { y: 0.64 }));
     parts.push(cyl(0.3, 0.28, 0.12, 12, C.black, { y: -0.64 }));

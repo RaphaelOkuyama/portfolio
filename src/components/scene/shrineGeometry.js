@@ -24,9 +24,10 @@ const lump = (r, scale, at, detail = 0) => {
   return placed(g, at);
 };
 
-// Volume orgânico facetado (icosaedro subdividido): lê como pedra esculpida, não como rocha bruta
+// Volume orgânico facetado (icosaedro subdividido): lê como pedra esculpida, não como rocha bruta.
+// Peças miúdas (dedos, miolo dos cachos, presas) ficam no icosaedro simples: não se vê a diferença
 const blob = (r, scale, at, tone = 1) => {
-  const g = paint(new IcosahedronGeometry(r, 1), [tone, tone, tone]);
+  const g = paint(new IcosahedronGeometry(r, r < 0.07 ? 0 : 1), [tone, tone, tone]);
   g.scale(...scale);
   return placed(g, at);
 };

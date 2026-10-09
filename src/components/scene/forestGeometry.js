@@ -1,4 +1,4 @@
-import { ConeGeometry, CylinderGeometry, DodecahedronGeometry, Float32BufferAttribute } from 'three';
+import { ConeGeometry, CylinderGeometry, DodecahedronGeometry, Float32BufferAttribute, OctahedronGeometry } from 'three';
 import { assemble, placed } from './lowpoly';
 
 // Árvores das cordilheiras, low-poly com a luz "pintada" nas faces (lowpoly.shadeOnto) e tons
@@ -94,8 +94,36 @@ function matsu() {
   return assemble(parts);
 }
 
+// Versões leves (LOD) para as árvores longe da câmera, onde a névoa já apaga o detalhe: o sugi
+// com 3 camadas de 6 lados e o matsu com tronco único e 3 nuvens em losango (~1/3 dos triângulos)
+function sugiLite() {
+  const parts = [placed(shade(new CylinderGeometry(0.035, 0.05, 0.42, 4), () => [0.62, 0.5, 0.42]), { y: 0.21 })];
+  for (let i = 0; i < 3; i += 1) {
+    const r = 0.44 * (1 - i * 0.26);
+    const h = 0.5 - i * 0.04;
+    const bottom = 0.22 + i * 0.38;
+    parts.push(placed(tier(r, h, 6, 0.86 + i * 0.09), { y: bottom + h / 2, rotY: i * 0.5 }));
+  }
+  return assemble(parts);
+}
+
+function matsuLite() {
+  const parts = [placed(shade(new CylinderGeometry(0.035, 0.06, 1.1, 4), () => [0.58, 0.46, 0.4]), { y: 0.55, x: 0.05, rotZ: 0.05 })];
+  [[-0.28, 0.72, 0.3, 0.88], [0.3, 0.98, 0.27, 0.94], [0.03, 1.22, 0.3, 1.02]].forEach(([x, y, r, light], i) => {
+    const g = new OctahedronGeometry(r, 0);
+    g.scale(1.6, 0.45, 1.3);
+    g.rotateY(i * 0.9 + 0.4);
+    parts.push(placed(shade(g, (yy) => {
+      const t = Math.min(1, Math.max(0, (yy + r * 0.45) / (r * 0.9)));
+      const v = light * (0.62 + 0.5 * t);
+      return [v * 0.96, v, v * 0.9];
+    }), { x, y }));
+  });
+  return assemble(parts);
+}
+
 export function forestGeometry() {
-  if (!cache) cache = { sugi: sugi(), matsu: matsu() };
+  if (!cache) cache = { sugi: sugi(), matsu: matsu(), sugiLite: sugiLite(), matsuLite: matsuLite() };
   return cache;
 }
 

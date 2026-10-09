@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import {
   Color, DataTexture, LinearFilter, MeshBasicMaterial, Object3D, RGBAFormat, Shape, ShapeGeometry,
@@ -164,7 +164,8 @@ export default function MountainLayers() {
     return layers.map(({ layer, points }, i) => {
       const all = forestPlacements(points, {
         seed: layer.seed + 5,
-        count,
+        // A cordilheira do fundo (atrás do rio) fica minúscula na névoa: metade das árvores
+        count: layer.z < FOREST.farZ ? Math.round(count * 0.5) : count,
         halfWidth: FOREST.halfWidth,
         valleyHalf: layer.forestValleyHalf ?? FOREST.valleyHalf,
         valleyCenter: layer.valleyCenter,
@@ -188,6 +189,8 @@ export default function MountainLayers() {
   );
   useEffect(() => () => materials.forEach((m) => m.dispose()), [materials]);
   useEffect(() => () => forestMaterials.forEach((m) => m.dispose()), [forestMaterials]);
+
+  const lod = useRef([]);
 
   const tones = useMemo(
     () => ({ near: new Color(), mid: new Color(), far: new Color(), target: new Color(), rim: new Color() }),
@@ -235,14 +238,36 @@ export default function MountainLayers() {
       u.uTime.value = frame.clock.elapsedTime;
     });
 
+    // LOD das florestas: a versão detalhada só nas camadas perto da câmera; longe (ou na qualidade
+    // baixa) fica a leve, com ~metade dos triângulos, onde a névoa já apaga o detalhe
+    if (quality !== 'low') {
+      MOUNTAIN_LAYERS.forEach((layer, i) => {
+        const pair = lod.current[i];
+        if (!pair?.full || !pair.lite) return;
+        const near = Math.abs(frame.camera.position.z - layer.z) < FOREST.lodDistance;
+        if (pair.full.visible !== near) {
+          pair.full.visible = near;
+          pair.lite.visible = !near;
+        }
+      });
+    }
+
     if (pending) frame.invalidate();
   });
 
   return layers.map(({ layer, geometry }, i) => (
     <group key={layer.seed} position={[layer.x, 0, layer.z]}>
       <mesh geometry={geometry} material={materials[i]} />
-      <Forest geometry={trees.sugi} material={forestMaterials[i]} trees={forests[i].sugi} slim={0.8} />
-      <Forest geometry={trees.matsu} material={forestMaterials[i]} trees={forests[i].matsu} slim={1} />
+      {quality === 'low' ? null : (
+        <group ref={(g) => { lod.current[i] = { ...lod.current[i], full: g }; }}>
+          <Forest geometry={trees.sugi} material={forestMaterials[i]} trees={forests[i].sugi} slim={0.8} />
+          <Forest geometry={trees.matsu} material={forestMaterials[i]} trees={forests[i].matsu} slim={1} />
+        </group>
+      )}
+      <group ref={(g) => { lod.current[i] = { ...lod.current[i], lite: g }; }} visible={quality === 'low'}>
+        <Forest geometry={trees.sugiLite} material={forestMaterials[i]} trees={forests[i].sugi} slim={0.8} />
+        <Forest geometry={trees.matsuLite} material={forestMaterials[i]} trees={forests[i].matsu} slim={1} />
+      </group>
     </group>
   ));
 }

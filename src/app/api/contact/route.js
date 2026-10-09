@@ -4,6 +4,9 @@ import {
   validateContact, isBot, buildMail, normalizeAppPassword, createRateLimiter,
 } from '../../../lib/contactMail';
 
+// A função roda em São Paulo: quem visita é do Brasil (antes ia e voltava dos EUA, ~150 ms a mais)
+export const preferredRegion = 'gru1';
+
 const allow = createRateLimiter({ max: 5, windowMs: 10 * 60 * 1000 });
 
 const MESSAGES = {
