@@ -4095,3 +4095,181 @@ html.dx-frozen :is([data-cursor], [data-cursor-trail], .water-gl, .water-shadow)
   .black-flash { animation: none; }
   .black-flash-bolts { display: none; }
 }
+
+/* 履歴書: o currículo pintado antes do download (about/ResumeBrush) */
+.rb {
+  position: fixed;
+  inset: 0;
+  z-index: 10003;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.rb-dim {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background: radial-gradient(ellipse at 50% 45%, rgba(12, 10, 8, 0.35), rgba(12, 10, 8, 0.72));
+  backdrop-filter: blur(3px);
+}
+.rb-paper {
+  position: relative;
+  height: min(78vh, 680px);
+  aspect-ratio: 420 / 594;
+  border-radius: 3px;
+  /* Washi: papel creme com fibras e as bordas um pouco mais escuras */
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(255, 255, 255, 0.55), transparent 70%),
+    repeating-linear-gradient(97deg, rgba(120, 95, 60, 0.035) 0 1px, transparent 1px 7px),
+    repeating-linear-gradient(8deg, rgba(120, 95, 60, 0.03) 0 1px, transparent 1px 11px),
+    #f3ead8;
+  box-shadow: inset 0 0 40px rgba(120, 90, 50, 0.18), 0 30px 80px rgba(0, 0, 0, 0.45);
+  will-change: transform, clip-path;
+}
+.rb-svg { width: 100%; height: 100%; display: block; }
+.rb-kanji path {
+  fill: none;
+  stroke: #1b1611;
+  stroke-width: 7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.rb-name {
+  font-family: var(--font-display), 'Yu Mincho', serif;
+  font-size: 28px;
+  font-weight: 800;
+  fill: #1b1611;
+}
+.rb-role {
+  font-family: var(--font-sans), sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  fill: #8f2a23;
+}
+.rb-rule { stroke: rgba(27, 22, 17, 0.35); stroke-width: 1; }
+.rb-section-title {
+  font-family: var(--font-display), 'Yu Mincho', serif;
+  font-size: 14px;
+  font-weight: 800;
+  fill: #8f2a23;
+}
+.rb-line {
+  fill: none;
+  stroke: rgba(30, 24, 18, 0.72);
+  stroke-linecap: round;
+}
+.rb-hanko {
+  position: absolute;
+  right: 9%;
+  bottom: 6%;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 6px;
+  background: #c23b30;
+  box-shadow: inset 0 0 0 2px rgba(255, 236, 220, 0.85), inset 0 0 0 4px #b1302a;
+  color: #fff4e6;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1;
+  writing-mode: vertical-rl;
+  opacity: 0;
+  mix-blend-mode: multiply;
+}
+
+/* 鯉: o contador da ração e o letreiro do 鯉の滝登り (KoiNotice) */
+.koi-chip {
+  position: fixed;
+  left: 50%;
+  bottom: 9vh;
+  z-index: 9980;
+  margin: 0;
+  padding: 7px 16px;
+  border-radius: 999px;
+  background: rgba(12, 16, 28, 0.72);
+  backdrop-filter: blur(6px);
+  color: #f3ead2;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  transform: translateX(-50%);
+  animation: koi-chip 1.6s ease forwards;
+}
+.koi-chip .font-jp { color: #e9b44c; margin-right: 4px; }
+@keyframes koi-chip {
+  0% { opacity: 0; transform: translate(-50%, 8px); }
+  12%, 75% { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, -6px); }
+}
+.koi-banner {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 13vh;
+  z-index: 9980;
+  padding: 2.2rem 0 2rem;
+  text-align: center;
+  /* Faixa escura suave atrás do letreiro: legível sobre qualquer parte da página */
+  background: radial-gradient(ellipse 55% 100% at 50% 50%, rgba(10, 12, 22, 0.62), rgba(10, 12, 22, 0));
+  pointer-events: none;
+  animation: koi-banner 4.2s ease forwards;
+}
+.koi-banner-jp {
+  margin: 0;
+  font-size: clamp(40px, 6vw, 84px);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #f6d27a;
+  text-shadow: 0 0 22px rgba(240, 180, 60, 0.75), 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+.koi-banner-sub {
+  margin: 0.5rem 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: #fff5e0;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
+}
+@keyframes koi-banner {
+  0% { opacity: 0; transform: translateY(14px); filter: blur(6px); }
+  14%, 78% { opacity: 1; transform: translateY(0); filter: blur(0); }
+  100% { opacity: 0; transform: translateY(-10px); filter: blur(4px); }
+}
+
+/* 木霊: o contador da caça, o letreiro verde e o botão da floresta dos espíritos (KodamaNotice) */
+.kodama-chip .font-jp { color: #8fe39a; }
+.kodama-banner .koi-banner-jp {
+  color: #b9f5bf;
+  text-shadow: 0 0 22px rgba(90, 230, 120, 0.75), 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+.kodama-toggle {
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  z-index: 9970;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 1px solid rgba(140, 230, 150, 0.4);
+  border-radius: 50%;
+  background: rgba(10, 20, 14, 0.6);
+  backdrop-filter: blur(6px);
+  color: #b9f5bf;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: box-shadow 0.3s, border-color 0.3s, opacity 0.3s;
+}
+.kodama-toggle[aria-pressed='true'] {
+  border-color: rgba(150, 255, 160, 0.9);
+  box-shadow: 0 0 16px rgba(110, 240, 130, 0.55);
+}
+.kodama-toggle[aria-pressed='false'] { opacity: 0.6; }

@@ -38,6 +38,8 @@ export function createJourneyStore() {
     tsukuyomi: false,
     // Algo cobre a tela inteira (Expansão de Domínio): a cena 3D para de desenhar
     covered: false,
+    // 木霊の森: os 5 kodama escondidos foram achados e a floresta dos espíritos está acesa
+    spirit: false,
 
     setProgress: (p) => {
       const progress = clamp01(p);
@@ -70,6 +72,7 @@ export function createJourneyStore() {
     setLost: (lost) => set({ lost }),
     setTsukuyomi: (tsukuyomi) => set({ tsukuyomi }),
     setCovered: (covered) => set({ covered }),
+    setSpirit: (spirit) => set({ spirit }),
   }));
 }
 

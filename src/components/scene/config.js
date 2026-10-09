@@ -105,6 +105,17 @@ export const KODAMA = {
   near: 18,
 };
 
+// 木霊探し: cinco kodama escondidos pela jornada (atrás do bonsai, junto do shishi-odoshi, espiando
+// atrás dos caixotes da barraca de máscaras, do outro lado das lanternas e perto da katana). Achar
+// os cinco acende a floresta dos espíritos. [x, z, giro]
+export const KODAMA_HUNT = {
+  spots: [[9.7, -31.6, -0.6], [-10.9, -10.2, 0.7], [-8.4, 3.9, 1.1], [-8.9, -41.6, 0.9], [16.4, -78.6, -0.9]],
+  scale: 0.8,
+  // Raio mínimo do alvo na tela (px): pequeno de ver, fácil de tocar
+  minHit: 18,
+  spirits: 170,
+};
+
 // 鹿威し no canto do jardim zen, fora da moldura de areia
 // 盆栽: o pinheiro na mesinha, à direita do caminho entre as lanternas de pedra
 export const BONSAI = { x: 8.2, z: -30.2, rotY: -0.45, scale: 2.2 };

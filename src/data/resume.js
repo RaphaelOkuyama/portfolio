@@ -61,6 +61,12 @@ export const resumeData = {
         { kanji: '芳賀', romaji: 'Haga', note: 'família da mãe' },
       ],
       btnResume: 'Baixar currículo',
+      // O currículo pintado antes do download (ResumeBrush)
+      resumePaint: {
+        role: 'Desenvolvedor Full-Stack',
+        sections: ['Experiência', 'Projetos', 'Formação', 'Tecnologias'],
+        status: 'Preparando o currículo para download',
+      },
       btnContact: 'Fale comigo'
     },
     techSection: {
@@ -433,6 +439,11 @@ export const resumeData = {
         { kanji: '芳賀', romaji: 'Haga', note: 'mother’s family' },
       ],
       btnResume: 'Download CV',
+      resumePaint: {
+        role: 'Full-Stack Developer',
+        sections: ['Experience', 'Projects', 'Education', 'Technologies'],
+        status: 'Preparing the CV for download',
+      },
       btnContact: 'Get in touch'
     },
     techSection: {

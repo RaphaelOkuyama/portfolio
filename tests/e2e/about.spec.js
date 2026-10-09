@@ -38,15 +38,28 @@ test('o kakejiku desenrola a foto ao entrar na tela', async ({ page }) => {
     .not.toContain('100%');
 });
 
-test('baixar o currículo carimba o hanko e mantém o download', async ({ page }) => {
+test('baixar o currículo pinta a folha, carimba o hanko e baixa o PDF', async ({ page }) => {
   await openHome(page);
   await scrollToAbout(page, 0);
   const link = page.getByRole('link', { name: 'Baixar currículo' });
   await expect(link).toHaveAttribute('href', '/curriculo.pdf');
   const download = page.waitForEvent('download');
   await link.click();
-  await expect(page.locator('[data-stamp]')).toBeVisible();
+  // 履歴書: a folha aparece, o hanko carimba e o download sai no fim (ou num clique, que pula)
+  await expect(page.locator('.rb')).toBeVisible();
+  await expect(page.locator('.rb-hanko')).toBeVisible({ timeout: 4000 });
   expect((await download).suggestedFilename()).toBe('Raphael_Okuyama_CV.pdf');
+  await expect(page.locator('.rb')).toHaveCount(0, { timeout: 4000 });
+});
+
+test('um clique na pintura do currículo pula direto para o download', async ({ page }) => {
+  await openHome(page);
+  await scrollToAbout(page, 0);
+  const download = page.waitForEvent('download');
+  await page.getByRole('link', { name: 'Baixar currículo' }).click();
+  await page.locator('.rb').click();
+  expect((await download).suggestedFilename()).toBe('Raphael_Okuyama_CV.pdf');
+  await expect(page.locator('.rb')).toHaveCount(0);
 });
 
 test('trocar o idioma refaz a divisão em linhas', async ({ page }) => {

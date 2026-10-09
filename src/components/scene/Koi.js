@@ -1,18 +1,49 @@
 'use client';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import {
-  Color, DoubleSide, InstancedBufferAttribute, Object3D, Plane, Raycaster, ShaderMaterial, UniformsLib, UniformsUtils,
-  Vector2, Vector3,
+  BufferAttribute, BufferGeometry, Color, DoubleSide, InstancedBufferAttribute, Object3D, Plane, Points, Raycaster, ShaderMaterial,
+  UniformsLib, UniformsUtils, Vector2, Vector3,
 } from 'three';
 import { journeyStore } from '../../store/journey';
 import { mulberry32 } from '../../lib/journey/ridge';
 import { clampToZone, insideZone, orbitPoint, separation, swimStep } from '../../lib/journey/koi';
 import { pointer } from '../../lib/pointer';
+import { addRipple } from '../../lib/journey/ripples';
+import { isSceneClick } from '../../lib/journey/sceneClick';
+import KoiDragon from './KoiDragon';
 import { NOISE, noiseDefines } from './glsl';
 import { koiGeometry } from './koiGeometry';
 import { revealWhenCompiled } from './warmup';
 import { KOI } from './config';
+
+// 餌: a ração que flutua na água (bolinhas mornas com brilho), no plano do rio
+const pelletVertex = /* glsl */ `
+  attribute float aAlive;
+  varying float vAlive;
+  void main() {
+    vAlive = aAlive;
+    vec4 mv = modelViewMatrix * vec4(position, 1.0);
+    gl_PointSize = 70.0 * aAlive / -mv.z;
+    gl_Position = projectionMatrix * mv;
+  }
+`;
+const pelletFragment = /* glsl */ `
+  varying float vAlive;
+  void main() {
+    vec2 c = gl_PointCoord - 0.5;
+    float d = length(c);
+    if (d > 0.5 || vAlive < 0.01) discard;
+    vec3 col = mix(vec3(0.86, 0.55, 0.26), vec3(0.45, 0.25, 0.1), smoothstep(0.1, 0.5, d));
+    col += smoothstep(0.18, 0.0, length(c - vec2(-0.12, -0.14))) * 0.45;
+    gl_FragColor = vec4(col, (1.0 - smoothstep(0.38, 0.5, d)) * vAlive);
+    #include <colorspace_fragment>
+  }
+`;
+// Ração: quantos grãos por clique, o máximo boiando, o raio da "mordida" e quantos para o dragão
+const FEED = { perClick: 5, max: 16, spread: 0.55, bite: 0.42, dragonAt: 9, life: 30 };
+// A carpa que vira dragão: a ogon (dourada)
+const DRAGON_KOI = 2;
 
 const lerp = (a, b, t) => a + (b - a) * t;
 // Variedades → tipo de desenho no shader (0 lisa metálica, 1 kohaku, 2 showa, 3 tanchō)
@@ -276,6 +307,30 @@ export default function Koi({ river, released }) {
     caster: new Raycaster(), ndc: new Vector2(), plane: new Plane(new Vector3(0, 1, 0), 0), hit: new Vector3(), origin: new Vector3(),
   }), []);
   const clock = useRef(0);
+  // Ração boiando (coordenadas do rio), quantas a carpa já comeu e o dragão em andamento
+  const pellets = useMemo(() => {
+    const geometry = new BufferGeometry();
+    geometry.setAttribute('position', new BufferAttribute(new Float32Array(FEED.max * 3), 3));
+    geometry.setAttribute('aAlive', new BufferAttribute(new Float32Array(FEED.max), 1));
+    const pelletMaterial = new ShaderMaterial({ vertexShader: pelletVertex, fragmentShader: pelletFragment, transparent: true, depthWrite: false });
+    const points = new Points(geometry, pelletMaterial);
+    points.frustumCulled = false;
+    points.renderOrder = 3;
+    return { geometry, material: pelletMaterial, points, list: [], fed: 0, click: null };
+  }, []);
+  useEffect(() => () => { pellets.geometry.dispose(); pellets.material.dispose(); }, [pellets]);
+  const [dragon, setDragon] = useState(null);
+  const dragonOn = useRef(false);
+
+  // Clique na água: joga um punhado de ração onde caiu (o raio é feito no próximo quadro)
+  useEffect(() => {
+    const onClick = (e) => {
+      if (journeyStore.getState().reducedMotion || !isSceneClick(e.target)) return;
+      pellets.click = { x: (e.clientX / window.innerWidth) * 2 - 1, y: -(e.clientY / window.innerHeight) * 2 + 1 };
+    };
+    window.addEventListener('click', onClick);
+    return () => window.removeEventListener('click', onClick);
+  }, [pellets]);
   // As lanternas marcam a hora da soltura neste relógio (que para com movimento reduzido)
   useEffect(() => {
     released.clock = () => clock.current;
@@ -310,6 +365,31 @@ export default function Koi({ river, released }) {
         if (insideZone(x, z, wide)) lure = clampToZone(x, z, KOI.zone);
       }
     }
+    // Ração: o clique vira grãos na água (só dentro da zona das carpas, um pouco folgada)
+    const now = performance.now() / 1000;
+    if (pellets.click) {
+      ray.plane.constant = -ray.origin.y;
+      ray.caster.setFromCamera(ray.ndc.set(pellets.click.x, pellets.click.y), state.camera);
+      pellets.click = null;
+      if (ray.caster.ray.intersectPlane(ray.plane, ray.hit)) {
+        const x = ray.hit.x - ray.origin.x;
+        const z = ray.hit.z - ray.origin.z;
+        const m = KOI.lureMargin * 0.5;
+        if (insideZone(x, z, { x: [KOI.zone.x[0] - m, KOI.zone.x[1] + m], z: [KOI.zone.z[0] - m, KOI.zone.z[1] + m] })) {
+          const at = clampToZone(x, z, KOI.zone);
+          for (let i = 0; i < FEED.perClick; i += 1) {
+            if (pellets.list.length >= FEED.max) pellets.list.shift();
+            const a = Math.random() * Math.PI * 2;
+            const r = Math.sqrt(Math.random()) * FEED.spread;
+            pellets.list.push({ x: at.x + Math.cos(a) * r, z: at.z + Math.sin(a) * r, born: now, seed: Math.random() * 6 });
+          }
+          addRipple(ray.hit.x, ray.hit.z, 0.9, now);
+        }
+      }
+    }
+    pellets.list = pellets.list.filter((p) => now - p.born < FEED.life);
+    const food = pellets.list;
+
     // Lanterna solta pelo formulário: o cardume inteiro acompanha enquanto ela desce o rio
     const lantern = released.item && t - released.at < KOI.followLantern ? { x: released.item.x, z: released.item.z } : null;
     // As mais próximas do cursor são as curiosas
@@ -320,7 +400,14 @@ export default function Koi({ river, released }) {
     if (moving) {
       school.forEach((k, i) => {
         let target;
-        if (lantern) target = orbitPoint(lantern, i, school.length, t, KOI.orbit.lantern);
+        // Com ração na água, cada carpa vai no grão mais perto (a dourada fica fora enquanto é dragão)
+        const hidden = i === DRAGON_KOI && dragonOn.current;
+        let meal = null;
+        if (food.length && !hidden) {
+          meal = food.reduce((best, p) => (Math.hypot(p.x - k.x, p.z - k.z) < Math.hypot(best.x - k.x, best.z - k.z) ? p : best));
+        }
+        if (meal) target = meal;
+        else if (lantern) target = orbitPoint(lantern, i, school.length, t, KOI.orbit.lantern);
         else if (curious?.has(k)) target = orbitPoint(lure, i, KOI.curious, t, KOI.orbit.pointer);
         else {
           // Passeio: um ponto ao acaso na zona, trocado ao chegar ou de tempos em tempos
@@ -332,7 +419,7 @@ export default function Koi({ river, released }) {
         }
         // Atrás do cursor ou da lanterna elas apressam o nado (e viram mais rápido). A arrancada
         // cresce e some aos poucos: sem trancos quando uma carpa entra ou sai das curiosas
-        const excited = Boolean(lantern) || Boolean(curious?.has(k));
+        const excited = Boolean(meal) || Boolean(lantern) || Boolean(curious?.has(k));
         k.boost += ((excited ? KOI.dash : 1) - k.boost) * (1 - Math.exp(-dt * 1.8));
         // As vizinhas desviam o rumo (em vez de empurrar de lado, que faz a carpa deslizar)
         const [px, pz] = separation(k, school, KOI.spacing);
@@ -348,15 +435,56 @@ export default function Koi({ river, released }) {
         k.beat += dt * (3.5 + 3.8 * k.drive);
         const rate = dt > 0 ? (next.heading - before) / dt : 0;
         k.bend += (Math.max(-0.5, Math.min(0.5, rate * 0.22)) - k.bend) * ease;
+        // A mordida: a boca (à frente do corpo) chegou no grão
+        if (meal) {
+          const mx = k.x + Math.sin(k.heading) * 0.35 * k.size;
+          const mz = k.z + Math.cos(k.heading) * 0.35 * k.size;
+          if (Math.hypot(meal.x - mx, meal.z - mz) < FEED.bite) {
+            pellets.list = pellets.list.filter((p) => p !== meal);
+            food.splice(food.indexOf(meal), 1);
+            k.gulp = 1;
+            addRipple(meal.x + ray.origin.x, meal.z + ray.origin.z, 0.7, now);
+            pellets.fed += 1;
+            window.dispatchEvent(new CustomEvent('koi-fed', { detail: { count: pellets.fed, goal: FEED.dragonAt } }));
+            // 鯉の滝登り: a nona porção faz a carpa dourada subir a cachoeira
+            if (pellets.fed >= FEED.dragonAt && !dragonOn.current) {
+              pellets.fed = 0;
+              dragonOn.current = true;
+              const gold = school[DRAGON_KOI];
+              setDragon({ at: [gold.x, 0, gold.z], key: now });
+              window.dispatchEvent(new CustomEvent('koi-dragon'));
+            }
+          }
+        }
+        k.gulp = Math.max(0, (k.gulp ?? 0) - dt * 2.5);
       });
     }
+
+    // Os grãos: boiam balançando de leve e afundam no fim da vida
+    const pp = pellets.geometry.attributes.position;
+    const alive = pellets.geometry.attributes.aAlive;
+    for (let i = 0; i < FEED.max; i += 1) {
+      const p = pellets.list[i];
+      if (p) {
+        const age = now - p.born;
+        pp.setXYZ(i, p.x + Math.sin(now * 0.7 + p.seed) * 0.05, 0.02 + Math.sin(now * 2 + p.seed) * 0.012 - Math.min(1, age / 0.25) * 0.0, p.z);
+        alive.setX(i, Math.min(1, age / 0.15) * (1 - Math.max(0, (age - FEED.life + 2) / 2)));
+      } else alive.setX(i, 0);
+    }
+    pp.needsUpdate = true;
+    alive.needsUpdate = true;
+    if (pellets.list.length) state.invalidate();
 
     const swim = geometry.attributes.aSwim;
     school.forEach((k, i) => {
       // Cada uma numa profundidade um pouco diferente, subindo e descendo devagar
-      dummy.position.set(k.x, KOI.y - (i % 3) * 0.06 + Math.sin(t * 0.6 + k.phase) * 0.02, k.z);
-      dummy.rotation.set(0, k.heading, 0);
-      dummy.scale.setScalar(k.size);
+      // Ao comer, a carpa sobe à superfície por um instante (a "beijoca" na água)
+      const gulp = (k.gulp ?? 0) * 0.14;
+      dummy.position.set(k.x, KOI.y - (i % 3) * 0.06 + Math.sin(t * 0.6 + k.phase) * 0.02 + gulp, k.z);
+      dummy.rotation.set(-gulp * 1.2, k.heading, 0);
+      // A dourada some enquanto é dragão e volta crescendo devagar
+      k.show = (k.show ?? 1) + ((i === DRAGON_KOI && dragonOn.current ? 0 : 1) - (k.show ?? 1)) * Math.min(1, dt * 3);
+      dummy.scale.setScalar(k.size * k.show);
       dummy.updateMatrix();
       mesh.setMatrixAt(i, dummy.matrix);
       swim.setXYZW(i, k.beat, k.phase, 0.45 + 0.45 * Math.min(k.drive, 1.6), k.bend);
@@ -368,12 +496,25 @@ export default function Koi({ river, released }) {
   // frustumCulled: a esfera de colisão é a da geometria na origem, não a das carpas espalhadas.
   // renderOrder: depois da água (que é transparente), para aparecerem sob a superfície
   return (
-    <instancedMesh
-      ref={meshRef}
-      args={[geometry, material, school.length]}
-      frustumCulled={false}
-      renderOrder={2}
-      visible={false}
-    />
+    <>
+      <instancedMesh
+        ref={meshRef}
+        args={[geometry, material, school.length]}
+        frustumCulled={false}
+        renderOrder={2}
+        visible={false}
+      />
+      <primitive object={pellets.points} />
+      {dragon ? (
+        <KoiDragon
+          key={dragon.key}
+          at={dragon.at}
+          onDone={() => {
+            dragonOn.current = false;
+            setDragon(null);
+          }}
+        />
+      ) : null}
+    </>
   );
 }

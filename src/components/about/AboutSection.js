@@ -1,5 +1,6 @@
 'use client';
-import { useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, Download } from 'lucide-react';
@@ -7,6 +8,10 @@ import { gsap, SplitText, useGSAP } from '../../lib/gsap';
 import Section from '../journey/Section';
 import Ruby from '../Ruby';
 import StationSign from '../journey/StationSign';
+
+// A pintura do currículo só baixa quando alguém clica para baixar
+const ResumeBrush = dynamic(() => import('./ResumeBrush'), { ssr: false });
+const RESUME = { href: '/curriculo.pdf', filename: 'Raphael_Okuyama_CV.pdf' };
 
 function prefersReducedMotion() {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -19,6 +24,8 @@ export default function AboutSection({ about }) {
   const textRef = useRef(null);
   const scrollRef = useRef(null);
   const stampRef = useRef(null);
+  const [painting, setPainting] = useState(false);
+  const endPainting = useCallback(() => setPainting(false), []);
 
   // Linhas do texto entram conforme a seção rola (máscara por linha)
   useGSAP(() => {
@@ -58,6 +65,18 @@ export default function AboutSection({ about }) {
       .from('.about-name', { opacity: 0, y: 10, duration: 0.6, stagger: 0.12, ease: 'power2.out' }, 0.9);
   }, { scope: rootRef });
 
+  // 履歴書: um clique comum pinta o currículo antes de baixar (ResumeBrush cuida do download).
+  // Ctrl/⌘/Shift/botão do meio e movimento reduzido seguem o link direto, com o carimbo
+  const download = (e) => {
+    const plain = e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
+    if (!plain || prefersReducedMotion()) {
+      stamp();
+      return;
+    }
+    e.preventDefault();
+    setPainting(true);
+  };
+
   // Carimbo 印 ao baixar o currículo (o download segue normalmente)
   const stamp = () => {
     const el = stampRef.current;
@@ -91,10 +110,10 @@ export default function AboutSection({ about }) {
           <div className="about-actions">
             <div className="about-resume">
               <a
-                href="/curriculo.pdf"
-                download="Raphael_Okuyama_CV.pdf"
+                href={RESUME.href}
+                download={RESUME.filename}
                 className="btn-fill about-btn"
-                onClick={stamp}
+                onClick={download}
               >
                 <Download size={20} aria-hidden="true" />
                 {about.btnResume}
@@ -133,6 +152,14 @@ export default function AboutSection({ about }) {
           </figcaption>
         </figure>
       </div>
+      {painting ? (
+        <ResumeBrush
+          href={RESUME.href}
+          filename={RESUME.filename}
+          labels={{ name: 'Raphael Okuyama', ...about.resumePaint }}
+          onDone={endPainting}
+        />
+      ) : null}
     </Section>
   );
 }
