@@ -2319,6 +2319,11 @@ textarea.contact-input { resize: vertical; min-height: 130px; }
   font-size: 1rem;
 }
 
+/* Sem ancoragem de rolagem do navegador: quem posiciona a página são o Lenis e os pins do
+   ScrollTrigger. Com ela ligada, o Chrome corrigia o scroll quando o pin do emakimono entrava
+   e a seção dava um tranco (subia e voltava) */
+html { overflow-anchor: none; }
+
 /* Sem scroll enquanto o loader ensō cobre a página */
 html.is-loading,
 html.is-loading body {

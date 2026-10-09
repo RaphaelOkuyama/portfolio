@@ -51,6 +51,27 @@ export default function SmoothScroll() {
     };
   }, [reducedMotion]);
 
+  // A altura da página mudou depois das medidas (fonte que chegou tarde, bloco que carregou sob
+  // demanda): sem recalcular, os pins prendem no lugar antigo e a seção dá um tranco ao fixar
+  useEffect(() => {
+    let last = document.documentElement.scrollHeight;
+    let timer = 0;
+    const observer = new ResizeObserver(() => {
+      if (Math.abs(document.documentElement.scrollHeight - last) < 2) return;
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        ScrollTrigger.refresh();
+        lenisRef.current?.resize();
+        last = document.documentElement.scrollHeight;
+      }, 150);
+    });
+    observer.observe(document.body);
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, []);
+
   // Enquanto o ensō carrega, a página não rola por baixo do overlay
   useEffect(() => {
     document.documentElement.classList.toggle('is-loading', !loaderDone);
