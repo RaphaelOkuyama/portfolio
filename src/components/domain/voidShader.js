@@ -1,5 +1,6 @@
-// 無量空処: o shader do Vazio Infinito (tela inteira, WebGL2). Nebulosa com o domínio dobrado
-// (fbm sobre fbm), túnel de estrelas em coordenadas polares (riscam quando a velocidade sobe), um
+// 無量空処: o shader do Vazio Infinito (tela inteira, WebGL2). Nebulosa azul-violeta com o domínio
+// dobrado (fbm sobre fbm) e um zoom que não para, anéis concêntricos correndo para o centro, túnel
+// de estrelas em coordenadas polares (riscam quando a velocidade sobe), um
 // orbe negro no centro com anel de luz, raios e lente gravitacional dobrando o fundo em volta, e a
 // abertura: um círculo que cresce a partir do gatilho com uma borda de luz. Saída pré-multiplicada
 
@@ -37,14 +38,31 @@ float fbm(vec2 p) {
   return v;
 }
 
+// Espaço azul-violeta do 無量空処: fundo quase preto, véus índigo e violeta, filetes de ciano
 vec3 nebula(vec2 p, float t) {
   vec2 q = vec2(fbm(p * 1.3 + t * 0.03), fbm(p * 1.3 + vec2(5.2, 1.3) - t * 0.02));
   float n = fbm(p * 1.6 + q * 2.4 + t * 0.02);
-  vec3 col = mix(vec3(0.004, 0.006, 0.02), vec3(0.07, 0.05, 0.26), smoothstep(0.28, 0.72, n));
-  col = mix(col, vec3(0.3, 0.1, 0.52), smoothstep(0.56, 0.86, n) * 0.75);
-  col += vec3(0.06, 0.5, 0.85) * pow(smoothstep(0.55, 0.95, q.x * n * 1.7), 2.0) * 0.55;
-  col += vec3(0.9, 0.5, 0.9) * pow(smoothstep(0.78, 1.0, n), 3.0) * 0.25;
+  vec3 col = mix(vec3(0.003, 0.004, 0.018), vec3(0.05, 0.06, 0.24), smoothstep(0.28, 0.72, n));
+  col = mix(col, vec3(0.22, 0.12, 0.5), smoothstep(0.56, 0.86, n) * 0.7);
+  col += vec3(0.08, 0.45, 0.95) * pow(smoothstep(0.55, 0.95, q.x * n * 1.7), 2.0) * 0.5;
+  col += vec3(0.7, 0.55, 1.0) * pow(smoothstep(0.78, 1.0, n), 3.0) * 0.22;
   return col;
+}
+
+// Estruturas concêntricas: anéis em escala logarítmica que correm para o centro (a profundidade
+// impossível: sempre há outro anel vindo), com marcas finas como uma régua de informação
+vec3 rings(vec2 p, float travel, float t) {
+  float r = length(p);
+  float a = atan(p.y, p.x);
+  float z = log(r + 0.0001) * 2.2 + travel * 0.9;
+  float band = fract(z);
+  float line = exp(-pow((band - 0.5) / 0.012, 2.0));
+  // Tiques ao longo do anel, girando devagar em sentidos alternados
+  float k = floor(z);
+  float dir = mod(k, 2.0) * 2.0 - 1.0;
+  float ticks = step(0.92, fract(a / 6.28318 * 72.0 + t * 0.05 * dir + k * 0.37)) * exp(-pow((band - 0.5) / 0.05, 2.0));
+  float fade = smoothstep(0.12, 0.35, r) * (1.0 - smoothstep(0.9, 1.4, r));
+  return vec3(0.45, 0.6, 1.0) * (line * 0.22 + ticks * 0.12) * fade;
 }
 
 vec3 tunnel(vec2 p, float t) {
@@ -95,7 +113,10 @@ void main() {
   vec2 lp = R > 0.0 ? p * (1.0 - (R * R * 0.9) / max(r * r, R * R)) : p;
   float rot = t * 0.04;
   mat2 m = mat2(cos(rot), -sin(rot), sin(rot), cos(rot));
-  vec3 col = nebula(m * lp * 1.2, t);
+  // Puxado para dentro: o fundo se aproxima sem parar (zoom contínuo)
+  float pull = 1.0 / (1.0 + uTravel * 0.06);
+  vec3 col = nebula(m * lp * 1.2 * pull, t);
+  col += rings(lp, uTravel, t);
   col += tunnel(lp, uTravel);
 
   if (R > 0.0) {

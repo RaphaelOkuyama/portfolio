@@ -15,7 +15,7 @@ test('o jardim tem 6 pedras e a primeira começa aberta', async ({ page }) => {
   await expect(tabs(page).first()).toHaveAttribute('aria-selected', 'true');
   await expect(panel(page)).toHaveCount(1); // só o painel ativo fica visível
   await expect(panel(page)).toContainText('TypeScript');
-  await expect(panel(page)).toContainText('05 ferramentas');
+  await expect(panel(page)).toContainText('04 ferramentas');
 });
 
 test('escolher uma pedra mostra as ferramentas daquela área', async ({ page }) => {

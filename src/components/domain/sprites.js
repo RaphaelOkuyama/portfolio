@@ -1,6 +1,7 @@
 // Peças do portfólio que saem do orbe no Vazio Infinito, desenhadas uma vez em canvas (depois cada
-// quadro só copia a imagem, escalada): as tiras do Tanabata do Stack (cor da área, kanji e
-// ferramenta), cartões de projeto (numeral em kanji e título) e os números da experiência
+// quadro só copia a imagem, escalada). Contam a história nesta ordem: os projetos (do IMACARDIOS em
+// diante, com a stack de cada um), os números reais da experiência, e depois a enxurrada: as tiras
+// do Tanabata do Stack, o nome 奥山 e as quatro estações
 import { TANABATA_COLORS, TANABATA_INK } from '../../lib/journey/tanabata';
 import { kanjiNumber } from '../../lib/kanji';
 
@@ -62,14 +63,17 @@ function tanzaku(tool, area, kanji, fonts) {
   return s;
 }
 
-// 作: cartão de projeto escuro, numeral em kanji vermelho, título em serifa
-function projectCard(title, index, fonts) {
-  const s = surface(260, 132);
+// 作: cartão de projeto escuro, numeral em kanji vermelho, título em serifa e a stack embaixo
+function projectCard(project, index, fonts, label) {
+  const s = surface(280, 158);
   const { ctx } = s;
-  rounded(ctx, 2, 2, 256, 128, 10);
-  ctx.fillStyle = '#141c30';
+  rounded(ctx, 2, 2, 276, 154, 10);
+  const bg = ctx.createLinearGradient(0, 0, 0, 158);
+  bg.addColorStop(0, '#18213a');
+  bg.addColorStop(1, '#0f1528');
+  ctx.fillStyle = bg;
   ctx.fill();
-  ctx.strokeStyle = 'rgba(160, 190, 255, 0.35)';
+  ctx.strokeStyle = 'rgba(160, 190, 255, 0.4)';
   ctx.lineWidth = 1.2;
   ctx.stroke();
   ctx.fillStyle = '#e8665a';
@@ -78,18 +82,33 @@ function projectCard(title, index, fonts) {
   ctx.fillText(kanjiNumber(index), 18, 16);
   ctx.fillStyle = 'rgba(217, 164, 65, 0.9)';
   ctx.font = `600 10px ${fonts.sans}`;
-  ctx.fillText(`PROJETO ${String(index + 1).padStart(2, '0')}`, 60, 24);
+  ctx.fillText(`${label} ${String(index + 1).padStart(2, '0')}`, 60, 24);
   ctx.fillStyle = '#eef2ff';
   ctx.font = `700 19px ${fonts.serif}`;
   // Quebra o título em até duas linhas
-  const words = title.split(' ');
+  const words = project.title.split(' ');
   const lines = [''];
   words.forEach((w) => {
     const next = lines[lines.length - 1] ? `${lines[lines.length - 1]} ${w}` : w;
-    if (ctx.measureText(next).width > 224 && lines[lines.length - 1]) lines.push(w);
+    if (ctx.measureText(next).width > 244 && lines[lines.length - 1]) lines.push(w);
     else lines[lines.length - 1] = next;
   });
-  lines.slice(0, 2).forEach((l, i) => ctx.fillText(l, 18, 58 + i * 25));
+  lines.slice(0, 2).forEach((l, i) => ctx.fillText(l, 18, 56 + i * 24));
+  // Stack: as três primeiras ferramentas, em pílulas
+  ctx.font = `600 10px ${fonts.sans}`;
+  let x = 18;
+  (project.stack ?? []).slice(0, 3).forEach((tech) => {
+    const tw = ctx.measureText(tech).width + 14;
+    if (x + tw > 262) return;
+    rounded(ctx, x, 120, tw, 20, 10);
+    ctx.fillStyle = 'rgba(120, 160, 255, 0.14)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(150, 185, 255, 0.35)';
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(225, 233, 255, 0.85)';
+    ctx.fillText(tech, x + 7, 125);
+    x += tw + 6;
+  });
   return s;
 }
 
@@ -114,17 +133,69 @@ function metric(value, label, fonts) {
   return s;
 }
 
-// Todas as peças, embaralhadas. `data` é resumeData[lang]
-export function buildSprites(data, metrics, fonts) {
-  const sprites = [];
-  data.techSection.categories.forEach((cat, area) => {
-    cat.items.forEach((tool) => sprites.push(tanzaku(tool, area, cat.kanji, fonts)));
-  });
-  data.projects.forEach((p, i) => sprites.push(projectCard(p.title, i, fonts)));
-  metrics.forEach(([v, l]) => sprites.push(metric(v, l, fonts)));
-  for (let i = sprites.length - 1; i > 0; i -= 1) {
+// 奥山: o nome em kanji, em papel claro com o carimbo vermelho, como um 表札
+function nameplate(fonts) {
+  const s = surface(120, 220);
+  const { ctx } = s;
+  rounded(ctx, 6, 4, 108, 212, 6);
+  ctx.fillStyle = '#efe6d2';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(80, 50, 20, 0.35)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.fillStyle = '#1d1712';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `700 54px ${fonts.jp}`;
+  ctx.fillText('奥', 60, 62);
+  ctx.fillText('山', 60, 126);
+  ctx.fillStyle = '#c23b30';
+  rounded(ctx, 44, 168, 32, 32, 3);
+  ctx.fill();
+  ctx.fillStyle = '#f6eee0';
+  ctx.font = `700 15px ${fonts.jp}`;
+  ctx.fillText('芳', 60, 185);
+  return s;
+}
+
+// 四季: as quatro estações da montanha, cada uma num disco com a sua cor
+const SEASONS = [['春', '#f0a8bd', '#5a2333'], ['夏', '#4f9a5b', '#f3f8ee'], ['秋', '#d8572a', '#fff3e6'], ['冬', '#b9c6d6', '#22324a']];
+function season([kanji, bg, ink], fonts) {
+  const s = surface(96, 96);
+  const { ctx } = s;
+  ctx.beginPath();
+  ctx.arc(48, 48, 44, 0, Math.PI * 2);
+  ctx.fillStyle = bg;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = ink;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `700 46px ${fonts.jp}`;
+  ctx.fillText(kanji, 48, 50);
+  return s;
+}
+
+const shuffle = (list) => {
+  for (let i = list.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1));
-    [sprites[i], sprites[j]] = [sprites[j], sprites[i]];
+    [list[i], list[j]] = [list[j], list[i]];
   }
-  return sprites;
+  return list;
+};
+
+// `story`: a ordem legível do começo (projetos, depois os números); `flood`: tudo, embaralhado,
+// para a enxurrada que vem depois. `data` é resumeData[lang]
+export function buildSprites(data, metrics, fonts, lang) {
+  const label = lang === 'en' ? 'PROJECT' : 'PROJETO';
+  const projects = data.projects.slice(0, 8).map((p, i) => projectCard(p, i, fonts, label));
+  const numbers = metrics.map(([v, l]) => metric(v, l, fonts));
+  const story = [projects[0], numbers[0], projects[1], numbers[1], projects[2], projects[3], numbers[2], projects[4], numbers[3]]
+    .filter(Boolean);
+  const tools = data.techSection.categories.flatMap((cat, area) => cat.items.map((tool) => tanzaku(tool, area, cat.kanji, fonts)));
+  const identity = [nameplate(fonts), ...SEASONS.map((x) => season(x, fonts))];
+  const flood = shuffle([...projects, ...numbers, ...tools, ...identity, ...identity]);
+  return { story, flood };
 }

@@ -5,10 +5,11 @@ export const DOMAIN = {
   // Palavras secretas (digitadas fora de campos de texto) e quanto segurar o kanji 技 (ms)
   words: ['domain', 'muryokusho', 'ryoiki'],
   hold: 900,
-  // Fases (s): o domínio fecha, o vazio dura, os cacos caem
-  close: 1.1,
-  void: 6.5,
-  shatter: 1.3,
+  // Fases (s): ativação e expansão até o vazio cobrir tudo (0–2,0), informação infinita até a
+  // quebra (2,0–6,0, com a saturação no fim) e a reconstrução (~1,6)
+  close: 2.0,
+  void: 4.0,
+  shatter: 1.6,
 };
 
 // Guarda as últimas teclas e diz se alguma palavra secreta acabou de ser digitada

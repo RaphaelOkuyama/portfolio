@@ -3828,6 +3828,42 @@ html:not(:lang(en)) [data-lang="en"] { display: none !important; }
   display: inline-block;
   will-change: transform, filter, opacity;
 }
+/* Traço de tinta sob 領域展開: afina nas pontas, como o pincel entrando e saindo do papel */
+.dx-brush {
+  display: block;
+  width: min(72vw, 900px);
+  height: 7px;
+  margin-top: -0.4rem;
+  border-radius: 50%;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.9) 18%, rgba(170, 205, 255, 0.85) 80%, rgba(170, 205, 255, 0));
+  box-shadow: 0 0 18px rgba(130, 180, 255, 0.6);
+  transform-origin: 0 50%;
+  opacity: 0;
+}
+/* 判子: carimbo vermelho que assina o fim da reconstrução */
+.dx-hanko {
+  position: absolute;
+  right: 6vw;
+  bottom: 9vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 84px;
+  height: 108px;
+  border-radius: 10px;
+  background: radial-gradient(circle at 30% 25%, #d8463b, #a8281f 70%);
+  box-shadow: inset 0 0 0 3px rgba(255, 236, 220, 0.85), inset 0 0 0 6px #b1302a, 0 6px 24px rgba(120, 20, 10, 0.35);
+  color: #fff4e6;
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.05;
+  opacity: 0;
+  pointer-events: none;
+}
+@media (max-width: 767px) {
+  .dx-hanko { right: 20px; bottom: 40px; width: 64px; height: 84px; font-size: 26px; }
+}
 .dx-intro-sub {
   margin: 0;
   font-size: 12px;
@@ -3858,6 +3894,7 @@ html:not(:lang(en)) [data-lang="en"] { display: none !important; }
   transform-origin: 0 50%;
 }
 .dx-label {
+  opacity: 0;
   margin: 0 0 0.35rem;
   font-size: 11px;
   font-weight: 600;
@@ -3872,6 +3909,7 @@ html:not(:lang(en)) [data-lang="en"] { display: none !important; }
   text-align: right;
 }
 .dx-count {
+  opacity: 0;
   margin: 0.2rem 0 0.4rem;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: clamp(22px, 2.6vw, 40px);
