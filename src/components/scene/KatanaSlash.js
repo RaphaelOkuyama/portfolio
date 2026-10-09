@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import {
-  BufferAttribute, BufferGeometry, DoubleSide, Points, RingGeometry, ShaderMaterial, Vector3,
+  BufferAttribute, BufferGeometry, DoubleSide, PlaneGeometry, Points, RingGeometry, ShaderMaterial, Vector3,
 } from 'three';
 import { journeyStore } from '../../store/journey';
 import { groundHeight } from '../../lib/journey/ground';
@@ -14,9 +14,16 @@ import { GROUND, KATANA, KATANA_SLASH, RIVER } from './config';
 
 // 水の呼吸: clicar na katana solta um golpe de água desenhado como as ondas das gravuras (arco azul
 // com linhas e espuma branca na borda). As gotas voam, caem com a gravidade e, as que chegam ao
-// rio, abrem anéis na água (ver ripples); as que caem na margem somem no chão
+// rio, abrem anéis na água (ver ripples); as que caem na margem somem no chão.
+// 黒閃 (Black Flash, Jujutsu Kaisen): um anel de luz se fecha sobre a katana em ciclos; quem clica
+// no instante em que ele acende solta o golpe negro com bordas e raios vermelhos e faíscas no lugar
+// das gotas (e a tela pisca em preto e vermelho, ver BlackFlash)
 
 const ARC = KATANA_SLASH.arc;
+const BF = KATANA_SLASH.blackFlash;
+// Fase do anel (0 = aberto, 1 = fechado sobre a katana) e se o clique cai na janela do 黒閃
+export const blackFlashPhase = (now) => (now % BF.cycle) / BF.cycle;
+export const inBlackFlashWindow = (now) => blackFlashPhase(now) >= 1 - BF.window;
 
 const arcVertex = /* glsl */ `
   varying vec2 vPos;
@@ -29,6 +36,7 @@ const arcVertex = /* glsl */ `
 const arcFragment = /* glsl */ `
   uniform float uProgress;
   uniform float uTime;
+  uniform float uBlack;
   varying vec2 vPos;
   ${NOISE}
 
@@ -53,6 +61,15 @@ const arcFragment = /* glsl */ `
     float foam = smoothstep(0.62, 0.86, r + crest * 0.4);
     col = mix(col, vec3(1.0), foam);
     float alpha = trail * (0.82 + 0.18 * foam) * smoothstep(0.0, 0.06, a);
+    // 黒閃: o corpo do golpe fica negro, as bordas e os raios em vermelho incandescente
+    if (uBlack > 0.5) {
+      float edge = smoothstep(0.5, 0.95, abs(r - 0.5) * 2.0 + crest * 0.5);
+      float bolt = smoothstep(0.86, 1.0, sin(r * 22.0 + fbm(vec2(a * 9.0, uTime * 9.0)) * 10.0));
+      vec3 bf = mix(vec3(0.02, 0.0, 0.01), vec3(1.0, 0.07, 0.1) * 1.7, clamp(edge + bolt * 0.9, 0.0, 1.0));
+      bf += vec3(1.0, 0.75, 0.7) * pow(bolt, 3.0) * 0.6;
+      col = bf;
+      alpha = trail * smoothstep(0.0, 0.05, a);
+    }
     gl_FragColor = vec4(col, alpha);
     #include <colorspace_fragment>
   }
@@ -71,6 +88,7 @@ const dropVertex = /* glsl */ `
 `;
 
 const dropFragment = /* glsl */ `
+  uniform float uBlack;
   varying float vAlive;
   void main() {
     vec2 c = gl_PointCoord - 0.5;
@@ -79,7 +97,35 @@ const dropFragment = /* glsl */ `
     // Gota: borda azulada, miolo claro com um brilho deslocado
     vec3 col = mix(vec3(0.85, 0.95, 1.0), vec3(0.35, 0.65, 0.95), smoothstep(0.1, 0.5, d));
     col += smoothstep(0.16, 0.0, length(c - vec2(-0.12, -0.12))) * 0.5;
+    // 黒閃: faísca, quente no meio e vermelha na borda
+    col = mix(col, mix(vec3(1.0, 0.55, 0.45), vec3(0.8, 0.02, 0.05), smoothstep(0.05, 0.4, d)), uBlack);
     gl_FragColor = vec4(col, (1.0 - smoothstep(0.35, 0.5, d)) * 0.95);
+    #include <colorspace_fragment>
+  }
+`;
+
+// O anel do 黒閃: fecha sobre a katana e, na janela certa, acende vermelho com um clarão no centro
+const ringVertex = /* glsl */ `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+const ringFragment = /* glsl */ `
+  uniform float uPhase;
+  uniform float uReady;
+  varying vec2 vUv;
+  void main() {
+    vec2 p = (vUv - 0.5) * 2.0;
+    float d = length(p);
+    float r = mix(0.95, 0.14, uPhase);
+    float ring = exp(-pow((d - r) / (0.016 + 0.02 * uReady), 2.0));
+    float core = exp(-d * d / 0.012) * uReady;
+    vec3 col = mix(vec3(0.85, 0.92, 1.0), vec3(1.0, 0.16, 0.2), uReady);
+    float alpha = ring * (0.28 + 0.72 * uReady) * smoothstep(0.0, 0.08, uPhase) + core * 0.9;
+    if (alpha < 0.01) discard;
+    gl_FragColor = vec4(col + core * vec3(1.0, 0.6, 0.55), alpha);
     #include <colorspace_fragment>
   }
 `;
@@ -106,7 +152,19 @@ export default function KatanaSlash() {
       transparent: true,
       depthWrite: false,
       side: DoubleSide,
-      uniforms: { uProgress: { value: 0 }, uTime: { value: 0 } },
+      uniforms: { uProgress: { value: 0 }, uTime: { value: 0 }, uBlack: { value: 0 } },
+    });
+    return { geometry, material };
+  }, []);
+
+  const ring = useMemo(() => {
+    const geometry = new PlaneGeometry(BF.size, BF.size);
+    const material = new ShaderMaterial({
+      vertexShader: ringVertex,
+      fragmentShader: ringFragment,
+      transparent: true,
+      depthWrite: false,
+      uniforms: { uPhase: { value: 0 }, uReady: { value: 0 } },
     });
     return { geometry, material };
   }, []);
@@ -119,6 +177,7 @@ export default function KatanaSlash() {
     geometry.setAttribute('aAlive', new BufferAttribute(new Float32Array(n), 1));
     const material = new ShaderMaterial({
       vertexShader: dropVertex, fragmentShader: dropFragment, transparent: true, depthWrite: false,
+      uniforms: { uBlack: { value: 0 } },
     });
     const points = new Points(geometry, material);
     points.frustumCulled = false;
@@ -133,10 +192,13 @@ export default function KatanaSlash() {
     arc.material.dispose();
     drops.geometry.dispose();
     drops.material.dispose();
-  }, [arc, drops]);
+    ring.geometry.dispose();
+    ring.material.dispose();
+  }, [arc, drops, ring]);
 
   const arcRef = useRef(null);
-  const slash = useRef({ start: -Infinity, pending: false });
+  const ringRef = useRef(null);
+  const slash = useRef({ start: -Infinity, pending: false, black: false });
   const scratch = useMemo(() => [new Vector3(), new Vector3()], []);
 
   // Clique na katana (o canvas fica atrás do conteúdo: confere a katana projetada na tela)
@@ -145,9 +207,11 @@ export default function KatanaSlash() {
       if (journeyStore.getState().reducedMotion || !isSceneClick(e.target)) return;
       const hit = projectSphere(center, KATANA_SLASH.clickRadius, camera, size.width, size.height, scratch);
       if (!hit || !insideCircle(e.clientX, e.clientY, hit.x, hit.y, hit.r)) return;
-      slash.current = { start: performance.now() / 1000, pending: true };
-      // O cursor vira uma bola d'água (WaterCursor)
-      window.dispatchEvent(new CustomEvent('katana-slash'));
+      const now = performance.now() / 1000;
+      const black = inBlackFlashWindow(now);
+      slash.current = { start: now, pending: true, black };
+      // 黒閃: a tela pisca em preto e vermelho; o golpe comum vira o cursor em bola d'água
+      window.dispatchEvent(new CustomEvent(black ? 'black-flash' : 'katana-slash'));
     };
     window.addEventListener('click', onClick);
     return () => window.removeEventListener('click', onClick);
@@ -159,6 +223,18 @@ export default function KatanaSlash() {
     const mesh = arcRef.current;
     if (!mesh) return;
     const now = performance.now() / 1000;
+
+    // O anel do 黒閃 sobre a katana (some enquanto um golpe acontece)
+    const ringMesh = ringRef.current;
+    if (ringMesh) {
+      const phase = blackFlashPhase(now);
+      ringMesh.visible = !journeyStore.getState().reducedMotion && now - slash.current.start > ARC.duration * 1.4;
+      tmp.toCam.subVectors(camera.position, center).normalize();
+      ringMesh.position.copy(center).addScaledVector(tmp.toCam, 1.6);
+      ringMesh.quaternion.copy(camera.quaternion);
+      ring.material.uniforms.uPhase.value = phase;
+      ring.material.uniforms.uReady.value = phase >= 1 - BF.window ? 1 : 0;
+    }
     const age = now - slash.current.start;
     const progress = age / ARC.duration;
 
@@ -173,6 +249,8 @@ export default function KatanaSlash() {
       mesh.updateMatrixWorld();
       arc.material.uniforms.uProgress.value = progress;
       arc.material.uniforms.uTime.value = now;
+      arc.material.uniforms.uBlack.value = slash.current.black ? 1 : 0;
+      drops.material.uniforms.uBlack.value = slash.current.black ? 1 : 0;
     }
 
     // Golpe novo: as gotas nascem ao longo do arco, saindo conforme a ponta passa por elas
@@ -186,7 +264,7 @@ export default function KatanaSlash() {
         d.p.copy(tmp.local).applyMatrix4(mesh.matrixWorld);
         // Voa na direção do corte (tangente) e para fora, com um impulso para cima e para o rio
         tmp.dir.set(-Math.sin(angle), Math.cos(angle), 0).transformDirection(mesh.matrixWorld);
-        const speed = 3 + Math.random() * 5;
+        const speed = (slash.current.black ? 6 : 3) + Math.random() * 5;
         d.v.copy(tmp.dir).multiplyScalar(speed);
         d.v.x += -1.6 - Math.random() * 1.8;
         d.v.y += 1.5 + Math.random() * 2.5;
@@ -212,7 +290,8 @@ export default function KatanaSlash() {
         const lx = d.p.x - river.x;
         const overWater = Math.abs(lx) < KATANA_SLASH.waterEdge && d.p.z < river.z + 76 && d.p.z > river.z - 76;
         if (overWater && d.p.y <= river.y) {
-          addRipple(d.p.x, d.p.z, 0.7 + d.size * 6, now);
+          // Faísca apaga na água sem abrir anel; a gota abre
+          if (!slash.current.black) addRipple(d.p.x, d.p.z, 0.7 + d.size * 6, now);
           d.alive = false;
         } else if (!overWater && d.p.y <= groundHeight(d.p.x, d.p.z, GROUND)) {
           d.alive = false;
@@ -235,6 +314,7 @@ export default function KatanaSlash() {
   return (
     <>
       <mesh ref={arcRef} geometry={arc.geometry} material={arc.material} visible={false} renderOrder={4} frustumCulled={false} />
+      <mesh ref={ringRef} geometry={ring.geometry} material={ring.material} renderOrder={4} frustumCulled={false} />
       <primitive object={drops.points} />
     </>
   );

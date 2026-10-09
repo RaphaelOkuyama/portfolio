@@ -3901,6 +3901,46 @@ html:not(:lang(en)) [data-lang="en"] { display: none !important; }
   .dx-sound { left: 20px; }
   .dx-volume { width: 72px; }
 }
+/* Legendas da fala, como no cinema: embaixo, centralizadas, com contorno escuro */
+.dx-captions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 18vh;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.dx-caption {
+  grid-area: 1 / 1;
+  margin: 0;
+  font-size: clamp(16px, 1.7vw, 22px);
+  font-style: italic;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: #f6f8ff;
+  text-shadow: 0 0 2px #000, 0 1px 3px rgba(0, 0, 0, 0.9), 0 0 18px rgba(0, 0, 0, 0.6);
+}
+.dx-caption-char { opacity: 0; }
+@media (max-width: 767px) {
+  .dx-captions { bottom: 30vh; }
+}
+/* Congelamento: o cursor de verdade some e fica um preso no lugar; a imagem perde a cor */
+.dx-frozen-cursor {
+  position: absolute;
+  left: -7px;
+  top: -7px;
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid rgba(235, 244, 255, 0.95);
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(140, 200, 255, 0.8);
+  opacity: 0;
+  pointer-events: none;
+}
+.dx.is-frozen .dx-frozen-cursor { opacity: 1; }
+.dx.is-frozen .dx-layer { filter: grayscale(0.55) contrast(1.15) brightness(0.92); }
+html.dx-frozen :is([data-cursor], [data-cursor-trail], .water-gl, .water-shadow) { visibility: hidden !important; }
 /* 判子: carimbo vermelho que assina o fim da reconstrução */
 .dx-hanko {
   position: absolute;
@@ -4003,3 +4043,55 @@ html:not(:lang(en)) [data-lang="en"] { display: none !important; }
 }
 /* Elementos que o domínio vai reconstruir: escondidos até o caco deles encaixar */
 .dx-hidden { opacity: 0 !important; }
+
+/* 黒閃 (Black Flash): o negativo preto e vermelho, os raios e o kanji em pincelada (BlackFlash) */
+.black-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 10005;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+  animation: black-flash-bg 0.9s steps(1, end) forwards;
+}
+@keyframes black-flash-bg {
+  0% { background: rgba(0, 0, 0, 0.92); backdrop-filter: invert(1) grayscale(1) contrast(2); }
+  9% { background: rgba(170, 0, 14, 0.55); backdrop-filter: invert(1) contrast(1.6); }
+  16% { background: rgba(0, 0, 0, 0.82); backdrop-filter: invert(1) grayscale(1) contrast(2); }
+  26% { background: rgba(0, 0, 0, 0.35); backdrop-filter: none; }
+  100% { background: transparent; backdrop-filter: none; }
+}
+.black-flash-bolts {
+  position: absolute;
+  inset: 0;
+  fill: none;
+  stroke: #ff2236;
+  stroke-width: 3;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 6px #ff1a2c) drop-shadow(0 0 18px rgba(255, 30, 50, 0.7));
+  animation: black-flash-bolts 0.5s ease-out forwards;
+}
+@keyframes black-flash-bolts {
+  0%, 30% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.black-flash-kanji {
+  margin: 0;
+  font-size: clamp(90px, 16vw, 240px);
+  font-weight: 900;
+  line-height: 1;
+  color: #0a0000;
+  -webkit-text-stroke: 3px #ff2a3a;
+  text-shadow: 0 0 24px rgba(255, 30, 50, 0.9), 0 0 60px rgba(255, 0, 20, 0.6);
+  animation: black-flash-kanji 0.9s cubic-bezier(0.2, 0.9, 0.2, 1) forwards;
+}
+@keyframes black-flash-kanji {
+  0% { opacity: 0; transform: scale(1.8) skewX(-12deg); filter: blur(8px); }
+  12% { opacity: 1; transform: scale(1) skewX(-6deg); filter: blur(0); }
+  70% { opacity: 1; transform: scale(1.04) skewX(-6deg); }
+  100% { opacity: 0; transform: scale(1.1) skewX(-6deg); filter: blur(4px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .black-flash { animation: none; }
+  .black-flash-bolts { display: none; }
+}

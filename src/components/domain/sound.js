@@ -1,7 +1,7 @@
 // Som do Vazio Infinito, sintetizado na hora (Web Audio, sem arquivo para baixar). Só começa depois
 // da interação que abriu o domínio (tecla ou toque: o navegador libera o áudio) e tem volume próprio,
-// guardado entre visitas. Sons: o impacto grave da abertura, o vento que sobe na saturação, o estalo
-// cristalino da reconstrução e o "toc" do hanko
+// guardado entre visitas. Sons: o impacto grave da abertura, o silêncio do congelamento, o vento que
+// sobe na saturação, o estalo cristalino da reconstrução e o "toc" do hanko
 const KEY = 'oku-domain-volume';
 const DEFAULT_VOLUME = 0.55;
 
@@ -100,6 +100,12 @@ export function createDomainSound() {
       gain.gain.setValueAtTime(0.0001, at);
       gain.gain.exponentialRampToValueAtTime(0.25, at + 0.003);
       gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.08);
+    },
+    // Congelamento: o som some de uma vez (o silêncio pesa) e volta quando o domínio solta
+    freeze(on) {
+      const target = on ? 0.0001 : savedVolume() * 0.8;
+      master.gain.cancelScheduledValues(ctx.currentTime);
+      master.gain.setTargetAtTime(target, ctx.currentTime, on ? 0.01 : 0.05);
     },
     setVolume(v) {
       const vol = Math.min(1, Math.max(0, v));

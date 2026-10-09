@@ -17,6 +17,9 @@ import HandSeal from './HandSeal';
 //  3. Informação infinita (2,0–5,3 s): primeiro, legível, a história (os projetos com a stack, os
 //     números reais); depois a enxurrada (as tiras do Stack, 奥山, as quatro estações), que se
 //     multiplica, se sobrepõe e vira partícula. O contador acompanha até perder o sentido
+//     Logo depois que o vazio abre, o buraco vira por um instante o olho azul do Gojo, que segue
+//     o mouse e pisca. No pico, tudo congela por meio segundo (o cursor trava, o som some): quem
+//     está no domínio não consegue agir
 //  4. Saturação (5,3–6,0 s): a informação dispara, a tela treme e estoura para o branco
 //  5. Reconstrução (6,0–7,6 s): o branco racha; cada caco é a região de um elemento real visível e
 //     carrega o conteúdo dele (os glifos do texto se juntam na fonte do site, a imagem em pedaços,
@@ -35,6 +38,10 @@ const TARGETS = 'header a, header button, main h1, main h2, main h3, main p, mai
 const SATURATE = { natural: 0.7, early: 0.5 };
 // A informação: começa pela história legível e vira enxurrada a partir desta fração do vazio
 const FLOOD_AT = 0.42;
+// 六眼: o olho aparece logo depois de o vazio abrir (tempos a partir de DOMAIN.close)
+const EYE = { from: 0.2, open: 0.3, blink: 1.05, blinkDur: 0.22, close: 1.9, fade: 0.35 };
+// O congelamento acaba um pouco antes da saturação e dura isto (s)
+const FREEZE = { lead: 0.08, length: 0.55 };
 const POINTS = 28;
 const MAX_GLYPHS = 320;
 const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
@@ -184,6 +191,11 @@ export default function DomainExpansion({ origin, onDone }) {
       }, 0.62)
       .fromTo(q('.dx-brush'), { scaleX: 0, opacity: 0 }, { scaleX: 1, opacity: 1, duration: 0.7, ease: 'expo.inOut' }, 0.74)
       .fromTo(q('.dx-intro-sub'), { opacity: 0, letterSpacing: '1.2em' }, { opacity: 0.8, letterSpacing: '0.6em', duration: 0.6, ease: 'expo.out' }, 0.95)
+      // Legendas, como no cinema: a fala aparece letra por letra embaixo da tela
+      .fromTo(q('.dx-caption-1 .dx-caption-char'), { opacity: 0 }, { opacity: 1, duration: 0.01, stagger: 0.04 }, 0.35)
+      .to(q('.dx-caption-1'), { opacity: 0, duration: 0.3 }, close - 0.2)
+      .fromTo(q('.dx-caption-2 .dx-caption-char'), { opacity: 0 }, { opacity: 1, duration: 0.01, stagger: 0.045 }, close + 0.1)
+      .to(q('.dx-caption-2'), { opacity: 0, duration: 0.4 }, close + 1.9)
       .to(q('.dx-intro'), { opacity: 0, scale: 1.14, filter: 'blur(10px)', duration: 0.4, ease: 'power2.in' }, close - 0.3)
       .fromTo(q('.dx-name-char'), {
         opacity: 0, scale: 0.55, skewX: 22, filter: 'blur(6px)',
@@ -399,6 +411,25 @@ export default function DomainExpansion({ origin, onDone }) {
       }
     };
 
+    // Onde está o mouse (o olho acompanha; no congelamento o cursor fica preso aqui)
+    const pointerAt = { x: origin.x, y: origin.y };
+    const onPointer = (e) => {
+      pointerAt.x = e.clientX;
+      pointerAt.y = e.clientY;
+    };
+    window.addEventListener('pointermove', onPointer, { passive: true });
+    const look = [0, 0];
+    const frozenCursor = root.querySelector('.dx-frozen-cursor');
+    let frozen = false;
+    const setFrozen = (on) => {
+      if (frozen === on) return;
+      frozen = on;
+      root.classList.toggle('is-frozen', on);
+      document.documentElement.classList.toggle('dx-frozen', on);
+      if (on) frozenCursor.style.transform = `translate(${pointerAt.x}px, ${pointerAt.y}px)`;
+      sound?.freeze(on);
+    };
+
     // Estado da animação
     const start = performance.now() / 1000;
     let exitAt = start + close + DOMAIN.void;
@@ -438,6 +469,7 @@ export default function DomainExpansion({ origin, onDone }) {
     const finish = () => {
       if (finished) return;
       finished = true;
+      document.documentElement.classList.remove('dx-frozen');
       releaseLens();
       restoreAll();
       onDone();
@@ -667,6 +699,15 @@ export default function DomainExpansion({ origin, onDone }) {
       const age = t - start;
 
       if (!rebuild && t < exitAt) {
+        // 無量空処 em quem está dentro: no pico, tudo para (o tempo do vazio, as peças, o contador,
+        // o cursor e o som) e depois desaba na saturação. Esc continua saindo
+        const freezeEnd = satStart - FREEZE.lead;
+        const inFreeze = !reduced && t > freezeEnd - FREEZE.length && t < freezeEnd && freezeEnd - FREEZE.length > start + close + 1;
+        setFrozen(inFreeze);
+        if (frozen) {
+          raf = requestAnimationFrame(tick);
+          return;
+        }
         const sat = reduced ? 0 : clamp01((t - satStart) / (exitAt - satStart));
         const info = clamp01((age - close) / Math.max(0.1, satStart - start - close));
         if (sat > 0) collectTargets();
@@ -678,7 +719,16 @@ export default function DomainExpansion({ origin, onDone }) {
         const orb = reduced ? 1 : Math.max(0, 1 - (1 - ok) ** 3 * Math.cos(ok * 4));
         const warp = reduced ? 0 : 0.4 + 2.6 * Math.exp(-((age - close - 0.9) ** 2) / 0.6) + info * 1.2 + sat * 5;
         travel += dt * (0.15 + warp * 0.45);
-        voidGl?.draw({ time: age, reveal: opening, origin: glOrigin, orb, warp, flash, travel });
+        // O olho: abre, segue o mouse (suave), pisca uma vez e volta a ser o buraco
+        const ea = age - close;
+        const eye = reduced ? 0 : clamp01((ea - EYE.from) / EYE.open) * (1 - clamp01((ea - EYE.close) / EYE.fade));
+        const blinkT = (ea - EYE.blink) / EYE.blinkDur;
+        const lid = blinkT > 0 && blinkT < 1 ? Math.sin(Math.PI * blinkT) : 1 - clamp01((ea - EYE.from) / EYE.open);
+        const lookX = gsap.utils.clamp(-1, 1, (pointerAt.x - w / 2) / (unit * 0.5));
+        const lookY = gsap.utils.clamp(-1, 1, -(pointerAt.y - h / 2) / (unit * 0.5));
+        look[0] += (lookX - look[0]) * Math.min(1, dt * 8);
+        look[1] += (lookY - look[1]) * Math.min(1, dt * 8);
+        voidGl?.draw({ time: age, reveal: opening, origin: glOrigin, orb, warp, flash, travel, eye, look, lid });
         if (!played.impact && age > 0.78) {
           played.impact = true;
           sound?.impact();
@@ -727,6 +777,8 @@ export default function DomainExpansion({ origin, onDone }) {
       gsap.killTweensOf(root.querySelectorAll('*'));
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('resize', onResize);
+      window.removeEventListener('pointermove', onPointer);
+      document.documentElement.classList.remove('dx-frozen');
       root.removeEventListener('pointerdown', leave);
       volumeInput.removeEventListener('input', onVolume);
       muteButton.removeEventListener('click', onMute);
@@ -777,7 +829,13 @@ export default function DomainExpansion({ origin, onDone }) {
           <p className="dx-label dx-label-dim">{en ? 'information, endlessly' : 'informação, sem fim'}</p>
         </div>
         <p className="dx-hint dx-label dx-label-dim">ESC</p>
+        <div className="dx-captions">
+          <p className="dx-caption dx-caption-1">{[...'“Ryōiki tenkai.”'].map((c, i) => <span key={i} className="dx-caption-char">{c}</span>)}</p>
+          <p className="dx-caption dx-caption-2">{[...'“Muryōkūsho.”'].map((c, i) => <span key={i} className="dx-caption-char">{c}</span>)}</p>
+        </div>
       </div>
+      {/* O cursor preso no lugar enquanto o domínio congela tudo */}
+      <span className="dx-frozen-cursor" aria-hidden="true" />
       {/* Som: liga/desliga e volume (guardado para a próxima vez) */}
       <div className="dx-sound">
         <button type="button" className="dx-mute" aria-label={en ? 'Mute the domain sound' : 'Silenciar o som do domínio'} aria-pressed="false">

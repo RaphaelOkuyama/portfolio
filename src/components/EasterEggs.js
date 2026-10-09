@@ -7,6 +7,7 @@ import { DOMAIN, typedSecret } from '../lib/domain';
 // ouvintes de evento). O código da bola d'água e do Vazio Infinito baixa no primeiro uso
 const WaterCursor = dynamic(() => import('./WaterCursor'), { ssr: false });
 const DomainExpansion = dynamic(() => import('./domain/DomainExpansion'), { ssr: false });
+const BlackFlash = dynamic(() => import('./BlackFlash'), { ssr: false });
 
 const HOLD_SELECTOR = '[data-station="stack"] .section-kanji';
 const editable = (el) => Boolean(el?.closest?.('input, textarea, select, [contenteditable="true"]'));
@@ -16,6 +17,9 @@ export default function EasterEggs() {
   const [water, setWater] = useState(null);
   const [domain, setDomain] = useState(null);
   const close = useCallback(() => setDomain(null), []);
+  // 黒閃: o clarão do golpe certeiro na katana (no ponto do clique)
+  const [flash, setFlash] = useState(null);
+  const endFlash = useCallback(() => setFlash(null), []);
 
   useEffect(() => {
     const last = { x: -200, y: -200 };
@@ -30,6 +34,7 @@ export default function EasterEggs() {
     };
     // 水玉: o primeiro golpe carrega a bola; os seguintes ela mesma escuta
     const onSlash = () => setWater((w) => w ?? { x: last.x, y: last.y });
+    const onBlackFlash = () => setFlash({ x: last.x, y: last.y, key: performance.now() });
     // 領域展開: palavra secreta (fora de campos) ou segurar o kanji 技
     const onKey = (e) => {
       if (editable(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
@@ -70,6 +75,7 @@ export default function EasterEggs() {
     };
     window.addEventListener('pointermove', onMove, { passive: true });
     window.addEventListener('katana-slash', onSlash);
+    window.addEventListener('black-flash', onBlackFlash);
     window.addEventListener('keydown', onKey);
     window.addEventListener('pointerdown', onDown);
     window.addEventListener('pointerup', onUp);
@@ -78,6 +84,7 @@ export default function EasterEggs() {
       cancel();
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('katana-slash', onSlash);
+      window.removeEventListener('black-flash', onBlackFlash);
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('pointerdown', onDown);
       window.removeEventListener('pointerup', onUp);
@@ -89,6 +96,7 @@ export default function EasterEggs() {
     <>
       {water ? <WaterCursor initial={water} /> : null}
       {domain ? <DomainExpansion origin={domain} onDone={close} /> : null}
+      {flash ? <BlackFlash key={flash.key} x={flash.x} y={flash.y} onDone={endFlash} /> : null}
     </>
   );
 }

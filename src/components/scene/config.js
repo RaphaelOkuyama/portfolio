@@ -299,6 +299,9 @@ export const KATANA_SLASH = {
   gravity: 9,
   // Onde começa a água do rio (|x| no plano do rio; as margens começam em |x| ≈ 14)
   waterEdge: 13.6,
+  // 黒閃 Black Flash: um anel de luz se fecha sobre a katana a cada `cycle` s; clicar quando ele
+  // acende (a fração final `window` do ciclo) solta o golpe negro e vermelho
+  blackFlash: { cycle: 2.6, window: 0.2, size: 3.4 },
 };
 
 export const LANTERNS = {
