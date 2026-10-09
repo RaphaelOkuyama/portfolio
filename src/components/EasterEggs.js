@@ -35,7 +35,11 @@ export default function EasterEggs() {
       last.y = e.clientY;
     };
     // 水玉: o primeiro golpe carrega a bola; os seguintes ela mesma escuta
-    const onSlash = () => setWater((w) => w ?? { x: last.x, y: last.y });
+    const onSlash = () => {
+      setWater((w) => w ?? { x: last.x, y: last.y });
+      // O 黒閃 vem no 3º golpe: já baixa o clarão para ele sair na hora
+      import('./BlackFlash');
+    };
     const onBlackFlash = () => setFlash({ x: last.x, y: last.y, key: performance.now() });
     // 領域展開: palavra secreta (fora de campos) ou segurar o kanji 技
     const onKey = (e) => {

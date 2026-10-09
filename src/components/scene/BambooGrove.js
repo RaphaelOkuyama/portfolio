@@ -6,8 +6,8 @@ import { journeyStore, useJourney } from '../../store/journey';
 import { mulberry32 } from '../../lib/journey/ridge';
 import { groundHeight } from '../../lib/journey/ground';
 import { useAccentMaterials } from './useAccentMaterials';
-import { bambooLeavesGeometry, bambooStalkGeometry, kodamaGeometry } from './shrineGeometry';
-import { BAMBOO, GROUND, KODAMA } from './config';
+import { bambooLeavesGeometry, bambooStalkGeometry } from './shrineGeometry';
+import { BAMBOO, GROUND } from './config';
 import { wind } from '../../lib/journey/wind';
 
 // Caules do bambuzal (sementes fixas: o mesmo bosque em toda visita)
@@ -34,7 +34,6 @@ const axis = new Vector3();
 const matrix = new Matrix4();
 const scale = new Vector3();
 const tip = new Vector3();
-const cameraAt = new Vector3();
 
 // 竹林: bambuzal dos dois lados do caminho entre o torii e o jardim, balançando ao vento.
 // Cada caule inclina em volta da própria base; o tufo de folhas acompanha a ponta
@@ -84,45 +83,4 @@ export function BambooGrove() {
       <instancedMesh key={`l${count}`} ref={leafRef} args={[bambooLeavesGeometry(), materials.leaves, count]} frustumCulled={false} />
     </>
   );
-}
-
-// 木霊: espíritos pequenos no chão do bambuzal. Quando a câmera chega perto, as cabeças giram
-// de um lado para o outro (o estalo que, na lenda, é o eco da floresta)
-export function Kodama() {
-  const materials = useAccentMaterials({ body: { accent: 'kodama' }, face: { accent: 'toriiTop' } });
-  const { body, head, face } = kodamaGeometry();
-  const heads = useRef([]);
-  const spots = useMemo(() => KODAMA.spots.map(([x, z, turn]) => ({
-    position: [x, groundHeight(x, z, GROUND), z],
-    at: new Vector3(x, groundHeight(x, z, GROUND), z),
-    // De frente para o caminho (centro), com um desvio de cada um
-    rotationY: Math.atan2(-x, 6) + turn * 0.3,
-    phase: (x * 7 + z * 3) % (Math.PI * 2),
-  })), []);
-  const time = useRef(0);
-
-  useFrame((state, delta) => {
-    if (journeyStore.getState().reducedMotion) return;
-    time.current += delta;
-    state.camera.getWorldPosition(cameraAt);
-    spots.forEach((s, i) => {
-      const h = heads.current[i];
-      if (!h) return;
-      const distance = cameraAt.distanceTo(s.at);
-      // Perto: a cabeça gira rápido em pequenos trancos; longe: quase parada
-      const near = Math.max(0, 1 - distance / KODAMA.near);
-      const rattle = Math.sign(Math.sin(time.current * 7 + s.phase)) * 0.35 * near;
-      h.rotation.z += (rattle + Math.sin(time.current * 0.6 + s.phase) * 0.06 - h.rotation.z) * Math.min(1, delta * 14);
-    });
-  });
-
-  return spots.map((s, i) => (
-    <group key={i} position={s.position} rotation={[0, s.rotationY, 0]} scale={KODAMA.scale}>
-      <mesh geometry={body} material={materials.body} dispose={null} />
-      <group ref={(el) => { heads.current[i] = el; }} position={[0, 0.34, 0]}>
-        <mesh geometry={head} material={materials.body} dispose={null} />
-        <mesh geometry={face} material={materials.face} dispose={null} />
-      </group>
-    </group>
-  ));
 }

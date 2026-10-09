@@ -89,7 +89,7 @@ export const KOMAINU = { right: 5.3, ahead: -1.6, scale: 1.25, turnIn: 0.45 };
 // Acendem à noite; `glow` > 1 dispara o bloom na qualidade alta
 export const STONE_LANTERNS = { x: 7.4, z: [5, -2.5, -26, -33.5, -41], scale: 1.15, glow: { night: 2.3, day: 1 } };
 
-// 竹林 e 木霊: bambuzal dos dois lados entre o torii e o jardim, com kodama no chão
+// 竹林: bambuzal dos dois lados entre o torii e o jardim
 export const BAMBOO = {
   // Afastados do centro e mais baixos: no hero ficam nas bordas, sem competir com o nome
   groves: [{ x: [-20, -11], z: [-1, -7.5] }, { x: [11, 20], z: [-1, -7.5] }],
@@ -97,19 +97,13 @@ export const BAMBOO = {
   height: [7, 11.5],
   sway: 0.035,
 };
-export const KODAMA = {
-  // Dentro do bambuzal, longe da trilha e das lanternas: quem não procura nem percebe
-  spots: [[-12.4, -4.2, 0.5], [-13.3, -5.1, 0.2], [-12.1, -6.4, 0.8], [12.8, -5.0, -0.4], [13.6, -4.1, -0.1]],
-  scale: 0.95,
-  // A câmera chegando perto faz as cabeças girarem (o "estalo" dos kodama)
-  near: 18,
-};
 
 // 木霊探し: cinco kodama escondidos pela jornada (atrás do bonsai, junto do shishi-odoshi, espiando
-// atrás dos caixotes da barraca de máscaras, do outro lado das lanternas e perto da katana). Achar
-// os cinco acende a floresta dos espíritos. [x, z, giro]
+// atrás dos caixotes da barraca de máscaras, do outro lado das lanternas e no meio do bambuzal da
+// direita). Longe da katana, para o clique de um não acertar o outro. Achar os cinco acende a
+// floresta dos espíritos. [x, z, giro]
 export const KODAMA_HUNT = {
-  spots: [[9.7, -31.6, -0.6], [-10.9, -10.2, 0.7], [-8.4, 3.9, 1.1], [-8.9, -41.6, 0.9], [16.4, -78.6, -0.9]],
+  spots: [[9.7, -31.6, -0.6], [-10.9, -10.2, 0.7], [-8.4, 3.9, 1.1], [-8.9, -41.6, 0.9], [13.2, -5.0, -0.5]],
   scale: 0.8,
   // Raio mínimo do alvo na tela (px): pequeno de ver, fácil de tocar
   minHit: 18,
@@ -304,15 +298,16 @@ export const REDTHREAD = {
 // 刀: o golpe de água ao clicar na katana (respiração da água). Raio do clique e do arco, gotas
 export const KATANA_SLASH = {
   clickRadius: 1.6,
+  // Raio mínimo do alvo na tela (px)
+  minHit: 44,
   height: 1.1,
   arc: { radius: 3.1, width: 1.05, angle: 2.9, tilt: -0.6, duration: 0.8 },
   drops: 170,
   gravity: 9,
   // Onde começa a água do rio (|x| no plano do rio; as margens começam em |x| ≈ 14)
   waterEdge: 13.6,
-  // 黒閃 Black Flash: um anel de luz se fecha sobre a katana a cada `cycle` s; clicar quando ele
-  // acende (a fração final `window` do ciclo) solta o golpe negro e vermelho
-  blackFlash: { cycle: 2.6, window: 0.2, size: 3.4 },
+  // 黒閃 Black Flash: a cada `every` golpes na katana, o último sai negro e vermelho
+  blackFlash: { every: 3 },
 };
 
 export const LANTERNS = {

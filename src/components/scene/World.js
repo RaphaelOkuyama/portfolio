@@ -10,7 +10,7 @@ import Petals from './Petals';
 import Torii from './Torii';
 import Iwakura from './Iwakura';
 import { Katana, Komainu, Pagoda, ShishiOdoshi, StoneLanterns, StonePaths, Taikobashi } from './ShrineProps';
-import { BambooGrove, Kodama } from './BambooGrove';
+import { BambooGrove } from './BambooGrove';
 import KodamaHunt from './KodamaHunt';
 import Celestial from './Celestial';
 import Tanabata from './Tanabata';
@@ -34,7 +34,7 @@ const STAGES = [
   [Ground, Kasumi],
   [Torii, Iwakura, Komainu, Festival],
   [StonePaths, StoneLanterns],
-  [BambooGrove, Kodama, KodamaHunt, ShishiOdoshi, Bonsai],
+  [BambooGrove, KodamaHunt, ShishiOdoshi, Bonsai],
   [Pagoda, Taikobashi, Katana, KatanaSlash],
   [Tanabata, Momiji, Snow],
   [River, Petals],

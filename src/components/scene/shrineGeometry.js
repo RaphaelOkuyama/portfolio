@@ -1,5 +1,5 @@
 import {
-  BoxGeometry, BufferGeometry, CatmullRomCurve3, ConeGeometry, CylinderGeometry, DodecahedronGeometry, ExtrudeGeometry,
+  BoxGeometry, BufferGeometry, CatmullRomCurve3, CircleGeometry, ConeGeometry, CylinderGeometry, DodecahedronGeometry, ExtrudeGeometry,
   Float32BufferAttribute, IcosahedronGeometry, Shape, SphereGeometry, TorusGeometry, TubeGeometry, Vector3,
 } from 'three';
 import { assemble, paint, placed } from './lowpoly';
@@ -526,17 +526,42 @@ export function bambooLeavesGeometry() {
   });
 }
 
-// 木霊 (kodama): espírito pequeno da floresta, corpo branco e cabeça redonda. A cabeça é uma
-// peça à parte (gira); o rosto (olhos e boca) é escuro
+// 木霊 (como em Princesa Mononoke): cabeça grande e irregular, meio ovalada e torta, com os três
+// buracos escuros do rosto (dois olhos de tamanhos diferentes e a boca), sobre um corpinho fino com
+// pescoço, bracinhos caídos e pernas curtas. A cabeça (origem no pescoço) gira à parte: o "estalo"
 export function kodamaGeometry() {
   return cached('kodama', () => {
-    const body = assemble([cyl(0.1, 0.15, 0.34, 6, { y: 0.17 }), cyl(0.03, 0.035, 0.16, 4, { x: -0.13, y: 0.18, rotZ: 0.6 }), cyl(0.03, 0.035, 0.16, 4, { x: 0.13, y: 0.18, rotZ: -0.6 })]);
-    const head = assemble([lump(0.17, [1.05, 1.12, 0.95], { y: 0.16 }, 1)]);
-    const face = assemble([
-      placed(paint(new SphereGeometry(0.028, 5, 3)), { x: -0.06, y: 0.19, z: 0.15 }),
-      placed(paint(new SphereGeometry(0.028, 5, 3)), { x: 0.06, y: 0.19, z: 0.15 }),
-      placed(paint(new SphereGeometry(0.022, 5, 3)), { y: 0.1, z: 0.158 }),
+    const body = assemble([
+      cyl(0.055, 0.085, 0.2, 10, { y: 0.18 }),
+      cyl(0.04, 0.05, 0.06, 8, { y: 0.3 }),
+      // Pernas curtas, um pouco abertas
+      cyl(0.024, 0.03, 0.1, 6, { x: -0.035, y: 0.05, rotZ: 0.12 }),
+      cyl(0.024, 0.03, 0.1, 6, { x: 0.035, y: 0.05, rotZ: -0.12 }),
+      // Bracinhos finos caídos ao lado do corpo, a mão um pouco à frente
+      cyl(0.016, 0.022, 0.15, 6, { x: -0.085, y: 0.19, z: 0.02, rotZ: 0.3, rotX: -0.2 }),
+      cyl(0.016, 0.022, 0.15, 6, { x: 0.085, y: 0.19, z: 0.02, rotZ: -0.3, rotX: -0.2 }),
     ]);
+    // Cabeça: esfera amassada de leve (cada kodama é torto do seu jeito), mais alta que larga
+    const R = 0.2;
+    const skull = new SphereGeometry(R, 18, 14);
+    const p = skull.attributes.position;
+    for (let i = 0; i < p.count; i += 1) {
+      const x = p.getX(i);
+      const y = p.getY(i);
+      const z = p.getZ(i);
+      const bump = 1 + 0.05 * Math.sin(x * 19 + y * 7) + 0.04 * Math.sin(y * 13 - z * 11) + 0.06 * Math.max(0, y / R) ** 2;
+      p.setXYZ(i, x * bump * 1.02, y * bump * 1.1, z * bump * 0.94);
+    }
+    skull.rotateZ(0.12);
+    const head = assemble([placed(paint(skull), { y: 0.17 })]);
+    // Rosto: buracos escuros rentes à superfície, virados para fora
+    const hole = (r, x, y, sy = 1) => {
+      const g = paint(new CircleGeometry(r, 14));
+      g.scale(1, sy, 1);
+      const nz = Math.sqrt(Math.max(0, 1 - (x / R) ** 2 - (y / (R * 1.1)) ** 2));
+      return placed(g, { x, y: 0.17 + y, z: R * 0.94 * nz + 0.004, rotY: Math.asin(x / R) * 0.9, rotX: -Math.asin(y / (R * 1.1)) * 0.9 });
+    };
+    const face = assemble([hole(0.04, -0.07, 0.03, 1.15), hole(0.033, 0.065, 0.045, 1.1), hole(0.026, -0.01, -0.07, 0.85)]);
     return { body, head, face };
   });
 }

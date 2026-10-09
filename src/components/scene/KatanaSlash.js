@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import {
-  BufferAttribute, BufferGeometry, DoubleSide, PlaneGeometry, Points, RingGeometry, ShaderMaterial, Vector3,
+  BufferAttribute, BufferGeometry, DoubleSide, Points, RingGeometry, ShaderMaterial, Vector3,
 } from 'three';
 import { journeyStore } from '../../store/journey';
 import { groundHeight } from '../../lib/journey/ground';
@@ -15,15 +15,12 @@ import { GROUND, KATANA, KATANA_SLASH, RIVER } from './config';
 // 水の呼吸: clicar na katana solta um golpe de água desenhado como as ondas das gravuras (arco azul
 // com linhas e espuma branca na borda). As gotas voam, caem com a gravidade e, as que chegam ao
 // rio, abrem anéis na água (ver ripples); as que caem na margem somem no chão.
-// 黒閃 (Black Flash, Jujutsu Kaisen): um anel de luz se fecha sobre a katana em ciclos; quem clica
-// no instante em que ele acende solta o golpe negro com bordas e raios vermelhos e faíscas no lugar
-// das gotas (e a tela pisca em preto e vermelho, ver BlackFlash)
+// 黒閃 (Black Flash, Jujutsu Kaisen): a cada três golpes, o terceiro sai negro com bordas e raios
+// vermelhos e faíscas no lugar das gotas (e a tela pisca em preto e vermelho, ver BlackFlash)
 
 const ARC = KATANA_SLASH.arc;
-const BF = KATANA_SLASH.blackFlash;
-// Fase do anel (0 = aberto, 1 = fechado sobre a katana) e se o clique cai na janela do 黒閃
-export const blackFlashPhase = (now) => (now % BF.cycle) / BF.cycle;
-export const inBlackFlashWindow = (now) => blackFlashPhase(now) >= 1 - BF.window;
+// O golpe de número `every` (3º, 6º, 9º...) é o 黒閃
+export const isBlackFlash = (count) => count > 0 && count % KATANA_SLASH.blackFlash.every === 0;
 
 const arcVertex = /* glsl */ `
   varying vec2 vPos;
@@ -104,32 +101,6 @@ const dropFragment = /* glsl */ `
   }
 `;
 
-// O anel do 黒閃: fecha sobre a katana e, na janela certa, acende vermelho com um clarão no centro
-const ringVertex = /* glsl */ `
-  varying vec2 vUv;
-  void main() {
-    vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`;
-const ringFragment = /* glsl */ `
-  uniform float uPhase;
-  uniform float uReady;
-  varying vec2 vUv;
-  void main() {
-    vec2 p = (vUv - 0.5) * 2.0;
-    float d = length(p);
-    float r = mix(0.95, 0.14, uPhase);
-    float ring = exp(-pow((d - r) / (0.016 + 0.02 * uReady), 2.0));
-    float core = exp(-d * d / 0.012) * uReady;
-    vec3 col = mix(vec3(0.85, 0.92, 1.0), vec3(1.0, 0.16, 0.2), uReady);
-    float alpha = ring * (0.28 + 0.72 * uReady) * smoothstep(0.0, 0.08, uPhase) + core * 0.9;
-    if (alpha < 0.01) discard;
-    gl_FragColor = vec4(col + core * vec3(1.0, 0.6, 0.55), alpha);
-    #include <colorspace_fragment>
-  }
-`;
-
 export default function KatanaSlash() {
   const camera = useThree((s) => s.camera);
   const size = useThree((s) => s.size);
@@ -157,17 +128,6 @@ export default function KatanaSlash() {
     return { geometry, material };
   }, []);
 
-  const ring = useMemo(() => {
-    const geometry = new PlaneGeometry(BF.size, BF.size);
-    const material = new ShaderMaterial({
-      vertexShader: ringVertex,
-      fragmentShader: ringFragment,
-      transparent: true,
-      depthWrite: false,
-      uniforms: { uPhase: { value: 0 }, uReady: { value: 0 } },
-    });
-    return { geometry, material };
-  }, []);
 
   const drops = useMemo(() => {
     const n = KATANA_SLASH.drops;
@@ -192,13 +152,11 @@ export default function KatanaSlash() {
     arc.material.dispose();
     drops.geometry.dispose();
     drops.material.dispose();
-    ring.geometry.dispose();
-    ring.material.dispose();
-  }, [arc, drops, ring]);
+  }, [arc, drops]);
 
   const arcRef = useRef(null);
-  const ringRef = useRef(null);
   const slash = useRef({ start: -Infinity, pending: false, black: false });
+  const strikes = useRef(0);
   const scratch = useMemo(() => [new Vector3(), new Vector3()], []);
 
   // Clique na katana (o canvas fica atrás do conteúdo: confere a katana projetada na tela)
@@ -206,9 +164,11 @@ export default function KatanaSlash() {
     const onClick = (e) => {
       if (journeyStore.getState().reducedMotion || !isSceneClick(e.target)) return;
       const hit = projectSphere(center, KATANA_SLASH.clickRadius, camera, size.width, size.height, scratch);
-      if (!hit || !insideCircle(e.clientX, e.clientY, hit.x, hit.y, hit.r)) return;
+      // A katana fica pequena na tela: um raio mínimo deixa o clique fácil (três seguidos, no 黒閃)
+      if (!hit || !insideCircle(e.clientX, e.clientY, hit.x, hit.y, Math.max(hit.r, KATANA_SLASH.minHit))) return;
       const now = performance.now() / 1000;
-      const black = inBlackFlashWindow(now);
+      strikes.current += 1;
+      const black = isBlackFlash(strikes.current);
       slash.current = { start: now, pending: true, black };
       // 黒閃: a tela pisca em preto e vermelho; o golpe comum vira o cursor em bola d'água
       window.dispatchEvent(new CustomEvent(black ? 'black-flash' : 'katana-slash'));
@@ -223,18 +183,6 @@ export default function KatanaSlash() {
     const mesh = arcRef.current;
     if (!mesh) return;
     const now = performance.now() / 1000;
-
-    // O anel do 黒閃 sobre a katana (some enquanto um golpe acontece)
-    const ringMesh = ringRef.current;
-    if (ringMesh) {
-      const phase = blackFlashPhase(now);
-      ringMesh.visible = !journeyStore.getState().reducedMotion && now - slash.current.start > ARC.duration * 1.4;
-      tmp.toCam.subVectors(camera.position, center).normalize();
-      ringMesh.position.copy(center).addScaledVector(tmp.toCam, 1.6);
-      ringMesh.quaternion.copy(camera.quaternion);
-      ring.material.uniforms.uPhase.value = phase;
-      ring.material.uniforms.uReady.value = phase >= 1 - BF.window ? 1 : 0;
-    }
     const age = now - slash.current.start;
     const progress = age / ARC.duration;
 
@@ -314,7 +262,6 @@ export default function KatanaSlash() {
   return (
     <>
       <mesh ref={arcRef} geometry={arc.geometry} material={arc.material} visible={false} renderOrder={4} frustumCulled={false} />
-      <mesh ref={ringRef} geometry={ring.geometry} material={ring.material} renderOrder={4} frustumCulled={false} />
       <primitive object={drops.points} />
     </>
   );
