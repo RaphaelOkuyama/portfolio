@@ -2,17 +2,18 @@
 import { useEffect, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import {
-  Color, ConeGeometry, DataTexture, LinearFilter, MeshBasicMaterial, Object3D, RGBAFormat, Shape, ShapeGeometry,
+  Color, DataTexture, LinearFilter, MeshBasicMaterial, Object3D, RGBAFormat, Shape, ShapeGeometry,
 } from 'three';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { journeyStore, useJourney } from '../../store/journey';
 import { SEASONS, SCENE_ACCENTS } from '../../lib/palette';
 import { TSUKUYOMI, tsukuyomi } from '../../lib/journey/tsukuyomi';
 import { sampleSeason, clamp01 } from '../../lib/journey/season';
 import { ridgePoints } from '../../lib/journey/ridge';
 import { ridgeProfile, forestPlacements } from '../../lib/journey/landscape';
+import { groundHeight } from '../../lib/journey/ground';
 import { NOISE, noiseDefines } from './glsl';
-import { MOUNTAIN_LAYERS, MOUNTAIN_LOOK, FOREST } from './config';
+import { forestGeometry, TREE_SWAY } from './forestGeometry';
+import { MOUNTAIN_LAYERS, MOUNTAIN_LOOK, FOREST, GROUND } from './config';
 
 // Distância em que a camada atinge o tom "longe"
 const FAR_DISTANCE = 60;
@@ -39,18 +40,6 @@ function ridgeTexture(points) {
   texture.minFilter = LinearFilter;
   texture.needsUpdate = true;
   return { texture, min, max };
-}
-
-// Sugi (杉): dois cones empilhados, low-poly, com a base na origem
-function sugiGeometry() {
-  const lower = new ConeGeometry(0.42, 1.0, 5);
-  lower.translate(0, 0.5, 0);
-  const upper = new ConeGeometry(0.3, 0.8, 5);
-  upper.translate(0, 1.05, 0);
-  const merged = mergeGeometries([lower, upper].map((g) => (g.index ? g.toNonIndexed() : g)));
-  lower.dispose();
-  upper.dispose();
-  return merged;
 }
 
 const VERTEX_HEAD = /* glsl */ `
@@ -131,15 +120,19 @@ function createMaterial(layer, ridge, index, quality) {
   return material;
 }
 
-// Material das árvores de uma camada: mesma cor e mesmos uniforms da encosta (a silhueta funde),
-// mas um objeto à parte. Com um só material para o mesh e o InstancedMesh, o three trocava de
-// programa (instanciado ↔ comum) e recalculava os parâmetros duas vezes por camada a cada quadro
+// Material das árvores de uma camada: mesma cor e mesmos uniforms da encosta (a silhueta funde de
+// longe), mas um objeto à parte. Com um só material para o mesh e o InstancedMesh, o three trocava
+// de programa (instanciado ↔ comum) e recalculava os parâmetros duas vezes por camada a cada quadro.
+// Além do shader da encosta: cor por vértice (o volume pintado da árvore) e o vento nas copas
 function twinMaterial(material) {
-  const twin = new MeshBasicMaterial();
+  const twin = new MeshBasicMaterial({ vertexColors: true });
   twin.defines = material.defines;
   twin.color = material.color;
   twin.userData.uniforms = material.userData.uniforms;
-  twin.onBeforeCompile = material.onBeforeCompile;
+  twin.onBeforeCompile = (shader) => {
+    material.onBeforeCompile(shader);
+    shader.vertexShader = `uniform float uTime;\n${shader.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>\n${TREE_SWAY}`)}`;
+  };
   return twin;
 }
 
@@ -163,13 +156,25 @@ export default function MountainLayers() {
   );
   const forestMaterials = useMemo(() => materials.map(twinMaterial), [materials]);
 
-  const sugi = useMemo(() => sugiGeometry(), []);
+  const trees = forestGeometry();
+  // Cada camada: ~70% sugi (cones em camadas) e ~30% matsu (pinheiro em nuvens), apoiados no chão do
+  // vale quando a crista afunda abaixo dele (antes ficavam enterrados, só com a ponta de fora)
   const forests = useMemo(() => {
     const count = FOREST.count[quality] ?? FOREST.count.low;
-    return layers.map(({ layer, points }, i) =>
-      forestPlacements(points, { seed: layer.seed + 5, count, halfWidth: FOREST.halfWidth, valleyHalf: layer.forestValleyHalf ?? FOREST.valleyHalf, valleyCenter: layer.valleyCenter })
-        .map(([x, y, s]) => [x, y, s * (1 + i * FOREST.growWithDistance)]),
-    );
+    return layers.map(({ layer, points }, i) => {
+      const all = forestPlacements(points, {
+        seed: layer.seed + 5,
+        count,
+        halfWidth: FOREST.halfWidth,
+        valleyHalf: layer.forestValleyHalf ?? FOREST.valleyHalf,
+        valleyCenter: layer.valleyCenter,
+        floor: (x) => groundHeight(x + layer.x, layer.z, GROUND),
+      }).map(([x, y, s]) => [x, y, s * (1 + i * FOREST.growWithDistance)]);
+      return {
+        sugi: all.filter((_, k) => k % 10 >= FOREST.matsuShare * 10),
+        matsu: all.filter((_, k) => k % 10 < FOREST.matsuShare * 10).map(([x, y, s]) => [x, y, s * 0.85]),
+      };
+    });
   }, [layers, quality]);
 
   useEffect(
@@ -178,9 +183,8 @@ export default function MountainLayers() {
         geometry.dispose();
         ridge.texture.dispose();
       });
-      sugi.dispose();
     },
-    [layers, sugi],
+    [layers],
   );
   useEffect(() => () => materials.forEach((m) => m.dispose()), [materials]);
   useEffect(() => () => forestMaterials.forEach((m) => m.dispose()), [forestMaterials]);
@@ -237,20 +241,21 @@ export default function MountainLayers() {
   return layers.map(({ layer, geometry }, i) => (
     <group key={layer.seed} position={[layer.x, 0, layer.z]}>
       <mesh geometry={geometry} material={materials[i]} />
-      <Forest geometry={sugi} material={forestMaterials[i]} trees={forests[i]} />
+      <Forest geometry={trees.sugi} material={forestMaterials[i]} trees={forests[i].sugi} slim={0.8} />
+      <Forest geometry={trees.matsu} material={forestMaterials[i]} trees={forests[i].matsu} slim={1} />
     </group>
   ));
 }
 
 const dummy = new Object3D();
 
-function Forest({ geometry, material, trees }) {
+function Forest({ geometry, material, trees, slim }) {
   const ref = (mesh) => {
     if (!mesh) return;
     trees.forEach(([x, y, s], i) => {
       dummy.position.set(x, y, 0);
-      // Um pouco mais estreita que alta: sugi é esguio
-      dummy.scale.set(s * 0.8, s, s * 0.8);
+      // `slim`: o sugi é mais estreito que alto; o matsu, cheio
+      dummy.scale.set(s * slim, s, s * slim);
       dummy.rotation.set(0, (i * 1.7) % Math.PI, 0);
       dummy.updateMatrix();
       mesh.setMatrixAt(i, dummy.matrix);

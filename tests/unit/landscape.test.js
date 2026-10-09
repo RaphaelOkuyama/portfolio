@@ -89,3 +89,18 @@ describe('flockFormation', () => {
     birds.slice(1).forEach(([x]) => expect(x).toBeLessThan(birds[0][0] + 0.3));
   });
 });
+
+describe('árvores nunca enterradas no chão do vale', () => {
+  it('com `floor`, a base da árvore nunca fica abaixo do chão', async () => {
+    const { ridgePoints } = await import('../../src/lib/journey/ridge');
+    const points = ridgePoints({ seed: 7, width: 160, segments: 160, baseHeight: -1, amplitude: 7, valleyDepth: 0.95, valleyWidth: 18 });
+    // Chão em concha que sobe nas laterais, como o do caminho
+    const floor = (x) => Math.min(0.02 * Math.max(0, Math.abs(x) - 10) ** 2, 5) - 0.5;
+    const trees = forestPlacements(points, { seed: 3, count: 80, halfWidth: 72, valleyHalf: 13, floor });
+    expect(trees.length).toBeGreaterThan(20);
+    trees.forEach(([x, y]) => expect(y).toBeGreaterThanOrEqual(floor(x) - 0.08 - 1e-9));
+    // Sem `floor` continua igual a antes (algumas ficariam abaixo desse chão)
+    const loose = forestPlacements(points, { seed: 3, count: 80, halfWidth: 72, valleyHalf: 13 });
+    expect(loose.some(([x, y]) => y < floor(x) - 0.08)).toBe(true);
+  });
+});

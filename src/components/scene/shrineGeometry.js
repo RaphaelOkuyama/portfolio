@@ -1,6 +1,6 @@
 import {
   BoxGeometry, BufferGeometry, CatmullRomCurve3, ConeGeometry, CylinderGeometry, DodecahedronGeometry, ExtrudeGeometry,
-  Float32BufferAttribute, Shape, SphereGeometry, TubeGeometry, Vector3,
+  Float32BufferAttribute, IcosahedronGeometry, Shape, SphereGeometry, TorusGeometry, TubeGeometry, Vector3,
 } from 'three';
 import { assemble, paint, placed } from './lowpoly';
 import { segment } from './tanabataGeometry';
@@ -24,42 +24,178 @@ const lump = (r, scale, at, detail = 0) => {
   return placed(g, at);
 };
 
+// Volume orgânico facetado (icosaedro subdividido): lê como pedra esculpida, não como rocha bruta
+const blob = (r, scale, at, tone = 1) => {
+  const g = paint(new IcosahedronGeometry(r, 1), [tone, tone, tone]);
+  g.scale(...scale);
+  return placed(g, at);
+};
+const tinted = (geometry, rgb) => paint(geometry, rgb);
+
+// Ruído estável por face (hash do centro da face), de 0 a 1
+const hash3 = (x, y, z) => {
+  const s = Math.sin(x * 12.9898 + y * 78.233 + z * 37.719) * 43758.5453;
+  return s - Math.floor(s);
+};
+
+// Pedra envelhecida: cada face ganha um tom levemente diferente (granito), as faces viradas
+// para dentro da figura (entre os cachos, sob o queixo) escurecem como sujeira acumulada, o pé
+// fica encardido e os topos ganham líquen em manchas. Tudo pintado nos vértices, sem textura.
+// `axisZ(y)`: z do eixo da figura naquela altura (a cabeça fica mais à frente que o corpo)
+function weather(geometry, axisZ) {
+  const pos = geometry.attributes.position;
+  const col = geometry.attributes.color;
+  const a = new Vector3();
+  const b = new Vector3();
+  const c = new Vector3();
+  const e = new Vector3();
+  const n = new Vector3();
+  for (let i = 0; i < pos.count; i += 3) {
+    a.fromBufferAttribute(pos, i);
+    b.fromBufferAttribute(pos, i + 1);
+    c.fromBufferAttribute(pos, i + 2);
+    n.subVectors(c, b).cross(e.subVectors(a, b)).normalize();
+    const cx = (a.x + b.x + c.x) / 3;
+    const cy = (a.y + b.y + c.y) / 3;
+    const cz = (a.z + b.z + c.z) / 3;
+    let tone = 0.93 + hash3(cx, cy, cz) * 0.1;
+    // Cavidades: na figura, a face que aponta para o eixo fica entre volumes
+    const dz = cz - axisZ(cy);
+    const facing = (n.x * cx + n.z * dz) / (Math.hypot(cx, dz) || 1);
+    if (cy > 1.1 && facing < -0.25) tone *= 0.8;
+    if (n.y < -0.5) tone *= 0.88;
+    // Faces grandes e planas (o pedestal) ficam lisas: o ruído por face marcaria a diagonal
+    if (e.subVectors(a, b).cross(n.clone().subVectors(c, b)).length() > 0.05) tone = 0.98;
+    let rgb = [tone, tone, tone];
+    // Líquen nos topos da figura voltados para o céu
+    if (n.y > 0.6 && cy > 1.15 && hash3(cx * 3.1, cy * 1.7, cz * 2.3) > 0.66) rgb = [tone * 0.93, tone * 1.02, tone * 0.78];
+    for (let k = i; k < i + 3; k += 1) {
+      // Encardido no pé do pedestal, por vértice (gradiente contínuo)
+      const y = pos.getY(k);
+      const grime = y < 0.45 ? 0.84 + 0.16 * (y / 0.45) : 1;
+      col.setXYZ(k, col.getX(k) * rgb[0] * grime, col.getY(k) * rgb[1] * grime, col.getZ(k) * rgb[2] * grime);
+    }
+  }
+  return geometry;
+}
+
 // 狛犬 (komainu): o par de leões guardiões do santuário, sentados num pedestal. O "a" fica de
-// boca aberta (o começo); o "un", de boca fechada e com um chifre (o fim)
+// boca aberta, com presas, e a pata sobre a joia (玉); o "un", de boca fechada, com o chifre e
+// o filhote sob a pata. Cabeça grande (quase 1/3 da figura), olhos saltados, juba em cachos
+// (渦) com mechas descendo pelas costas e cauda em chama
 export function komainuGeometry(variant) {
   return cached(`komainu-${variant}`, () => {
-    const y0 = 1.07;
     const open = variant === 'a';
+    const moss = [0.86, 0.92, 0.8];
     const parts = [
-      // Pedestal em três degraus
-      box(1.5, 0.35, 1.2, { y: 0.175 }),
-      box(1.22, 0.6, 0.98, { y: 0.65 }),
-      box(1.4, 0.12, 1.1, { y: 1.01 }),
-      // Ancas, peito erguido e as patas da frente
-      lump(0.46, [1.1, 0.78, 1], { y: y0 + 0.33, z: -0.2 }),
-      lump(0.38, [1, 1.4, 0.92], { y: y0 + 0.74, z: 0.08 }),
-      cyl(0.09, 0.11, 0.62, 5, { x: -0.2, y: y0 + 0.3, z: 0.3 }),
-      cyl(0.09, 0.11, 0.62, 5, { x: 0.2, y: y0 + 0.3, z: 0.3 }),
-      box(0.2, 0.1, 0.26, { x: -0.2, y: y0 + 0.05, z: 0.38 }),
-      box(0.2, 0.1, 0.26, { x: 0.2, y: y0 + 0.05, z: 0.38 }),
-      // Juba encaracolada atrás da cabeça, cabeça e orelhas
-      lump(0.44, [1.28, 1.08, 0.78], { y: y0 + 1.2, z: 0.02 }),
-      lump(0.32, [1.1, 1, 1], { y: y0 + 1.28, z: 0.2 }),
-      cone(0.07, 0.16, 4, { x: -0.23, y: y0 + 1.55, z: 0.12 }),
-      cone(0.07, 0.16, 4, { x: 0.23, y: y0 + 1.55, z: 0.12 }),
-      // Cauda em chama, erguida atrás
-      cone(0.26, 0.75, 5, { y: y0 + 0.86, z: -0.55, rotX: -0.55 }),
+      // Pedestal: laje com musgo, chanfro, bloco com painel em moldura, capa e almofada
+      placed(tinted(new BoxGeometry(1.62, 0.26, 1.32), moss), { y: 0.13 }),
+      placed(tinted(new CylinderGeometry(0.98, 1.06, 0.1, 4, 1), [0.9, 0.94, 0.86]), { y: 0.31, rotY: Math.PI / 4 }),
+      box(1.24, 0.56, 1.0, { y: 0.64 }),
+      ...[0.5, -0.5].flatMap((z) => [
+        box(1.0, 0.06, 0.04, { y: 0.83, z }), box(1.0, 0.06, 0.04, { y: 0.45, z }),
+        box(0.06, 0.38, 0.04, { x: -0.47, y: 0.64, z }), box(0.06, 0.38, 0.04, { x: 0.47, y: 0.64, z }),
+      ]),
+      // Florão em relevo no centro do painel
+      blob(0.09, [1.4, 1, 0.35], { y: 0.64, z: 0.5 }, 0.96),
+      placed(paint(new CylinderGeometry(1.0, 0.92, 0.1, 4, 1)), { y: 0.97, rotY: Math.PI / 4 }),
+      placed(paint(new CylinderGeometry(0.76, 0.84, 0.07, 4, 1), [0.94, 0.94, 0.94]), { y: 1.055, rotY: Math.PI / 4 }),
+    ];
+    const y0 = 1.09;
+    parts.push(
+      // Ancas (patas de trás dobradas), patas de trás e o tronco inclinado para trás
+      blob(0.27, [0.8, 0.9, 1.2], { x: -0.3, y: y0 + 0.27, z: -0.14 }),
+      blob(0.27, [0.8, 0.9, 1.2], { x: 0.3, y: y0 + 0.27, z: -0.14 }),
+      blob(0.12, [1, 0.55, 1.45], { x: -0.37, y: y0 + 0.06, z: 0.14 }),
+      blob(0.12, [1, 0.55, 1.45], { x: 0.37, y: y0 + 0.06, z: 0.14 }),
+      blob(0.34, [1, 1.4, 0.95], { y: y0 + 0.62, z: -0.06, rotX: -0.18 }),
+      blob(0.31, [1.15, 1, 0.85], { y: y0 + 0.78, z: 0.14 }),
+      // Tufos de pelo nos cotovelos, em chama para trás
+      blob(0.1, [0.8, 1.3, 1.2], { x: -0.22, y: y0 + 0.55, z: 0.22, rotX: 0.5 }, 0.94),
+      blob(0.1, [0.8, 1.3, 1.2], { x: 0.22, y: y0 + 0.55, z: 0.22, rotX: 0.5 }, 0.94),
+    );
+    // Patas da frente: perna, pata e três dedos; uma delas pousada na joia ou no filhote
+    const leg = (x, lift) => {
+      const h = 0.62 - lift;
+      parts.push(blob(0.1, [0.95, h / 0.2, 1.05], { x, y: y0 + lift + h / 2, z: 0.32 }));
+      parts.push(blob(0.12, [1, 0.6, 1.3], { x, y: y0 + lift + 0.06, z: 0.4 }));
+      [-0.07, 0, 0.07].forEach((dx) => parts.push(blob(0.045, [1, 0.8, 1.1], { x: x + dx, y: y0 + lift + 0.05, z: 0.53 }, 1.04)));
+    };
+    const held = open ? 0.19 : -0.19;
+    leg(-held, 0);
+    leg(held, 0.2);
+    if (open) {
+      // 玉: a joia sob a pata, com o sulco em espiral sugerido por um anel
+      parts.push(blob(0.11, [1, 1, 1], { x: held, y: y0 + 0.11, z: 0.42 }, 1.06));
+      parts.push(placed(paint(new TorusGeometry(0.105, 0.018, 4, 10), [0.88, 0.88, 0.88]), { x: held, y: y0 + 0.11, z: 0.42, rotX: 0.5 }));
+    } else {
+      // 子獅子: o filhote deitado sob a pata, olhando para cima, com a juba pequena
+      parts.push(blob(0.11, [1.1, 0.8, 1.2], { x: held, y: y0 + 0.09, z: 0.42 }));
+      parts.push(blob(0.075, [1, 1, 1], { x: held - 0.02, y: y0 + 0.17, z: 0.56 }, 1.04));
+      parts.push(blob(0.05, [1.3, 1, 0.7], { x: held - 0.02, y: y0 + 0.2, z: 0.5 }, 0.9));
+    }
+
+    // Cabeça (montada em volta do centro e depois ampliada): crânio largo, focinho achatado, nariz
+    // largo, olhos saltados sob as sobrancelhas em cacho, bochechas e orelhas caídas
+    const hy = y0 + 1.22;
+    const head = [
+      blob(0.3, [1.2, 1, 1], { y: hy, z: 0.12 }),
+      blob(0.17, [1.4, 0.78, 1], { y: hy - 0.1, z: 0.36 }),
+      blob(0.075, [1.6, 0.85, 1], { y: hy - 0.03, z: 0.52 }, 1.06),
+      blob(0.066, [1, 1, 0.85], { x: -0.13, y: hy + 0.07, z: 0.38 }, 1.12),
+      blob(0.066, [1, 1, 0.85], { x: 0.13, y: hy + 0.07, z: 0.38 }, 1.12),
+      blob(0.075, [1.5, 0.7, 0.9], { x: -0.13, y: hy + 0.17, z: 0.36, rotZ: -0.3 }, 0.96),
+      blob(0.075, [1.5, 0.7, 0.9], { x: 0.13, y: hy + 0.17, z: 0.36, rotZ: 0.3 }, 0.96),
+      blob(0.11, [1, 1, 0.8], { x: -0.22, y: hy - 0.12, z: 0.3 }),
+      blob(0.11, [1, 1, 0.8], { x: 0.22, y: hy - 0.12, z: 0.3 }),
+      blob(0.1, [1.3, 0.5, 0.8], { x: -0.32, y: hy + 0.16, z: 0.05, rotZ: 0.8 }),
+      blob(0.1, [1.3, 0.5, 0.8], { x: 0.32, y: hy + 0.16, z: 0.05, rotZ: -0.8 }),
     ];
     if (open) {
-      // Boca aberta: maxila e mandíbula separadas
-      parts.push(box(0.3, 0.12, 0.24, { y: y0 + 1.27, z: 0.48, rotX: -0.22 }));
-      parts.push(box(0.26, 0.08, 0.2, { y: y0 + 1.08, z: 0.44, rotX: 0.3 }));
+      // "A": mandíbula aberta, a boca escura por dentro, a língua e as presas em cima e embaixo
+      head.push(blob(0.13, [1.3, 0.45, 1], { y: hy - 0.31, z: 0.33, rotX: 0.35 }));
+      head.push(placed(tinted(new BoxGeometry(0.26, 0.1, 0.1), [0.42, 0.42, 0.45]), { y: hy - 0.22, z: 0.43 }));
+      head.push(blob(0.06, [1.5, 0.4, 1], { y: hy - 0.26, z: 0.42 }, 0.8));
+      [-0.09, 0.09].forEach((x) => {
+        head.push(cone(0.024, 0.09, 4, { x, y: hy - 0.19, z: 0.48, rotX: Math.PI }));
+        head.push(cone(0.02, 0.07, 4, { x: x * 0.9, y: hy - 0.27, z: 0.46 }));
+      });
     } else {
-      parts.push(box(0.3, 0.2, 0.24, { y: y0 + 1.18, z: 0.47 }));
-      // O chifre do "un"
-      parts.push(cone(0.06, 0.24, 5, { y: y0 + 1.66, z: 0.2, rotX: 0.25 }));
+      // "Un": boca fechada e o chifre na testa
+      head.push(blob(0.13, [1.3, 0.5, 1], { y: hy - 0.22, z: 0.34 }));
+      head.push(cone(0.055, 0.26, 6, { y: hy + 0.33, z: 0.16, rotX: 0.3 }));
     }
-    return assemble(parts);
+    // Juba: cachos em espiral (o cacho e o miolo saltado) em dois anéis em volta do rosto
+    const curl = (list, x, y, z, r) => {
+      list.push(blob(r, [1, 1, 0.75], { x, y, z }, 0.9));
+      list.push(blob(r * 0.45, [1, 1, 0.8], { x: x * 1.02, y, z: z + r * 0.62 }, 1.02));
+    };
+    for (let i = 0; i <= 12; i += 1) {
+      const ang = -0.8 + (i / 12) * (Math.PI + 1.6);
+      curl(head, Math.cos(ang) * 0.4, hy + Math.sin(ang) * 0.35, -0.04, 0.1);
+      if (i % 2 === 0) curl(head, Math.cos(ang) * 0.26, hy + Math.sin(ang) * 0.24, -0.15, 0.11);
+    }
+    // Barba em cachos sob o queixo
+    [-0.12, 0, 0.12].forEach((x) => curl(head, x, hy - 0.42 + Math.abs(x) * 0.5, 0.28, 0.07));
+    const S = 1.14;
+    head.forEach((g) => {
+      g.translate(0, -hy, -0.12);
+      g.scale(S, S, S);
+      g.translate(0, hy, 0.12);
+      parts.push(g);
+    });
+
+    // Mechas da juba descendo pelas costas, afinando
+    [-0.26, -0.13, 0, 0.13, 0.26].forEach((x, i) => {
+      parts.push(blob(0.09, [0.75, 2.4, 0.6], { x, y: y0 + 0.92 - (i % 2) * 0.06, z: -0.3, rotX: -0.35, rotZ: x * 0.6 }, 0.9));
+    });
+    // Cauda em chama (尾): cachos empilhados subindo atrás das costas, abrindo em leque
+    [[0, 0.32, -0.45, 0.17], [0, 0.58, -0.54, 0.18], [-0.17, 0.78, -0.48, 0.13], [0.17, 0.78, -0.48, 0.13],
+      [0, 0.86, -0.54, 0.15], [-0.1, 1.06, -0.46, 0.11], [0.1, 1.06, -0.46, 0.11], [0, 1.16, -0.42, 0.1]]
+      .forEach(([x, y, z, r]) => curl(parts, x, y0 + y, z, r));
+    parts.push(cone(0.07, 0.22, 6, { y: y0 + 1.32, z: -0.38, rotX: -0.35 }));
+
+    return weather(assemble(parts), (y) => (y > hy - 0.45 ? 0.12 : 0));
   });
 }
 

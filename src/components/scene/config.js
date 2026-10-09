@@ -350,6 +350,8 @@ export const FOREST = {
   halfWidth: 72,
   valleyHalf: 13,
   growWithDistance: 0.12,
+  // Fração de matsu (pinheiro em nuvens) no meio dos sugi
+  matsuShare: 0.3,
 };
 
 // Kasumi (霞): faixas de névoa entre as camadas, à deriva

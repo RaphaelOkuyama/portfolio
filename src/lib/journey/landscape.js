@@ -28,7 +28,9 @@ export function ridgeProfile(points) {
 
 // Sugi (杉) nas cristas: aglomerados, fora do vale por onde a câmera passa.
 // Retorna [x, y, escala] com a base logo abaixo do cume (a árvore "nasce" da encosta)
-export function forestPlacements(points, { seed, count, halfWidth, valleyHalf, valleyCenter = 0, heightRange = [1.4, 3] }) {
+// `floor(x)`: altura do chão do vale naquele x (opcional). Perto do vale o chão sobe em concha e
+// passa por cima da crista: sem isso a árvore ficava enterrada, só com a ponta de fora
+export function forestPlacements(points, { seed, count, halfWidth, valleyHalf, valleyCenter = 0, heightRange = [1.4, 3], floor = null }) {
   const rand = mulberry32(seed);
   // Densidade em faixas: bosques e clareiras ao longo do cume
   const phase = rand() * Math.PI * 2;
@@ -43,7 +45,10 @@ export function forestPlacements(points, { seed, count, halfWidth, valleyHalf, v
     // Base logo abaixo do cume, só para não flutuar no declive. Antes afundava até 1,05: os sugi
     // menores (2 de altura) ficavam pela metade e viravam calombos da cor da montanha
     const sink = 0.05 + rand() * 0.25;
-    trees.push([x, ridgeHeightAt(points, x) - sink, scale]);
+    let base = ridgeHeightAt(points, x) - sink;
+    // Crista abaixo do chão: a árvore fica de pé no chão (um tiquinho para dentro, sem flutuar)
+    if (floor) base = Math.max(base, floor(x) - 0.08);
+    trees.push([x, base, scale]);
   }
   return trees;
 }
