@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { resumeData } from '../data/resume';
 import { normalizeTheme } from '../lib/palette';
 import { LANG_KEY } from '../lib/themeBoot';
@@ -58,8 +58,15 @@ export function SettingsProvider({ children }) {
     applyTheme(initial);
   }, []);
 
-  // Leitores de tela e tradutores seguem o idioma escolhido
+  // Leitores de tela e tradutores seguem o idioma escolhido. Na primeira passada o estado ainda é
+  // o 'pt' do servidor: escrever aqui trocava o <html lang> do script do <head> (ex.: 'en') por
+  // pt-BR e de volta, repintando o texto da hero (o LCP ia para depois da hidratação)
+  const synced = useRef(false);
   useEffect(() => {
+    if (!synced.current) {
+      synced.current = true;
+      if (document.documentElement.getAttribute('data-language') !== language) return;
+    }
     document.documentElement.lang = language === 'pt' ? 'pt-BR' : 'en';
     document.documentElement.setAttribute('data-language', language);
   }, [language]);
