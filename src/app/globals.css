@@ -3840,6 +3840,67 @@ html:not(:lang(en)) [data-lang="en"] { display: none !important; }
   transform-origin: 0 50%;
   opacity: 0;
 }
+/* 印: o selo de mão que abre o domínio, no centro da tela */
+.dx-seal {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  pointer-events: none;
+  /* Vinheta escura atrás da mão: o resto da página some e o selo é o foco */
+  background: radial-gradient(circle at 50% 50%, rgba(2, 4, 12, 0.85) 0, rgba(2, 4, 12, 0.55) 30%, rgba(2, 4, 12, 0) 62%);
+}
+.dx-seal-svg {
+  width: auto;
+  height: min(56vh, 460px);
+  filter: drop-shadow(0 0 18px rgba(120, 180, 255, 0.55));
+}
+.dx-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+/* Som do domínio: liga/desliga e volume, no canto */
+.dx-sound {
+  position: absolute;
+  top: 4vh;
+  left: 6vw;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: auto;
+  opacity: 0.75;
+  transition: opacity 0.2s;
+}
+.dx-sound:hover,
+.dx-sound:focus-within { opacity: 1; }
+.dx-mute {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid rgba(200, 225, 255, 0.35);
+  border-radius: 50%;
+  background: rgba(8, 12, 28, 0.55);
+  color: #e6f0ff;
+  cursor: pointer;
+}
+.dx-mute .dx-mute-x { display: none; }
+.dx-mute[data-muted='true'] .dx-mute-x { display: inline; }
+.dx-mute[data-muted='true'] .dx-mute-waves { display: none; }
+.dx-volume {
+  width: 96px;
+  accent-color: #9cc8ff;
+  cursor: pointer;
+}
+@media (max-width: 767px) {
+  .dx-sound { left: 20px; }
+  .dx-volume { width: 72px; }
+}
 /* 判子: carimbo vermelho que assina o fim da reconstrução */
 .dx-hanko {
   position: absolute;

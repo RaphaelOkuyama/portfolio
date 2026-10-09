@@ -6,10 +6,14 @@ import { journeyStore } from '../../store/journey';
 import { DOMAIN, pickTargets, rectPoly, resample, voronoiCells } from '../../lib/domain';
 import { createVoid } from './voidShader';
 import { buildSprites } from './sprites';
+import { createDomainSound, savedVolume } from './sound';
+import HandSeal from './HandSeal';
 
 // 領域展開 · 無量空処: o Vazio Infinito (carregado só quando alguém abre; ver EasterEggs).
-//  1. Ativação (0–0,8 s): a página escurece e 領域展開 surge em pinceladas
-//  2. Expansão (0,8–2,0 s): o vazio abre num círculo a partir do gatilho; o orbe negro nasce no centro
+//  1. Ativação (0–0,8 s): a página escurece, o selo de mão do Gojo (indicador e médio cruzados)
+//     acende e 領域展開 surge em pinceladas; o som grave marca a abertura
+//  2. Expansão (0,8–2,0 s): o vazio rasga a cena a partir do gatilho, com a página real sendo puxada
+//     para ele (lente); o buraco negro nasce no centro, com o disco em espiral e o anel azul-gelo
 //  3. Informação infinita (2,0–5,3 s): primeiro, legível, a história (os projetos com a stack, os
 //     números reais); depois a enxurrada (as tiras do Stack, 奥山, as quatro estações), que se
 //     multiplica, se sobrepõe e vira partícula. O contador acompanha até perder o sentido
@@ -138,7 +142,13 @@ export default function DomainExpansion({ origin, onDone }) {
       serif: getComputedStyle(document.querySelector('h1, h2') ?? document.body).fontFamily,
       jp: getComputedStyle(document.querySelector('.font-jp') ?? document.body).fontFamily,
     };
-    const { story, flood } = buildSprites(resumeData[lang], METRICS[lang], fonts, lang);
+    // As peças só aparecem aos 2 s: são desenhadas depois dos primeiros quadros (desenhar todas na
+    // montagem segurava ~300 ms logo depois da tecla, antes de qualquer coisa aparecer)
+    let story = [];
+    let flood = [];
+    const spritesTimer = setTimeout(() => {
+      ({ story, flood } = buildSprites(resumeData[lang], METRICS[lang], fonts, lang));
+    }, 650);
     const unit = Math.min(w, h);
     // Celular: menos peças, menos partículas e menos tremor
     const small = unit < 700;
@@ -166,12 +176,15 @@ export default function DomainExpansion({ origin, onDone }) {
     const close = DOMAIN.close;
     const tl = gsap.timeline();
     tl.to(q('.dx-dim'), { opacity: 1, duration: 0.4, ease: 'power2.out' }, 0)
+      // 印: o selo de mão acende, segura um instante e se desfaz quando o nome do domínio entra
+      .fromTo(q('.dx-seal'), { opacity: 0, scale: 0.9, filter: 'blur(8px)' }, { opacity: 1, scale: 1, filter: 'blur(0px)', duration: 0.32, ease: 'power3.out' }, 0)
+      .to(q('.dx-seal'), { opacity: 0, scale: 1.08, filter: 'blur(10px)', duration: 0.35, ease: 'power2.in' }, 0.62)
       .fromTo(q('.dx-intro-char'), { clipPath: 'inset(0% 0% 100% 0%)', opacity: 0, filter: 'blur(10px)', y: -14, scale: 1.12 }, {
-        clipPath: 'inset(0% 0% 0% 0%)', opacity: 1, filter: 'blur(0px)', y: 0, scale: 1, duration: 0.52, stagger: 0.11, ease: 'power3.out',
-      }, 0.06)
-      .fromTo(q('.dx-brush'), { scaleX: 0, opacity: 0 }, { scaleX: 1, opacity: 1, duration: 0.7, ease: 'expo.inOut' }, 0.2)
-      .fromTo(q('.dx-intro-sub'), { opacity: 0, letterSpacing: '1.2em' }, { opacity: 0.8, letterSpacing: '0.6em', duration: 0.6, ease: 'expo.out' }, 0.45)
-      .to(q('.dx-intro'), { opacity: 0, scale: 1.14, filter: 'blur(10px)', duration: 0.45, ease: 'power2.in' }, close - 0.45)
+        clipPath: 'inset(0% 0% 0% 0%)', opacity: 1, filter: 'blur(0px)', y: 0, scale: 1, duration: 0.5, stagger: 0.1, ease: 'power3.out',
+      }, 0.62)
+      .fromTo(q('.dx-brush'), { scaleX: 0, opacity: 0 }, { scaleX: 1, opacity: 1, duration: 0.7, ease: 'expo.inOut' }, 0.74)
+      .fromTo(q('.dx-intro-sub'), { opacity: 0, letterSpacing: '1.2em' }, { opacity: 0.8, letterSpacing: '0.6em', duration: 0.6, ease: 'expo.out' }, 0.95)
+      .to(q('.dx-intro'), { opacity: 0, scale: 1.14, filter: 'blur(10px)', duration: 0.4, ease: 'power2.in' }, close - 0.3)
       .fromTo(q('.dx-name-char'), {
         opacity: 0, scale: 0.55, skewX: 22, filter: 'blur(6px)',
         textShadow: '-9px 0px 10px rgba(255,70,120,0.9), 9px 0px 10px rgba(70,200,255,0.9)',
@@ -185,6 +198,99 @@ export default function DomainExpansion({ origin, onDone }) {
       .fromTo(q('.dx-label, .dx-count'), { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.7, stagger: 0.08, ease: 'power3.out' }, close + 0.45);
     const counter = root.querySelector('.dx-count');
     const layers = [glCanvas, itemsCanvas];
+
+    // Som (opcional, com volume próprio): nasce aqui, logo depois da tecla ou do toque que abriu
+    const sound = createDomainSound();
+    const played = { impact: false, rise: false };
+    const volumeInput = root.querySelector('.dx-volume');
+    const muteButton = root.querySelector('.dx-mute');
+    let lastVolume = savedVolume() || 0.55;
+    const syncMute = (v) => {
+      muteButton.dataset.muted = v <= 0.001 ? 'true' : 'false';
+      muteButton.setAttribute('aria-pressed', v <= 0.001 ? 'true' : 'false');
+    };
+    const onVolume = () => {
+      const v = Number(volumeInput.value);
+      if (v > 0.001) lastVolume = v;
+      sound?.setVolume(v);
+      syncMute(v);
+    };
+    const onMute = () => {
+      const v = Number(volumeInput.value) > 0.001 ? 0 : lastVolume;
+      volumeInput.value = String(v);
+      onVolume();
+    };
+    // Os controles não contam como "clique para sair"
+    const keep = (e) => e.stopPropagation();
+    volumeInput.value = String(savedVolume());
+    syncMute(Number(volumeInput.value));
+    volumeInput.addEventListener('input', onVolume);
+    muteButton.addEventListener('click', onMute);
+    const controls = root.querySelector('.dx-sound');
+    controls.addEventListener('pointerdown', keep);
+
+    // Lente sobre a página real: enquanto o vazio abre, a cena 3D é dobrada em volta do ponto de
+    // ativação (deslocamento SVG, campo radial) e o conteúdo é puxado e torcido na direção dele.
+    // Tudo volta ao normal quando o vazio cobre a tela (ninguém vê a troca)
+    const lensTargets = [document.querySelector('[data-scene]'), document.querySelector('header')].filter(Boolean);
+    const lensMap = root.querySelector('.dx-lens-map');
+    const lensDisp = root.querySelector('.dx-lens-disp');
+    {
+      // Campo radial puxando para o ponto de ativação: R e G guardam o vetor (128 = parado)
+      const S = 128;
+      const field = document.createElement('canvas');
+      field.width = S;
+      field.height = S;
+      const fctx = field.getContext('2d');
+      const img = fctx.createImageData(S, S);
+      const ox = (origin.x / w) * S;
+      const oy = (origin.y / h) * S;
+      for (let y = 0; y < S; y += 1) {
+        for (let x = 0; x < S; x += 1) {
+          const dx = x - ox;
+          const dy = y - oy;
+          const d = Math.hypot(dx, dy) || 1;
+          const fall = Math.exp(-d / (S * 0.45)) * Math.min(1, d / (S * 0.08));
+          const i = (y * S + x) * 4;
+          img.data[i] = 128 + (dx / d) * fall * 127;
+          img.data[i + 1] = 128 + (dy / d) * fall * 127;
+          img.data[i + 2] = 128;
+          img.data[i + 3] = 255;
+        }
+      }
+      fctx.putImageData(img, 0, 0);
+      lensMap.setAttribute('href', field.toDataURL());
+      lensMap.setAttribute('width', String(w));
+      lensMap.setAttribute('height', String(h));
+    }
+    const lensSaved = lensTargets.map((el) => ({
+      el, transform: el.style.transform, filter: el.style.filter, origin: el.style.transformOrigin, will: el.style.willChange,
+    }));
+    let lensOn = !reduced;
+    const setLens = (k) => {
+      if (!lensOn) return;
+      lensDisp.setAttribute('scale', String(-150 * k));
+      lensTargets.forEach((el, i) => {
+        if (i === 0) {
+          el.style.filter = k > 0.001 ? 'url(#dx-lens)' : '';
+          return;
+        }
+        const r = el.getBoundingClientRect();
+        el.style.willChange = 'transform';
+        el.style.transformOrigin = `${origin.x - r.left}px ${origin.y - r.top}px`;
+        el.style.transform = k > 0.001 ? `scale(${1 - 0.1 * k}) rotate(${-2.5 * k}deg)` : '';
+      });
+    };
+    const releaseLens = () => {
+      if (!lensOn) return;
+      lensOn = false;
+      lensSaved.forEach(({ el, transform, filter, origin: o, will }) => {
+        el.style.transform = transform;
+        el.style.filter = filter;
+        el.style.transformOrigin = o;
+        el.style.willChange = will;
+      });
+    };
 
     // Peças voando: nascem dentro do orbe (z = 0, perto do centro) e só aparecem ao passar da borda
     // dele; com a perspectiva crescem e passam pela câmera. As da história são lentas e grandes
@@ -221,7 +327,7 @@ export default function DomainExpansion({ origin, onDone }) {
           launch(story[storyIndex], true);
           storyIndex += 1;
         }
-        if (info >= FLOOD_AT * 0.7) {
+        if (info >= FLOOD_AT * 0.7 && flood.length) {
           const k = clamp01((info - FLOOD_AT * 0.7) / (1 - FLOOD_AT * 0.7));
           spawnAcc += dt * (4 + 42 * k * k + 70 * sat) * density;
           while (spawnAcc > 1) {
@@ -332,6 +438,7 @@ export default function DomainExpansion({ origin, onDone }) {
     const finish = () => {
       if (finished) return;
       finished = true;
+      releaseLens();
       restoreAll();
       onDone();
     };
@@ -384,6 +491,7 @@ export default function DomainExpansion({ origin, onDone }) {
         };
       });
       rebuild = { frozen, cells, at: performance.now() / 1000, pulseAt: 0, total: cells.filter((c) => c.target).length, landedCount: 0 };
+      sound?.shatter();
     };
 
     // O conteúdo do elemento que o caco carrega, montando-se conforme o caco chega (a = 0..1)
@@ -442,6 +550,7 @@ export default function DomainExpansion({ origin, onDone }) {
     // Encerramento: o pulso de luz percorre a interface a partir do impacto e o hanko assina
     const startPulse = (now) => {
       rebuild.pulseAt = now;
+      setTimeout(() => sound?.stamp(), 120);
       const hanko = root.querySelector('.dx-hanko');
       gsap.timeline()
         .fromTo(hanko, { opacity: 0, scale: 1.7, rotate: -14 }, { opacity: 1, scale: 1, rotate: -6, duration: 0.32, ease: 'hanko' })
@@ -570,11 +679,21 @@ export default function DomainExpansion({ origin, onDone }) {
         const warp = reduced ? 0 : 0.4 + 2.6 * Math.exp(-((age - close - 0.9) ** 2) / 0.6) + info * 1.2 + sat * 5;
         travel += dt * (0.15 + warp * 0.45);
         voidGl?.draw({ time: age, reveal: opening, origin: glOrigin, orb, warp, flash, travel });
+        if (!played.impact && age > 0.78) {
+          played.impact = true;
+          sound?.impact();
+        }
+        if (!played.rise && sat > 0) {
+          played.rise = true;
+          sound?.rise(Math.max(0.2, exitAt - t));
+        }
+        if (!covered) setLens(ease(clamp01((age - 0.25) / (close - 0.25))));
         if (!covered && opening >= 1) {
           covered = true;
+          releaseLens();
           journeyStore.getState().setCovered(true);
         }
-        drawItems(dt, age, info, sat, 0.165 * orb * h);
+        drawItems(dt, age, info, sat, 0.2 * orb * h);
         // Tremor da saturação: a tela inteira não aguenta tanta informação
         const shake = sat * sat * (small ? 3 : 7);
         const tx = (Math.random() - 0.5) * shake;
@@ -603,11 +722,17 @@ export default function DomainExpansion({ origin, onDone }) {
 
     return () => {
       cancelAnimationFrame(raf);
+      clearTimeout(spritesTimer);
       tl.kill();
       gsap.killTweensOf(root.querySelectorAll('*'));
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('resize', onResize);
       root.removeEventListener('pointerdown', leave);
+      volumeInput.removeEventListener('input', onVolume);
+      muteButton.removeEventListener('click', onMute);
+      controls.removeEventListener('pointerdown', keep);
+      releaseLens();
+      sound?.dispose();
       journeyStore.getState().setCovered(false);
       // Nada fica escondido se o domínio sair no meio (troca de rota, erro)
       restoreAll();
@@ -617,12 +742,20 @@ export default function DomainExpansion({ origin, onDone }) {
 
   const en = typeof document !== 'undefined' && document.documentElement.getAttribute('data-language') === 'en';
   return (
-    <div ref={rootRef} className="dx" data-domain="" aria-hidden="true">
-      <div className="dx-dim" />
-      <canvas ref={glRef} className="dx-layer" />
-      <canvas ref={itemsRef} className="dx-layer" />
-      <canvas ref={shardRef} className="dx-layer" />
-      <div className="dx-type">
+    <div ref={rootRef} className="dx" data-domain="">
+      {/* Filtro da lente (usado pela cena 3D enquanto o vazio abre) */}
+      <svg className="dx-defs" aria-hidden="true" focusable="false">
+        <filter id="dx-lens" x="0" y="0" width="100%" height="100%" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
+          <feImage className="dx-lens-map" x="0" y="0" preserveAspectRatio="none" result="map" />
+          <feDisplacementMap className="dx-lens-disp" in="SourceGraphic" in2="map" scale="0" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+      </svg>
+      <div className="dx-dim" aria-hidden="true" />
+      <canvas ref={glRef} className="dx-layer" aria-hidden="true" />
+      <canvas ref={itemsRef} className="dx-layer" aria-hidden="true" />
+      <canvas ref={shardRef} className="dx-layer" aria-hidden="true" />
+      <HandSeal />
+      <div className="dx-type" aria-hidden="true">
         <div className="dx-intro">
           <p className="dx-intro-jp font-jp" lang="ja">
             {[...'領域展開'].map((c) => <span key={c} className="dx-intro-char">{c}</span>)}
@@ -645,8 +778,19 @@ export default function DomainExpansion({ origin, onDone }) {
         </div>
         <p className="dx-hint dx-label dx-label-dim">ESC</p>
       </div>
+      {/* Som: liga/desliga e volume (guardado para a próxima vez) */}
+      <div className="dx-sound">
+        <button type="button" className="dx-mute" aria-label={en ? 'Mute the domain sound' : 'Silenciar o som do domínio'} aria-pressed="false">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+            <path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" />
+            <path className="dx-mute-waves" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+            <path className="dx-mute-x" d="M16 9l5 6M21 9l-5 6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          </svg>
+        </button>
+        <input className="dx-volume" type="range" min="0" max="1" step="0.05" aria-label={en ? 'Domain sound volume' : 'Volume do som do domínio'} />
+      </div>
       {/* 判子: o carimbo vermelho que assina a reconstrução */}
-      <div className="dx-hanko font-jp" lang="ja">
+      <div className="dx-hanko font-jp" lang="ja" aria-hidden="true">
         <span>奥</span>
         <span>山</span>
       </div>

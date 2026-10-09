@@ -100,15 +100,26 @@ void main() {
   vec2 p = (frag - 0.5 * uRes) / uRes.y;
   float t = uTime;
 
-  // Abertura: círculo a partir do gatilho, com borda de luz
+  // Abertura: o vazio rasga a cena a partir do gatilho (como no anime): a borda é irregular, em
+  // dentes de tinta branca, com respingos soltos logo à frente dela
   float diag = length(uRes);
-  float dist = length(frag - uOrigin) / diag;
-  float rev = uReveal * 1.05;
-  float inside = 1.0 - smoothstep(rev - 0.003, rev, dist);
-  float edge = exp(-pow((dist - rev) / 0.005, 2.0)) * step(0.001, uReveal) * (1.0 - smoothstep(0.9, 1.0, uReveal));
+  vec2 fromO = frag - uOrigin;
+  float dist = length(fromO) / diag;
+  float ang = atan(fromO.y, fromO.x);
+  float rev = uReveal * 1.08;
+  float opening = step(0.001, uReveal) * (1.0 - smoothstep(0.88, 1.0, uReveal));
+  float ragged = ((fbm(vec2(ang * 2.2, uReveal * 3.0)) - 0.5) * 0.11 + (noise(vec2(ang * 22.0, 1.7)) - 0.5) * 0.03)
+    * smoothstep(0.0, 0.06, rev);
+  float rr = rev + ragged;
+  float inside = 1.0 - smoothstep(rr - 0.003, rr, dist);
+  float edge = exp(-pow((dist - rr) / 0.006, 2.0)) * opening;
+  // Respingos: manchas brancas fora da borda, mais densas perto dela
+  float ahead = dist - rr;
+  float splat = step(0.0, ahead) * step(0.78, noise(fromO / diag * 90.0 + 7.0)) * exp(-ahead / 0.018) * opening;
+  edge = max(edge, splat);
 
   // Lente gravitacional: perto do orbe o fundo é puxado para fora
-  float R = 0.165 * uOrb;
+  float R = 0.2 * uOrb;
   float r = length(p);
   vec2 lp = R > 0.0 ? p * (1.0 - (R * R * 0.9) / max(r * r, R * R)) : p;
   float rot = t * 0.04;
@@ -127,10 +138,19 @@ void main() {
     // Brilho e raios só do lado de fora: o miolo fica negro
     float glow = (exp(-out_ * 11.0) * 0.55 + exp(-out_ * 2.6) * 0.14) * (1.0 - core);
     float rays = pow(noise(vec2(a * 14.0, t * 0.6)), 4.0) * exp(-out_ * 3.6) * 0.8 * (1.0 - core);
-    vec3 rim = vec3(0.85, 0.93, 1.0);
+    // 六眼: o anel em azul-gelo, a cor do olhar do Gojo
+    vec3 rim = vec3(0.62, 0.88, 1.0);
+    // Disco de acreção: riscos em espiral girando em volta do buraco, iridescentes (azul-gelo
+    // passando por violeta e um âmbar fraco, como o vazio do anime)
+    float swirl = a + log(r / R + 0.05) * 3.2 - t * 0.9;
+    float streak = pow(noise(vec2(swirl * 5.0, r * 38.0)), 3.0) + pow(noise(vec2(swirl * 11.0 + 4.0, r * 90.0)), 5.0) * 0.6;
+    float disk = streak * exp(-out_ * 7.5) * (1.0 - core);
+    vec3 iri = mix(vec3(0.55, 0.85, 1.0), vec3(0.78, 0.6, 1.0), 0.5 + 0.5 * sin(swirl * 1.3));
+    iri = mix(iri, vec3(1.0, 0.78, 0.55), pow(0.5 + 0.5 * sin(swirl * 0.7 + 2.0), 6.0) * 0.6);
     col = mix(col, vec3(0.0), core);
-    col += core * vec3(0.04, 0.06, 0.2) * smoothstep(R * 0.5, R, r);
-    col += (ring * 2.2 + glow + rays) * rim * uOrb;
+    col += core * vec3(0.02, 0.05, 0.16) * smoothstep(R * 0.5, R, r);
+    col += (ring * 2.4 + glow + rays) * rim * uOrb;
+    col += iri * disk * 1.3 * uOrb;
     // O anel se separa em cores nas bordas (aberração)
     col.r += exp(-pow((r - R * 1.014) / 0.004, 2.0)) * 0.5 * uOrb;
     col.b += exp(-pow((r - R * 0.986) / 0.004, 2.0)) * 0.7 * uOrb;
@@ -141,7 +161,7 @@ void main() {
   col += uFlash;
   col = 1.0 - exp(-max(col, 0.0) * 1.4);
 
-  vec3 e = vec3(0.75, 0.9, 1.0) * edge * 1.5;
+  vec3 e = vec3(0.9, 0.96, 1.0) * edge * 1.6;
   outColor = vec4(col * inside + e, clamp(inside + edge, 0.0, 1.0));
 }
 `;
@@ -162,22 +182,40 @@ export function createVoid(canvas) {
   gl.attachShader(program, vs);
   gl.attachShader(program, fs);
   gl.linkProgram(program);
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    console.warn('無量空処: shader', gl.getShaderInfoLog(fs) || gl.getProgramInfoLog(program));
-    return null;
-  }
-  // Um triângulo que cobre a tela
-  const buffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-  const loc = gl.getAttribLocation(program, 'aPos');
-  gl.enableVertexAttribArray(loc);
-  gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-  gl.useProgram(program);
-  const names = ['uRes', 'uTime', 'uReveal', 'uOrigin', 'uOrb', 'uWarp', 'uFlash', 'uTravel'];
-  const u = Object.fromEntries(names.map((n) => [n, gl.getUniformLocation(program, n)]));
+  // Compilação em paralelo: consultar o resultado do link na hora travava a página (~300 ms logo
+  // depois da tecla). Com a extensão, o driver compila em segundo plano e o vazio só começa a
+  // desenhar quando o programa fica pronto (ele só aparece aos 0,8 s mesmo)
+  const parallel = gl.getExtension('KHR_parallel_shader_compile');
+  let state = 'pending';
+  let buffer = null;
+  let u = null;
+  const setup = () => {
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      console.warn('無量空処: shader', gl.getShaderInfoLog(fs) || gl.getProgramInfoLog(program));
+      state = 'failed';
+      return;
+    }
+    // Um triângulo que cobre a tela
+    buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(program, 'aPos');
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    gl.useProgram(program);
+    const names = ['uRes', 'uTime', 'uReveal', 'uOrigin', 'uOrb', 'uWarp', 'uFlash', 'uTravel'];
+    u = Object.fromEntries(names.map((n) => [n, gl.getUniformLocation(program, n)]));
+    state = 'ready';
+  };
+  const ready = () => {
+    if (state === 'pending' && (!parallel || gl.getProgramParameter(program, parallel.COMPLETION_STATUS_KHR))) setup();
+    return state === 'ready';
+  };
+  if (!parallel) ready();
+  if (state === 'failed') return null;
   return {
     draw({ time, reveal, origin, orb, warp, flash, travel }) {
+      if (!ready()) return;
       gl.viewport(0, 0, canvas.width, canvas.height);
       gl.uniform2f(u.uRes, canvas.width, canvas.height);
       gl.uniform1f(u.uTime, time);
@@ -190,7 +228,7 @@ export function createVoid(canvas) {
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     },
     dispose() {
-      gl.deleteBuffer(buffer);
+      if (buffer) gl.deleteBuffer(buffer);
       gl.deleteProgram(program);
       gl.deleteShader(vs);
       gl.deleteShader(fs);

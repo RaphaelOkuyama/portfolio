@@ -22,6 +22,8 @@ export default function EasterEggs() {
     let buffer = '';
     let holdTimer = 0;
     let holding = null;
+    let heldSince = 0;
+    let heldAt = null;
     const onMove = (e) => {
       last.x = e.clientX;
       last.y = e.clientY;
@@ -43,12 +45,22 @@ export default function EasterEggs() {
       holding?.classList.remove('is-charging');
       holding = null;
     };
+    // Soltou depois do tempo, mas o timer atrasou (a thread ocupada, por exemplo com a cena 3D
+    // começando no primeiro toque): conta o tempo segurado de verdade e abre do mesmo jeito
+    const onUp = () => {
+      const held = holding && performance.now() - heldSince >= DOMAIN.hold;
+      const at = heldAt;
+      cancel();
+      if (held) setDomain((d) => d ?? at);
+    };
     const onDown = (e) => {
       const kanji = e.target?.closest?.(HOLD_SELECTOR);
       if (!kanji) return;
       holding = kanji;
+      heldSince = performance.now();
       kanji.classList.add('is-charging');
       const { clientX: x, clientY: y } = e;
+      heldAt = { x, y };
       // Já começa a baixar o domínio enquanto a pessoa segura
       import('./domain/DomainExpansion');
       holdTimer = setTimeout(() => {
@@ -60,7 +72,7 @@ export default function EasterEggs() {
     window.addEventListener('katana-slash', onSlash);
     window.addEventListener('keydown', onKey);
     window.addEventListener('pointerdown', onDown);
-    window.addEventListener('pointerup', cancel);
+    window.addEventListener('pointerup', onUp);
     window.addEventListener('pointercancel', cancel);
     return () => {
       cancel();
@@ -68,7 +80,7 @@ export default function EasterEggs() {
       window.removeEventListener('katana-slash', onSlash);
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('pointerdown', onDown);
-      window.removeEventListener('pointerup', cancel);
+      window.removeEventListener('pointerup', onUp);
       window.removeEventListener('pointercancel', cancel);
     };
   }, []);
