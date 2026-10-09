@@ -38,34 +38,50 @@ const fragmentShader = /* glsl */ `
   varying vec2 vUv;
   ${NOISE}
 
-  // 輪廻写輪眼 (como na lua do Tsukuyomi): íris vermelha lisa, pupila no centro e três anéis finos;
-  // em cada anel, três tomoe: a cabeça redonda em cima do anel e a cauda curta que segue o anel e
-  // se abre para fora, como uma vírgula. Devolve (tinta preta 0..1, linha dos anéis 0..1)
-  vec2 rinne(vec2 p, float d) {
+  // 巴 tomoe como distância com sinal (negativo dentro), no referencial do anel: x corre ao longo
+  // do anel (para trás do giro), y sai do anel para fora. É o magatama, a mesma gota do yin-yang:
+  // um círculo de raio 2h cortado ao meio, mais a cabeça (raio h) numa ponta, menos um círculo
+  // igual na outra. A cauda sai da cabeça, faz a curva por fora e volta afinando até a ponta,
+  // que encosta no anel atrás da cabeça
+  float sdCircle(vec2 q, vec2 c, float r) { return length(q - c) - r; }
+  float tomoe(vec2 q, float h) {
+    // Gota no seu referencial (cabeça embaixo em (0, -h), ponta em cima em (0, 2h), barriga em +x):
+    // o eixo da gota corre ao longo do anel e a barriga aponta para fora, um pouco achatada
+    const float squash = 0.82;
+    vec2 f = vec2(q.y / squash, q.x - h);
+    float body = max(sdCircle(f, vec2(0.0), 2.0 * h), -f.x);
+    float head = sdCircle(f, vec2(0.0, -h), h);
+    float cut = sdCircle(f, vec2(0.0, h), h);
+    return max(min(body, head), -cut) * squash;
+  }
+
+  // 輪廻写輪眼 (como na lua do Tsukuyomi): pupila no centro e três anéis finos; em cada anel, três
+  // tomoe que giram, a cauda seguindo atrás do giro. Devolve (tinta preta 0..1, linha dos anéis 0..1,
+  // sombra suave em volta da tinta 0..1)
+  vec3 rinne(vec2 p, float d) {
     float a = atan(p.y, p.x);
+    float aa = fwidth(d) * 1.2;
+    float pupil = d - 0.118;
+    float ink = 1.0 - smoothstep(-aa, aa, pupil);
+    float shade = 1.0 - smoothstep(0.0, 0.05, pupil);
     float rings = 0.0;
-    float ink = 1.0 - smoothstep(0.115, 0.13, d);
     for (int k = 1; k <= 3; k++) {
       float r = 0.12 + float(k) * 0.24;
-      rings = max(rings, 1.0 - smoothstep(0.006, 0.014, abs(d - r)));
+      rings = max(rings, 1.0 - smoothstep(0.0035, 0.0035 + aa * 1.5, abs(d - r)));
       // Os anéis giram em sentidos alternados, cada um num ritmo
       float dirK = mod(float(k), 2.0) * 2.0 - 1.0;
-      // Cauda com o mesmo comprimento em todos os anéis (o ângulo encolhe nos de fora)
-      float span = 0.17 / r;
       for (int j = 0; j < 3; j++) {
         float ang = float(j) * 2.0944 + float(k) * 1.05 + uSpin * dirK * (1.2 - float(k) * 0.25);
-        vec2 c = r * vec2(cos(ang), sin(ang));
-        float head = 1.0 - smoothstep(0.072, 0.084, length(p - c));
         float da = mod(a - ang + 3.14159 * 3.0, 6.28318) - 3.14159;
-        float back = -da * dirK;
-        float tl = clamp(back / span, 0.0, 1.0);
-        // Afina rápido no fim (ponta fina da vírgula) e curva para fora do anel
-        float w = 0.068 * pow(1.0 - tl, 0.7);
-        float tail = step(0.0, back) * step(back, span) * (1.0 - smoothstep(w - 0.008, w + 0.002, abs(d - r - pow(tl, 1.6) * 0.12)));
-        ink = max(ink, max(head, tail));
+        // Comprimento de arco ao longo do anel: a cauda dobra junto com a curva do anel
+        vec2 q = vec2(-da * dirK * r, d - r);
+        float sd = tomoe(q, 0.05);
+        float w = fwidth(sd) * 0.9;
+        ink = max(ink, 1.0 - smoothstep(-w, w, sd));
+        shade = max(shade, 1.0 - smoothstep(0.0, 0.035, sd));
       }
     }
-    return vec2(ink, rings);
+    return vec3(ink, rings, shade);
   }
 
   void main() {
@@ -82,12 +98,17 @@ const fragmentShader = /* glsl */ `
     vec3 col = uColor * (1.0 - maria * disc);
     if (uEye > 0.001) {
       // O olho abre do centro para fora; a íris escurece para a borda e brilha no meio
-      vec2 eye = rinne(p, d);
+      vec3 eye = rinne(p, d);
       float reveal = 1.0 - smoothstep(uEye * 1.15 - 0.15, uEye * 1.15, d);
-      // Íris quase lisa (um pouco mais clara no meio), anéis em traço escuro fino, tomoe pretos
-      vec3 iris = mix(uIris * 1.1, uIris * 0.86, smoothstep(0.0, 1.0, d));
-      iris = mix(iris, vec3(0.1, 0.0, 0.01), eye.y * 0.9);
-      iris = mix(iris, vec3(0.03, 0.0, 0.0), eye.x);
+      // Íris: brilho no meio que escurece até a borda (limbo), fibras radiais bem sutis, os anéis
+      // em traço escuro fino e os tomoe em tinta preta com uma sombra macia em volta
+      float fibers = fbm(vec2(atan(p.y, p.x) * 9.0, d * 2.5)) - 0.5;
+      vec3 iris = mix(uIris * 1.18, uIris * 0.8, smoothstep(0.1, 0.98, d));
+      iris *= 1.0 + fibers * 0.12;
+      iris = mix(iris, uIris * 0.45, smoothstep(0.86, 1.0, d));
+      iris = mix(iris, vec3(0.12, 0.0, 0.01), eye.y * 0.85);
+      iris *= 1.0 - eye.z * 0.28;
+      iris = mix(iris, vec3(0.025, 0.0, 0.0), eye.x);
       col = mix(col, iris, reveal * disc);
       // Halo e borda vermelhos
       col = mix(col, uGlow, (1.0 - disc) * uEye);

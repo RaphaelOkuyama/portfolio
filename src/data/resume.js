@@ -69,7 +69,7 @@ export const resumeData = {
       toolsCount: "ferramentas",
       // kanji: 言 palavra · 表 a face · 裏 o avesso · 蔵 o depósito · 守 proteger · 流 o fluxo
       categories: [
-        { name: "Linguagens", kanji: "言", items: ["TypeScript", "JavaScript", "Python", "SQL", "GLSL"] },
+        { name: "Linguagens", kanji: "言", items: ["TypeScript", "JavaScript", "Python", "SQL"] },
         { name: "Front-end & 3D", kanji: "表", items: ["React", "Next.js", "Tailwind CSS", "Shadcn/ui", "Vite", "GSAP", "Three.js", "React Three Fiber", "Zustand"] },
         { name: "Back-end & Arquitetura", kanji: "裏", items: ["Node.js", "NestJS", "Express", "Fastify", "Swagger/OpenAPI", "Stripe (Checkout e Webhooks)", "API Gemini (IA generativa)", "Multi-tenancy"] },
         { name: "Dados", kanji: "蔵", items: ["PostgreSQL", "MySQL", "MongoDB", "Prisma ORM", "Power BI"] },
@@ -440,7 +440,7 @@ export const resumeData = {
       hint: "Like Tanabata wishes, each paper strip is an area. Pick one to see the tools.",
       toolsCount: "tools",
       categories: [
-        { name: "Languages", kanji: "言", items: ["TypeScript", "JavaScript", "Python", "SQL", "GLSL"] },
+        { name: "Languages", kanji: "言", items: ["TypeScript", "JavaScript", "Python", "SQL"] },
         { name: "Front-end & 3D", kanji: "表", items: ["React", "Next.js", "Tailwind CSS", "Shadcn/ui", "Vite", "GSAP", "Three.js", "React Three Fiber", "Zustand"] },
         { name: "Back-end & Architecture", kanji: "裏", items: ["Node.js", "NestJS", "Express", "Fastify", "Swagger/OpenAPI", "Stripe (Checkout & Webhooks)", "Gemini API (generative AI)", "Multi-tenancy"] },
         { name: "Data", kanji: "蔵", items: ["PostgreSQL", "MySQL", "MongoDB", "Prisma ORM", "Power BI"] },

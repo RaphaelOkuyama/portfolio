@@ -43,7 +43,7 @@ describe('dados do Stack', () => {
 
   it('as ferramentas usadas neste site estão na lista', () => {
     const all = resumeData.pt.techSection.categories.flatMap((c) => c.items).map(toolKey);
-    for (const tool of ['three.js', 'reactthreefiber', 'zustand', 'vitest', 'glsl']) {
+    for (const tool of ['three.js', 'reactthreefiber', 'zustand', 'vitest']) {
       expect(all).toContain(tool);
     }
   });
