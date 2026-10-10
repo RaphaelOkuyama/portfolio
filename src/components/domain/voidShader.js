@@ -19,9 +19,6 @@ uniform float uOrb;
 uniform float uWarp;
 uniform float uFlash;
 uniform float uTravel;
-uniform float uEyeOpen;
-uniform vec2 uLook;
-uniform float uLid;
 out vec4 outColor;
 
 float hash21(vec2 p) {
@@ -154,33 +151,6 @@ void main() {
     col += core * vec3(0.02, 0.05, 0.16) * smoothstep(R * 0.5, R, r);
     col += (ring * 2.4 + glow + rays) * rim * uOrb;
     col += iri * disk * 1.3 * uOrb;
-
-    // 六眼: por um instante o buraco vira o olho do Gojo, azul, olhando para onde está o mouse e
-    // piscando uma vez (as pálpebras fecham na horizontal, em amêndoa)
-    if (uEyeOpen > 0.001) {
-      vec2 e = p - uLook * R * 0.3;
-      float er = length(e);
-      float irisR = R * 0.64;
-      float ea = atan(e.y, e.x);
-      float fibers = pow(noise(vec2(ea * 26.0, er / irisR * 3.0 - t * 0.3)), 2.0);
-      vec3 eyeCol = mix(vec3(0.75, 0.96, 1.0), vec3(0.14, 0.52, 0.95), smoothstep(0.2, 1.0, er / irisR));
-      eyeCol *= 0.75 + fibers * 0.6;
-      eyeCol = mix(eyeCol, vec3(0.02, 0.08, 0.22), smoothstep(0.84, 1.0, er / irisR));
-      float pupil = 1.0 - smoothstep(irisR * 0.3, irisR * 0.33, er);
-      eyeCol = mix(eyeCol, vec3(0.0), pupil);
-      // Brilho úmido no canto de cima
-      eyeCol += vec3(1.0) * (1.0 - smoothstep(0.0, irisR * 0.12, length(e - vec2(-0.32, 0.36) * irisR))) * 0.9;
-      float irisMask = 1.0 - smoothstep(irisR - 0.003, irisR, er);
-      // Pálpebras: só aparece o que está entre as duas curvas (abertas = 1 - uLid)
-      float open = R * 0.78 * (1.0 - uLid) * (1.0 - pow(abs(p.x) / R, 2.0));
-      float lids = 1.0 - smoothstep(open - 0.004, open, abs(p.y));
-      // O contorno das pálpebras brilha em azul
-      float lidLine = exp(-pow((abs(p.y) - open) / 0.004, 2.0)) * step(abs(p.x), R * 0.98) * (1.0 - uLid * 0.5);
-      col = mix(col, eyeCol, irisMask * lids * core * uEyeOpen);
-      col += vec3(0.55, 0.85, 1.0) * lidLine * core * uEyeOpen * 1.2;
-      // Halo azul em volta enquanto o olho está aberto
-      col += vec3(0.3, 0.6, 1.0) * glow * uEyeOpen * 0.8;
-    }
     // O anel se separa em cores nas bordas (aberração)
     col.r += exp(-pow((r - R * 1.014) / 0.004, 2.0)) * 0.5 * uOrb;
     col.b += exp(-pow((r - R * 0.986) / 0.004, 2.0)) * 0.7 * uOrb;
@@ -233,7 +203,7 @@ export function createVoid(canvas) {
     gl.enableVertexAttribArray(loc);
     gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
     gl.useProgram(program);
-    const names = ['uRes', 'uTime', 'uReveal', 'uOrigin', 'uOrb', 'uWarp', 'uFlash', 'uTravel', 'uEyeOpen', 'uLook', 'uLid'];
+    const names = ['uRes', 'uTime', 'uReveal', 'uOrigin', 'uOrb', 'uWarp', 'uFlash', 'uTravel'];
     u = Object.fromEntries(names.map((n) => [n, gl.getUniformLocation(program, n)]));
     state = 'ready';
   };
@@ -244,7 +214,12 @@ export function createVoid(canvas) {
   if (!parallel) ready();
   if (state === 'failed') return null;
   return {
-    draw({ time, reveal, origin, orb, warp, flash, travel, eye = 0, look = [0, 0], lid = 0 }) {
+    // Termina a compilação agora (bloqueia): usado na pré-compilação, quando ninguém vê a pausa
+    finish() {
+      if (state === 'pending') setup();
+      return state === 'ready';
+    },
+    draw({ time, reveal, origin, orb, warp, flash, travel }) {
       if (!ready()) return;
       gl.viewport(0, 0, canvas.width, canvas.height);
       gl.uniform2f(u.uRes, canvas.width, canvas.height);
@@ -255,9 +230,6 @@ export function createVoid(canvas) {
       gl.uniform1f(u.uWarp, warp);
       gl.uniform1f(u.uFlash, flash);
       gl.uniform1f(u.uTravel, travel);
-      gl.uniform1f(u.uEyeOpen, eye);
-      gl.uniform2f(u.uLook, look[0], look[1]);
-      gl.uniform1f(u.uLid, lid);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     },
     dispose() {
@@ -267,4 +239,31 @@ export function createVoid(canvas) {
       gl.deleteShader(fs);
     },
   };
+}
+
+// Pré-compilação: o shader do vazio é pesado e, sem a extensão de compilação em paralelo (muitas
+// GPUs e navegadores), compilar trava a página ~250 ms. Então ele é compilado antes de o domínio
+// abrir, quando a pessoa começa a digitar a palavra secreta ou a segurar o kanji 技 (nada anima
+// nessa hora, ninguém vê a pausa). O domínio pega o canvas já pronto com takeVoid
+let prepared = null;
+export function prepareVoid() {
+  if (prepared || typeof document === 'undefined') return;
+  const canvas = document.createElement('canvas');
+  canvas.width = 2;
+  canvas.height = 2;
+  const v = createVoid(canvas);
+  if (!v) return;
+  // Força o driver a terminar todo o trabalho (link e o primeiro desenho), não só a enfileirar
+  if (v.finish()) v.draw({ time: 0, reveal: 0, origin: [0, 0], orb: 0, warp: 0, flash: 0, travel: 0 });
+  prepared = { canvas, v };
+}
+
+// O vazio pronto (se foi pré-compilado) ou um novo, no canvas dado
+export function takeVoid(fallback) {
+  if (prepared) {
+    const p = prepared;
+    prepared = null;
+    return p;
+  }
+  return { canvas: fallback, v: createVoid(fallback) };
 }

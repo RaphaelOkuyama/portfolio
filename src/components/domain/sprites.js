@@ -186,16 +186,35 @@ const shuffle = (list) => {
   return list;
 };
 
-// `story`: a ordem legível do começo (projetos, depois os números); `flood`: tudo, embaralhado,
-// para a enxurrada que vem depois. `data` é resumeData[lang]
-export function buildSprites(data, metrics, fonts, lang) {
+// As peças, montadas aos poucos: cada peça é um canvas desenhado com texto, e desenhar as ~60 de uma
+// vez segurava a página ~100 ms logo depois de o domínio abrir. Aqui saem algumas por quadro (até
+// ~4 ms de trabalho), a história primeiro; `out` vai sendo preenchido e `cancel()` para no meio
+export function buildSpritesGradually(data, metrics, fonts, lang, out) {
   const label = lang === 'en' ? 'PROJECT' : 'PROJETO';
-  const projects = data.projects.slice(0, 8).map((p, i) => projectCard(p, i, fonts, label));
-  const numbers = metrics.map(([v, l]) => metric(v, l, fonts));
-  const story = [projects[0], numbers[0], projects[1], numbers[1], projects[2], projects[3], numbers[2], projects[4], numbers[3]]
-    .filter(Boolean);
-  const tools = data.techSection.categories.flatMap((cat, area) => cat.items.map((tool) => tanzaku(tool, area, cat.kanji, fonts)));
-  const identity = [nameplate(fonts), ...SEASONS.map((x) => season(x, fonts))];
-  const flood = shuffle([...projects, ...numbers, ...tools, ...identity, ...identity]);
-  return { story, flood };
+  const projects = [];
+  const numbers = [];
+  const rest = [];
+  const jobs = [
+    ...data.projects.slice(0, 8).map((p, i) => () => { projects[i] = projectCard(p, i, fonts, label); }),
+    ...metrics.map(([v, l], i) => () => { numbers[i] = metric(v, l, fonts); }),
+    // A história fica pronta assim que os projetos e os números existem
+    () => {
+      out.story = [projects[0], numbers[0], projects[1], numbers[1], projects[2], projects[3], numbers[2], projects[4], numbers[3]].filter(Boolean);
+    },
+    ...data.techSection.categories.flatMap((cat, area) => cat.items.map((tool) => () => { rest.push(tanzaku(tool, area, cat.kanji, fonts)); })),
+    () => { rest.push(nameplate(fonts)); },
+    ...SEASONS.map((x) => () => { rest.push(season(x, fonts)); }),
+    () => {
+      const identity = rest.slice(-5);
+      out.flood = shuffle([...projects, ...numbers, ...rest, ...identity]);
+    },
+  ];
+  let raf = 0;
+  const step = () => {
+    const until = performance.now() + 4;
+    while (jobs.length && performance.now() < until) jobs.shift()();
+    if (jobs.length) raf = requestAnimationFrame(step);
+  };
+  raf = requestAnimationFrame(step);
+  return () => cancelAnimationFrame(raf);
 }

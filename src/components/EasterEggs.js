@@ -13,6 +13,13 @@ const KodamaNotice = dynamic(() => import('./KodamaNotice'), { ssr: false });
 
 const HOLD_SELECTOR = '[data-station="stack"] .section-kanji';
 const editable = (el) => Boolean(el?.closest?.('input, textarea, select, [contenteditable="true"]'));
+// O vazio compila antes de abrir (ver voidShader.prepareVoid): no começo da palavra secreta ou do
+// segurar, quando nada está animando
+const warmDomain = () => {
+  import('./domain/DomainExpansion');
+  import('./domain/voidShader').then((m) => m.prepareVoid()).catch(() => {});
+};
+const startsSecret = (buffer) => DOMAIN.words.some((w) => buffer.endsWith(w.slice(0, 2)) || buffer.endsWith(w.slice(0, 3)));
 
 export default function EasterEggs() {
   // Ponto onde a primeira gota nasce (o cursor no golpe da katana) e o gatilho do domínio
@@ -46,6 +53,7 @@ export default function EasterEggs() {
       if (editable(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
       const r = typedSecret(buffer, e.key);
       buffer = r.buffer;
+      if (!r.hit && startsSecret(buffer)) warmDomain();
       if (r.hit) {
         buffer = '';
         setDomain((d) => d ?? { x: window.innerWidth / 2, y: window.innerHeight / 2 });
@@ -72,8 +80,8 @@ export default function EasterEggs() {
       kanji.classList.add('is-charging');
       const { clientX: x, clientY: y } = e;
       heldAt = { x, y };
-      // Já começa a baixar o domínio enquanto a pessoa segura
-      import('./domain/DomainExpansion');
+      // Já começa a baixar e compilar o domínio enquanto a pessoa segura
+      warmDomain();
       holdTimer = setTimeout(() => {
         cancel();
         setDomain((d) => d ?? { x, y });

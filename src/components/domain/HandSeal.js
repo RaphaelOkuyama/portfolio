@@ -5,10 +5,14 @@
 // (o miolo), e as juntas e unhas em traço fino
 const OUTLINE = '#d9ecff';
 const FILL = '#060a16';
+const GLOW = '#8ec5ff';
 
+// O brilho vem de um traço largo e translúcido por trás (um filtro de desfoque custava ~150 ms de
+// rasterização na GPU ao aparecer)
 function Finger({ d, w }) {
   return (
     <g>
+      <path d={d} fill="none" stroke={GLOW} strokeWidth={w + 16} strokeLinecap="round" strokeLinejoin="round" opacity="0.14" />
       <path d={d} fill="none" stroke={OUTLINE} strokeWidth={w + 4.5} strokeLinecap="round" strokeLinejoin="round" />
       <path d={d} fill="none" stroke={FILL} strokeWidth={w} strokeLinecap="round" strokeLinejoin="round" />
     </g>
@@ -23,19 +27,18 @@ export default function HandSeal() {
   return (
     <div className="dx-seal" aria-hidden="true">
       <svg viewBox="0 0 220 320" className="dx-seal-svg">
-        <defs>
-          <filter id="dx-seal-glow" x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-        <g filter="url(#dx-seal-glow)">
+        <g>
           {/* Antebraço */}
           <path d="M66 320 L72 262 M162 320 L154 262" fill="none" stroke={OUTLINE} strokeWidth="2.4" strokeLinecap="round" />
-          {/* Palma larga, com o monte do polegar à esquerda */}
+          {/* Palma larga, com o monte do polegar à esquerda (e o halo por trás) */}
+          <path
+            d="M72 266 C58 246 52 220 56 196 C58 176 66 160 80 152 L148 148 C162 154 170 170 168 192 C166 218 160 244 154 266 Z"
+            fill="none"
+            stroke={GLOW}
+            strokeWidth="18"
+            strokeLinejoin="round"
+            opacity="0.12"
+          />
           <path
             d="M72 266 C58 246 52 220 56 196 C58 176 66 160 80 152 L148 148 C162 154 170 170 168 192 C166 218 160 244 154 266 Z"
             fill={FILL}

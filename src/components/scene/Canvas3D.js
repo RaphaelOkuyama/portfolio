@@ -72,6 +72,10 @@ export default function Canvas3D() {
         if (new URLSearchParams(window.location.search).has('perf')) window.__r3f = state;
       }}
       dpr={settings.dpr}
+      // Mede o tamanho pelo layout (offsetWidth/Height), não pelo retângulo visual: uma
+      // transformação no contêiner (a lente do domínio puxando a cena) não redimensiona o
+      // renderizador e o bloom a cada quadro
+      resize={{ offsetSize: true }}
       frameloop={frameloop}
       camera={{ fov: 50, near: 0.1, far: 300, position: CAMERA_PATH[0] }}
       gl={{ antialias: settings.antialias, powerPreference: 'high-performance' }}

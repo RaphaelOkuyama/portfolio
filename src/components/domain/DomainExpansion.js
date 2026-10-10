@@ -4,8 +4,8 @@ import { gsap } from '../../lib/gsap';
 import { resumeData } from '../../data/resume';
 import { journeyStore } from '../../store/journey';
 import { DOMAIN, pickTargets, rectPoly, resample, voronoiCells } from '../../lib/domain';
-import { createVoid } from './voidShader';
-import { buildSprites } from './sprites';
+import { takeVoid } from './voidShader';
+import { buildSpritesGradually } from './sprites';
 import { createDomainSound, savedVolume } from './sound';
 import HandSeal from './HandSeal';
 
@@ -17,8 +17,7 @@ import HandSeal from './HandSeal';
 //  3. Informação infinita (2,0–5,3 s): primeiro, legível, a história (os projetos com a stack, os
 //     números reais); depois a enxurrada (as tiras do Stack, 奥山, as quatro estações), que se
 //     multiplica, se sobrepõe e vira partícula. O contador acompanha até perder o sentido
-//     Logo depois que o vazio abre, o buraco vira por um instante o olho azul do Gojo, que segue
-//     o mouse e pisca. No pico, tudo congela por meio segundo (o cursor trava, o som some): quem
+//     No pico, tudo congela por meio segundo (o cursor trava, o som some): quem
 //     está no domínio não consegue agir
 //  4. Saturação (5,3–6,0 s): a informação dispara, a tela treme e estoura para o branco
 //  5. Reconstrução (6,0–7,6 s): o branco racha; cada caco é a região de um elemento real visível e
@@ -38,8 +37,6 @@ const TARGETS = 'header a, header button, main h1, main h2, main h3, main p, mai
 const SATURATE = { natural: 0.7, early: 0.5 };
 // A informação: começa pela história legível e vira enxurrada a partir desta fração do vazio
 const FLOOD_AT = 0.42;
-// 六眼: o olho aparece logo depois de o vazio abrir (tempos a partir de DOMAIN.close)
-const EYE = { from: 0.2, open: 0.3, blink: 1.05, blinkDur: 0.22, close: 1.9, fade: 0.35 };
 // O congelamento acaba um pouco antes da saturação e dura isto (s)
 const FREEZE = { lead: 0.08, length: 0.55 };
 const POINTS = 28;
@@ -136,7 +133,15 @@ export default function DomainExpansion({ origin, onDone }) {
 
   useEffect(() => {
     const root = rootRef.current;
-    const glCanvas = glRef.current;
+    // O vazio: o canvas pré-compilado (se a pessoa começou a digitar ou segurar antes) entra no lugar
+    // do canvas do componente; senão compila agora
+    const { canvas: glCanvas, v: voidGl } = takeVoid(glRef.current);
+    if (glCanvas !== glRef.current) {
+      glCanvas.className = glRef.current.className;
+      glCanvas.setAttribute('aria-hidden', 'true');
+      glRef.current.after(glCanvas);
+      glRef.current.style.display = 'none';
+    }
     const itemsCanvas = itemsRef.current;
     const shardCanvas = shardRef.current;
     const w = window.innerWidth;
@@ -149,13 +154,10 @@ export default function DomainExpansion({ origin, onDone }) {
       serif: getComputedStyle(document.querySelector('h1, h2') ?? document.body).fontFamily,
       jp: getComputedStyle(document.querySelector('.font-jp') ?? document.body).fontFamily,
     };
-    // As peças só aparecem aos 2 s: são desenhadas depois dos primeiros quadros (desenhar todas na
-    // montagem segurava ~300 ms logo depois da tecla, antes de qualquer coisa aparecer)
-    let story = [];
-    let flood = [];
-    const spritesTimer = setTimeout(() => {
-      ({ story, flood } = buildSprites(resumeData[lang], METRICS[lang], fonts, lang));
-    }, 650);
+    // As peças só aparecem aos 2 s: são desenhadas aos poucos, algumas por quadro, enquanto o selo
+    // e o 領域展開 acontecem (de uma vez, seguravam a página ~100 ms)
+    const pieces = { story: [], flood: [] };
+    const cancelSprites = buildSpritesGradually(resumeData[lang], METRICS[lang], fonts, lang, pieces);
     const unit = Math.min(w, h);
     // Celular: menos peças, menos partículas e menos tremor
     const small = unit < 700;
@@ -173,7 +175,6 @@ export default function DomainExpansion({ origin, onDone }) {
     ictx.setTransform(dpr, 0, 0, dpr, 0, 0);
     const sctx = shardCanvas.getContext('2d');
     sctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const voidGl = createVoid(glCanvas);
     const glOrigin = [origin.x * glScale, (h - origin.y) * glScale];
 
     // Tipografia: 領域展開 em pinceladas (cada ideograma é revelado de cima para baixo, como o pincel
@@ -184,10 +185,10 @@ export default function DomainExpansion({ origin, onDone }) {
     const tl = gsap.timeline();
     tl.to(q('.dx-dim'), { opacity: 1, duration: 0.4, ease: 'power2.out' }, 0)
       // 印: o selo de mão acende, segura um instante e se desfaz quando o nome do domínio entra
-      .fromTo(q('.dx-seal'), { opacity: 0, scale: 0.9, filter: 'blur(8px)' }, { opacity: 1, scale: 1, filter: 'blur(0px)', duration: 0.32, ease: 'power3.out' }, 0)
-      .to(q('.dx-seal'), { opacity: 0, scale: 1.08, filter: 'blur(10px)', duration: 0.35, ease: 'power2.in' }, 0.62)
-      .fromTo(q('.dx-intro-char'), { clipPath: 'inset(0% 0% 100% 0%)', opacity: 0, filter: 'blur(10px)', y: -14, scale: 1.12 }, {
-        clipPath: 'inset(0% 0% 0% 0%)', opacity: 1, filter: 'blur(0px)', y: 0, scale: 1, duration: 0.5, stagger: 0.1, ease: 'power3.out',
+      .fromTo(q('.dx-seal'), { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.32, ease: 'power3.out' }, 0)
+      .to(q('.dx-seal'), { opacity: 0, scale: 1.08, duration: 0.35, ease: 'power2.in' }, 0.62)
+      .fromTo(q('.dx-intro-char'), { clipPath: 'inset(0% 0% 100% 0%)', opacity: 0, y: -14, scale: 1.12 }, {
+        clipPath: 'inset(0% 0% 0% 0%)', opacity: 1, y: 0, scale: 1, duration: 0.5, stagger: 0.1, ease: 'power3.out',
       }, 0.62)
       .fromTo(q('.dx-brush'), { scaleX: 0, opacity: 0 }, { scaleX: 1, opacity: 1, duration: 0.7, ease: 'expo.inOut' }, 0.74)
       .fromTo(q('.dx-intro-sub'), { opacity: 0, letterSpacing: '1.2em' }, { opacity: 0.8, letterSpacing: '0.6em', duration: 0.6, ease: 'expo.out' }, 0.95)
@@ -196,12 +197,12 @@ export default function DomainExpansion({ origin, onDone }) {
       .to(q('.dx-caption-1'), { opacity: 0, duration: 0.3 }, close - 0.2)
       .fromTo(q('.dx-caption-2 .dx-caption-char'), { opacity: 0 }, { opacity: 1, duration: 0.01, stagger: 0.045 }, close + 0.1)
       .to(q('.dx-caption-2'), { opacity: 0, duration: 0.4 }, close + 1.9)
-      .to(q('.dx-intro'), { opacity: 0, scale: 1.14, filter: 'blur(10px)', duration: 0.4, ease: 'power2.in' }, close - 0.3)
+      .to(q('.dx-intro'), { opacity: 0, scale: 1.14, duration: 0.4, ease: 'power2.in' }, close - 0.3)
       .fromTo(q('.dx-name-char'), {
-        opacity: 0, scale: 0.55, skewX: 22, filter: 'blur(6px)',
+        opacity: 0, scale: 0.55, skewX: 22,
         textShadow: '-9px 0px 10px rgba(255,70,120,0.9), 9px 0px 10px rgba(70,200,255,0.9)',
       }, {
-        opacity: 1, scale: 1, skewX: 0, filter: 'blur(0px)',
+        opacity: 1, scale: 1, skewX: 0,
         textShadow: '0px 0px 24px rgba(140,190,255,0.55), 0px 0px 24px rgba(140,190,255,0)',
         duration: 0.95, stagger: 0.08, ease: 'expo.out',
       }, close + 0.15)
@@ -241,64 +242,35 @@ export default function DomainExpansion({ origin, onDone }) {
     const controls = root.querySelector('.dx-sound');
     controls.addEventListener('pointerdown', keep);
 
-    // Lente sobre a página real: enquanto o vazio abre, a cena 3D é dobrada em volta do ponto de
-    // ativação (deslocamento SVG, campo radial) e o conteúdo é puxado e torcido na direção dele.
-    // Tudo volta ao normal quando o vazio cobre a tela (ninguém vê a troca)
+    // Lente sobre a página real: enquanto o vazio abre, a cena 3D e a barra do topo são puxadas e
+    // torcidas na direção do ponto de ativação (transformação no compositor: sem custo de pintura;
+    // um filtro SVG de deslocamento na cena segurava a página ~120 ms). Tudo volta ao normal quando o
+    // vazio cobre a tela (ninguém vê a troca)
     const lensTargets = [document.querySelector('[data-scene]'), document.querySelector('header')].filter(Boolean);
-    const lensMap = root.querySelector('.dx-lens-map');
-    const lensDisp = root.querySelector('.dx-lens-disp');
-    {
-      // Campo radial puxando para o ponto de ativação: R e G guardam o vetor (128 = parado)
-      const S = 128;
-      const field = document.createElement('canvas');
-      field.width = S;
-      field.height = S;
-      const fctx = field.getContext('2d');
-      const img = fctx.createImageData(S, S);
-      const ox = (origin.x / w) * S;
-      const oy = (origin.y / h) * S;
-      for (let y = 0; y < S; y += 1) {
-        for (let x = 0; x < S; x += 1) {
-          const dx = x - ox;
-          const dy = y - oy;
-          const d = Math.hypot(dx, dy) || 1;
-          const fall = Math.exp(-d / (S * 0.45)) * Math.min(1, d / (S * 0.08));
-          const i = (y * S + x) * 4;
-          img.data[i] = 128 + (dx / d) * fall * 127;
-          img.data[i + 1] = 128 + (dy / d) * fall * 127;
-          img.data[i + 2] = 128;
-          img.data[i + 3] = 255;
-        }
-      }
-      fctx.putImageData(img, 0, 0);
-      lensMap.setAttribute('href', field.toDataURL());
-      lensMap.setAttribute('width', String(w));
-      lensMap.setAttribute('height', String(h));
-    }
     const lensSaved = lensTargets.map((el) => ({
-      el, transform: el.style.transform, filter: el.style.filter, origin: el.style.transformOrigin, will: el.style.willChange,
+      el, transform: el.style.transform, origin: el.style.transformOrigin, will: el.style.willChange,
     }));
     let lensOn = !reduced;
-    const setLens = (k) => {
-      if (!lensOn) return;
-      lensDisp.setAttribute('scale', String(-150 * k));
-      lensTargets.forEach((el, i) => {
-        if (i === 0) {
-          el.style.filter = k > 0.001 ? 'url(#dx-lens)' : '';
-          return;
-        }
+    if (lensOn) {
+      lensTargets.forEach((el) => {
         const r = el.getBoundingClientRect();
         el.style.willChange = 'transform';
         el.style.transformOrigin = `${origin.x - r.left}px ${origin.y - r.top}px`;
-        el.style.transform = k > 0.001 ? `scale(${1 - 0.1 * k}) rotate(${-2.5 * k}deg)` : '';
+      });
+    }
+    const setLens = (k) => {
+      if (!lensOn) return;
+      lensTargets.forEach((el, i) => {
+        // A cena é puxada para dentro (encolhe e gira); a barra, um pouco menos
+        const pull = i === 0 ? 0.14 : 0.1;
+        el.style.transform = k > 0.001 ? `scale(${1 - pull * k}) rotate(${-3 * k}deg)` : '';
       });
     };
     const releaseLens = () => {
       if (!lensOn) return;
       lensOn = false;
-      lensSaved.forEach(({ el, transform, filter, origin: o, will }) => {
+      lensSaved.forEach(({ el, transform, origin: o, will }) => {
         el.style.transform = transform;
-        el.style.filter = filter;
         el.style.transformOrigin = o;
         el.style.willChange = will;
       });
@@ -315,7 +287,9 @@ export default function DomainExpansion({ origin, onDone }) {
     let floodIndex = 0;
     const project = (a, d, z) => {
       const persp = 1 / Math.max(0.05, 1 - z);
-      const r = d * unit * 0.11 * persp;
+      // Nascem já na borda do buraco (0,2 da tela) e saem dali: antes nasciam escondidas dentro
+      // dele e muitas apagavam antes de aparecer
+      const r = (unit * 0.19 + d * unit * 0.08) * persp;
       return [w / 2 + Math.cos(a) * r, h / 2 + Math.sin(a) * r, persp];
     };
     const launch = (s, legible) => flying.push({
@@ -334,17 +308,17 @@ export default function DomainExpansion({ origin, onDone }) {
       const active = age > close + 0.1;
       if (active && !reduced) {
         // A história, uma peça de cada vez, até a enxurrada começar
-        if (info < FLOOD_AT && storyIndex < story.length && age - storyAt > 0.36) {
+        if (info < FLOOD_AT && storyIndex < pieces.story.length && age - storyAt > 0.36) {
           storyAt = age;
-          launch(story[storyIndex], true);
+          launch(pieces.story[storyIndex], true);
           storyIndex += 1;
         }
-        if (info >= FLOOD_AT * 0.7 && flood.length) {
+        if (info >= FLOOD_AT * 0.7 && pieces.flood.length) {
           const k = clamp01((info - FLOOD_AT * 0.7) / (1 - FLOOD_AT * 0.7));
           spawnAcc += dt * (4 + 42 * k * k + 70 * sat) * density;
           while (spawnAcc > 1) {
             spawnAcc -= 1;
-            launch(flood[floodIndex % flood.length], false);
+            launch(pieces.flood[floodIndex % pieces.flood.length], false);
             floodIndex += 1;
           }
         }
@@ -418,7 +392,6 @@ export default function DomainExpansion({ origin, onDone }) {
       pointerAt.y = e.clientY;
     };
     window.addEventListener('pointermove', onPointer, { passive: true });
-    const look = [0, 0];
     const frozenCursor = root.querySelector('.dx-frozen-cursor');
     let frozen = false;
     const setFrozen = (on) => {
@@ -462,8 +435,9 @@ export default function DomainExpansion({ origin, onDone }) {
     const reveal = (el) => {
       el.classList.remove('dx-hidden');
       el.animate?.([
-        { opacity: 0, filter: 'blur(6px) brightness(2)' },
-        { opacity: 1, filter: 'blur(0px) brightness(1)' },
+        // Sem filtro (desfoque e brilho em dezenas de elementos de uma vez pesavam na pintura)
+        { opacity: 0, transform: 'scale(1.03)' },
+        { opacity: 1, transform: 'scale(1)' },
       ], { duration: 420, easing: 'cubic-bezier(0.2, 0.7, 0.2, 1)' });
     };
     const finish = () => {
@@ -719,16 +693,7 @@ export default function DomainExpansion({ origin, onDone }) {
         const orb = reduced ? 1 : Math.max(0, 1 - (1 - ok) ** 3 * Math.cos(ok * 4));
         const warp = reduced ? 0 : 0.4 + 2.6 * Math.exp(-((age - close - 0.9) ** 2) / 0.6) + info * 1.2 + sat * 5;
         travel += dt * (0.15 + warp * 0.45);
-        // O olho: abre, segue o mouse (suave), pisca uma vez e volta a ser o buraco
-        const ea = age - close;
-        const eye = reduced ? 0 : clamp01((ea - EYE.from) / EYE.open) * (1 - clamp01((ea - EYE.close) / EYE.fade));
-        const blinkT = (ea - EYE.blink) / EYE.blinkDur;
-        const lid = blinkT > 0 && blinkT < 1 ? Math.sin(Math.PI * blinkT) : 1 - clamp01((ea - EYE.from) / EYE.open);
-        const lookX = gsap.utils.clamp(-1, 1, (pointerAt.x - w / 2) / (unit * 0.5));
-        const lookY = gsap.utils.clamp(-1, 1, -(pointerAt.y - h / 2) / (unit * 0.5));
-        look[0] += (lookX - look[0]) * Math.min(1, dt * 8);
-        look[1] += (lookY - look[1]) * Math.min(1, dt * 8);
-        voidGl?.draw({ time: age, reveal: opening, origin: glOrigin, orb, warp, flash, travel, eye, look, lid });
+        voidGl?.draw({ time: age, reveal: opening, origin: glOrigin, orb, warp, flash, travel });
         if (!played.impact && age > 0.78) {
           played.impact = true;
           sound?.impact();
@@ -772,7 +737,7 @@ export default function DomainExpansion({ origin, onDone }) {
 
     return () => {
       cancelAnimationFrame(raf);
-      clearTimeout(spritesTimer);
+      cancelSprites();
       tl.kill();
       gsap.killTweensOf(root.querySelectorAll('*'));
       window.removeEventListener('keydown', onKey);
@@ -795,13 +760,6 @@ export default function DomainExpansion({ origin, onDone }) {
   const en = typeof document !== 'undefined' && document.documentElement.getAttribute('data-language') === 'en';
   return (
     <div ref={rootRef} className="dx" data-domain="">
-      {/* Filtro da lente (usado pela cena 3D enquanto o vazio abre) */}
-      <svg className="dx-defs" aria-hidden="true" focusable="false">
-        <filter id="dx-lens" x="0" y="0" width="100%" height="100%" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
-          <feImage className="dx-lens-map" x="0" y="0" preserveAspectRatio="none" result="map" />
-          <feDisplacementMap className="dx-lens-disp" in="SourceGraphic" in2="map" scale="0" xChannelSelector="R" yChannelSelector="G" />
-        </filter>
-      </svg>
       <div className="dx-dim" aria-hidden="true" />
       <canvas ref={glRef} className="dx-layer" aria-hidden="true" />
       <canvas ref={itemsRef} className="dx-layer" aria-hidden="true" />
