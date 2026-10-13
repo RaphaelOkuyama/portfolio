@@ -451,7 +451,7 @@ export default function Koi({ river, released }) {
               pellets.fed = 0;
               dragonOn.current = true;
               const gold = school[DRAGON_KOI];
-              setDragon({ at: [gold.x, 0, gold.z], key: now });
+              setDragon({ at: [gold.x, 0, gold.z] });
               window.dispatchEvent(new CustomEvent('koi-dragon'));
             }
           }
@@ -505,16 +505,14 @@ export default function Koi({ river, released }) {
         visible={false}
       />
       <primitive object={pellets.points} />
-      {dragon ? (
-        <KoiDragon
-          key={dragon.key}
-          at={dragon.at}
-          onDone={() => {
-            dragonOn.current = false;
-            setDragon(null);
-          }}
-        />
-      ) : null}
+      {/* Sempre montado: os shaders do dragão compilam antes, e o salto não trava */}
+      <KoiDragon
+        run={dragon}
+        onDone={() => {
+          dragonOn.current = false;
+          setDragon(null);
+        }}
+      />
     </>
   );
 }

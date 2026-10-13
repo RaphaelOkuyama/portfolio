@@ -1,3 +1,4 @@
+import { softwareContext } from '../../lib/webgl';
 // 無量空処: o shader do Vazio Infinito (tela inteira, WebGL2). Nebulosa azul-violeta com o domínio
 // dobrado (fbm sobre fbm) e um zoom que não para, anéis concêntricos correndo para o centro, túnel
 // de estrelas em coordenadas polares (riscam quando a velocidade sobe), um
@@ -169,7 +170,8 @@ void main() {
 // Programa pronto para desenhar: devolve { draw(uniforms), dispose } ou null sem WebGL2
 export function createVoid(canvas) {
   const gl = canvas.getContext('webgl2', { premultipliedAlpha: true, antialias: false, preserveDrawingBuffer: true });
-  if (!gl || gl.isContextLost()) return null;
+  // Sem GPU, o vazio em tela cheia na CPU levaria segundos por quadro: o domínio segue sem ele
+  if (!gl || gl.isContextLost() || softwareContext(gl)) return null;
   const shader = (type, src) => {
     const s = gl.createShader(type);
     gl.shaderSource(s, src);

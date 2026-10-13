@@ -2426,6 +2426,21 @@ html[data-visited].is-loading body { overflow: visible; }
   background: radial-gradient(ellipse 85% 75% at 50% 45%, transparent 60%, rgb(120 90 55 / 0.14) 100%);
 }
 
+/* Sem GPU (o navegador desenha na CPU, ver lib/webgl): a composição da página também é na CPU, e
+   desfoque de fundo e camadas misturadas em tela cheia custam a cada quadro da rolagem. Saem: a
+   barra fica com fundo quase opaco no lugar do vidro e o washi fica só com a vinheta */
+html.no-gpu * {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+html.no-gpu nav {
+  background: color-mix(in srgb, var(--bg-color) 92%, transparent);
+}
+html.no-gpu .washi {
+  background-image: none;
+  mix-blend-mode: normal;
+}
+
 /* --- 千羽鶴: easter egg (Konami ou 5 carimbadas no hanko do rodapé) --- */
 .footer-hanko { user-select: none; }
 

@@ -45,3 +45,27 @@ test.describe('sem WebGL', () => {
     await expect(page.locator('.hero-title')).toBeVisible({ timeout: 15_000 });
   });
 });
+
+test.describe('WebGL sem GPU (renderizador por software)', () => {
+  test('a cena dá lugar ao cenário pintado e os efeitos de CSS caros saem', async ({ page }) => {
+    await page.addInitScript(() => {
+      // Sem a chave dos testes (oku-3d) e com o WebGL respondendo como SwiftShader, na CPU
+      localStorage.removeItem('oku-3d');
+      const original = HTMLCanvasElement.prototype.getContext;
+      HTMLCanvasElement.prototype.getContext = function getContext(type, ...args) {
+        if (!/webgl/i.test(type)) return original.call(this, type, ...args);
+        const ctx = original.call(this, type);
+        if (!ctx) return ctx;
+        const getParameter = ctx.getParameter.bind(ctx);
+        ctx.getParameter = (p) => (p === 0x9246 || p === ctx.RENDERER ? 'ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero)), SwiftShader driver)' : getParameter(p));
+        return ctx;
+      };
+    });
+    await page.goto('/');
+    await page.mouse.move(300, 300);
+    await expect(page.locator('[data-scene="fallback"]')).toHaveCount(1, { timeout: 15_000 });
+    await expect(page.locator('[data-scene="webgl"] canvas')).toHaveCount(0);
+    await expect(page.locator('html')).toHaveClass(/no-gpu/);
+    expect(await page.locator('nav').first().evaluate((el) => getComputedStyle(el).backdropFilter)).toBe('none');
+  });
+});
