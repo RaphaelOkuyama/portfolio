@@ -31,17 +31,17 @@ test.describe('sem WebGL', () => {
     });
   });
 
-  test('mostra o fundo estático e o conteúdo continua acessível', async ({ page }) => {
+  test('mostra a montanha pintada (Canvas 2D) e o conteúdo continua acessível', async ({ page }) => {
     await page.goto('/');
-    // A cena tenta começar na primeira interação: sem WebGL, o fundo pintado assume de vez
+    // A cena tenta começar na primeira interação: sem WebGL, a montanha pintada assume de vez
     // (mexe o mouse até a página ouvir: o primeiro movimento pode chegar antes da hidratação)
     let x = 300;
     await expect.poll(async () => {
       x += 7;
       await page.mouse.move(x, 300);
-      return page.locator('[data-scene="fallback"] svg').count();
+      return page.locator('[data-scene="fallback"] canvas[data-painted]').count();
     }, { timeout: 15_000 }).toBe(1);
-    await expect(page.locator('[data-scene] canvas')).toHaveCount(0);
+    await expect(page.locator('[data-scene] canvas:not([data-painted])')).toHaveCount(0);
     await expect(page.locator('.hero-title')).toBeVisible({ timeout: 15_000 });
   });
 });

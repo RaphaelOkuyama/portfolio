@@ -32,8 +32,12 @@ const NEAR_TREES = cedarsOnRidge({
 }).map((t) => cedarPath(t.x, t.y, t.h)).join(' ');
 
 const RIVER_TOP = ridgeY(NEAR, W / 2) + 6;
-const RIVER = riverPath({ topX: W / 2, topY: RIVER_TOP, bottomY: H + 20, topWidth: 14, bottomWidth: 760, sway: 160, seed: 3 });
+const RIVER_SPEC = { topX: W / 2, topY: RIVER_TOP, bottomY: H + 20, topWidth: 14, bottomWidth: 760, sway: 160, seed: 3 };
+const RIVER = riverPath(RIVER_SPEC);
 const RIVER_GLINT = riverPath({ topX: W / 2 + 6, topY: RIVER_TOP + 30, bottomY: H + 20, topWidth: 2, bottomWidth: 90, sway: 150, seed: 3 });
+
+// A mesma geometria serve à cena pintada animada (PaintedScene, sem GPU)
+export const BACKDROP = { W, H, FAR, MID, NEAR, MID_TREES, NEAR_TREES, RIVER_SPEC, RIVER, RIVER_GLINT };
 
 // Fundo pintado para navegadores sem WebGL: a mesma montanha da cena 3D em camadas de SVG,
 // com névoa entre as cristas, cedros e o rio, nas cores da estação atual

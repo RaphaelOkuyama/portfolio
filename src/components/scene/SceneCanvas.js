@@ -8,6 +8,8 @@ import StaticBackdrop from './StaticBackdrop';
 // three/R3F só carregam no cliente, fora do bundle inicial
 const loadCanvas = () => import('./Canvas3D');
 const Canvas3D = dynamic(loadCanvas, { ssr: false, loading: () => null });
+// Sem GPU: a montanha pintada e animada em Canvas 2D (leve, só baixa nesse caso)
+const PaintedScene = dynamic(() => import('./PaintedScene'), { ssr: false, loading: () => null });
 
 const wrapperStyle = { position: 'fixed', inset: 0, zIndex: -1, pointerEvents: 'none' };
 
@@ -76,6 +78,8 @@ export default function SceneCanvas() {
   const sceneReady = useJourney((s) => s.sceneReady);
   // Depois do fade da cena, o fundo estático sai do DOM (não fica pintando por baixo)
   const [backdropGone, setBackdropGone] = useState(false);
+  // Sem GPU: a cena pintada assume quando a primeira camada fica pronta, e o SVG sai
+  const [paintedReady, setPaintedReady] = useState(false);
 
   // O teste de WebGL cria um contexto de GPU: feito no carregamento, segurava a primeira pintura
   // (o quadro esperava o processo da GPU acordar). Agora só acontece quando a cena vai começar;
@@ -96,10 +100,12 @@ export default function SceneCanvas() {
     return () => clearTimeout(id);
   }, [sceneReady, webgl, failed]);
 
+  // Sem WebGL acelerado: a cena pintada e animada. Se o chunk 3D falhou, só o fundo estático
   if (webgl === false || failed) {
     return (
       <div aria-hidden="true" data-scene="fallback" style={wrapperStyle}>
-        <StaticBackdrop theme={theme} mix={mix} />
+        {paintedReady && !failed ? null : <StaticBackdrop theme={theme} mix={mix} />}
+        {failed ? null : <PaintedScene onReady={() => setPaintedReady(true)} />}
         <div className="washi" />
       </div>
     );

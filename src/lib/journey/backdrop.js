@@ -43,20 +43,25 @@ export function cedarsOnRidge({ seed, points, count, minHeight, maxHeight, avoid
   return trees;
 }
 
+// Centro e largura do rio em t (0 no vale, 1 perto de quem olha): t² aproxima a perspectiva, as
+// curvas se apertam lá longe
+export function riverAt({ topX, topY, bottomY, topWidth, bottomWidth, sway, seed }, t) {
+  const phase = mulberry32(seed)() * Math.PI * 2;
+  return {
+    x: topX + Math.sin(phase + t * Math.PI * 1.6) * sway * t,
+    y: topY + (bottomY - topY) * t * t,
+    half: (topWidth + (bottomWidth - topWidth) * t * t) / 2,
+  };
+}
+
 // Rio em perspectiva: estreito no vale, largo e sinuoso perto de quem olha
-export function riverPath({ topX, topY, bottomY, topWidth, bottomWidth, sway, seed, steps = 24 }) {
-  const rand = mulberry32(seed);
-  const phase = rand() * Math.PI * 2;
+export function riverPath({ steps = 24, ...river }) {
   const left = [];
   const right = [];
   for (let i = 0; i <= steps; i++) {
-    const t = i / steps;
-    // t² aproxima a perspectiva: as curvas se apertam lá longe
-    const y = topY + (bottomY - topY) * t * t;
-    const center = topX + Math.sin(phase + t * Math.PI * 1.6) * sway * t;
-    const half = (topWidth + (bottomWidth - topWidth) * t * t) / 2;
-    left.push([center - half, y]);
-    right.push([center + half, y]);
+    const { x, y, half } = riverAt(river, i / steps);
+    left.push([x - half, y]);
+    right.push([x + half, y]);
   }
   const pts = [...left, ...right.reverse()];
   return `M${pts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' L')} Z`;

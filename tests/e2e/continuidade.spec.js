@@ -93,26 +93,28 @@ test.describe('Fundo pintado sem WebGL', () => {
     });
   });
 
-  test('tem névoa, cedros e o rio, e acompanha o tema', async ({ page }) => {
+  test('antes da cena começar, o fundo em SVG tem névoa, cedros e o rio', async ({ page }) => {
     await openHome(page);
-    // O cenário pintado aparece desde o início (a cena 3D só tenta começar na primeira interação)
+    // O cenário pintado aparece desde o início (a cena só tenta começar na primeira interação)
     const backdrop = page.locator('[data-scene] .static-backdrop');
-    await expect(backdrop).toBeVisible();
     await expect(backdrop.locator('.backdrop-mist')).toHaveCount(2);
     await expect(backdrop.locator('[data-trees="near"]')).toHaveAttribute('d', /M/);
     await expect(backdrop.locator('[data-trees="mid"]')).toHaveAttribute('d', /M/);
     await expect(backdrop.locator('[data-river]')).toHaveAttribute('d', /Z$/);
-    const nightSky = await backdrop.locator('#bd-sky stop').first().getAttribute('stop-color');
-    await page.getByRole('button', { name: 'Alternar dia/noite' }).first().click();
-    await expect(backdrop.locator('#bd-sky stop').first()).not.toHaveAttribute('stop-color', nightSky);
   });
 
-  test('as cores seguem a estação conforme rola', async ({ page }) => {
+  test('a montanha pintada e animada assume, acompanha o tema e a estação', async ({ page }) => {
     await openHome(page);
-    const backdrop = page.locator('[data-scene] .static-backdrop');
-    await expect(backdrop).toHaveAttribute('data-season-mix', '0');
+    await page.mouse.move(300, 300);
+    const painted = page.locator('[data-scene="fallback"] canvas[data-painted]');
+    await expect(painted).toHaveAttribute('data-theme', 'night', { timeout: 15_000 });
+    await expect(painted).toHaveAttribute('data-season', 'spring');
+    // Pronta, ela substitui o SVG (que não fica pintando por baixo)
+    await expect(page.locator('[data-scene] .static-backdrop')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Alternar dia/noite' }).first().click();
+    await expect(painted).toHaveAttribute('data-theme', 'day');
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-    await expect(backdrop).not.toHaveAttribute('data-season-mix', '0', { timeout: 5_000 });
+    await expect(painted).not.toHaveAttribute('data-season', 'spring', { timeout: 5_000 });
   });
 });
 
