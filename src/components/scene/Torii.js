@@ -8,6 +8,8 @@ import { TORII, GROUND } from './config';
 import { groundHeight } from '../../lib/journey/ground';
 import { sceneHeight, toNdc } from '../../lib/pointer';
 import { setToriiHitTester } from '../../lib/toriiHit';
+import { useJourney } from '../../store/journey';
+import Yatagarasu from './Yatagarasu';
 
 // Torii único do hero: a TORII.toriiDistance do início do caminho. A câmera acelera até ele
 // e o atravessa quando o "Sobre" entra (ver cameraMap.js); do outro lado aparece o "Sobre Mim".
@@ -40,9 +42,14 @@ export default function Torii() {
     };
   }, [params.toriiT]);
 
+  // 八咫烏: o corvo que pousa no portão quando a pessoa fica parada (não na cena leve, sem GPU)
+  const lite = useJourney((s) => s.lite);
   return (
-    <group ref={groupRef}>
-      <ToriiGate spec={TORII} body={body} top={top} position={position} rotation={[0, rotationY, 0]} />
-    </group>
+    <>
+      <group ref={groupRef}>
+        <ToriiGate spec={TORII} body={body} top={top} position={position} rotation={[0, rotationY, 0]} />
+      </group>
+      {lite ? null : <Yatagarasu position={position} rotationY={rotationY} />}
+    </>
   );
 }

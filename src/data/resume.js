@@ -52,7 +52,7 @@ export const resumeData = {
       lead: 'Minha história começa muito antes do código.',
       paragraphs: [
         'Sou descendente de japoneses por parte de pai e de mãe, e a cultura japonesa sempre esteve presente na minha família: nos meus avós, nos costumes e nas pequenas tradições. 奥山 (Okuyama) significa "montanha profunda", algo que vem de longe, guarda histórias e segue existindo nas novas gerações.',
-        'Na tecnologia encontrei um jeito de transformar curiosidade em coisas concretas: produtos que unem engenharia, interação e design. Fora do código, gosto de xadrez e de experimentar novas ideias.',
+        'Na tecnologia encontrei um jeito de transformar curiosidade em coisas concretas: produtos que unem engenharia, interação e design. Fora do código, gosto de animes, de jogar online e de futebol.',
         'Hoje sou desenvolvedor full-stack, estudo Engenharia de Computação na FACENS e procuro um time onde eu possa construir produto de ponta a ponta.',
       ],
       // Os dois sobrenomes: o do pai (Okuyama) e o da mãe (Haga)
@@ -431,7 +431,7 @@ export const resumeData = {
       lead: 'My story starts long before code.',
       paragraphs: [
         'I am of Japanese descent on both my father’s and my mother’s side, and Japanese culture has always been part of my family: in my grandparents, our customs and the small traditions. 奥山 (Okuyama) means "deep mountain", something that comes from far away, keeps stories and lives on in new generations.',
-        'Technology is where I found a way to turn curiosity into concrete things: products that bring together engineering, interaction and design. Beyond code, I like chess and trying out new ideas.',
+        'Technology is where I found a way to turn curiosity into concrete things: products that bring together engineering, interaction and design. Beyond code, I enjoy anime, online games and football.',
         'Today I am a full-stack developer, studying Computer Engineering at FACENS, looking for a team where I can build products end to end.',
       ],
       names: [

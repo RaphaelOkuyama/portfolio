@@ -5,6 +5,7 @@ import { gsap } from '../../lib/gsapCore';
 import { useSettings } from '../../context/SettingsContext';
 import { drawOmikuji } from '../../lib/omikuji';
 import { hitsTorii } from '../../lib/toriiHit';
+import { hitsCrow } from '../../lib/crow';
 
 // Cliques nesses elementos são deles: nunca viram sorteio, mesmo com o torii atrás
 const OWN_CLICK = 'a, button, input, textarea, select, label, dialog, [role="button"], header, nav';
@@ -55,7 +56,8 @@ export default function Omikuji({ labels }) {
     const onClick = (e) => {
       if (e.button !== 0 || dialogRef.current?.open || !inHero()) return;
       if (e.target.closest?.(OWN_CLICK)) return;
-      if (!hitsTorii(e.clientX, e.clientY)) return;
+      // O corvo pousado no torii tem a vez (o clique nele dá uma dica, ver CrowHint)
+      if (!hitsTorii(e.clientX, e.clientY) || hitsCrow(e.clientX, e.clientY)) return;
       if (!reduced()) {
         const ring = document.createElement('span');
         ring.className = 'omikuji-ripple';

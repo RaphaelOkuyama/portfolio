@@ -17,7 +17,7 @@ test('o texto do Sobre é dividido em linhas e continua completo', async ({ page
   await openHome(page);
   const text = page.locator('.about-text');
   await expect(text).toContainText('Sou descendente de japoneses');
-  await expect(text).toContainText('xadrez');
+  await expect(text).toContainText('animes');
   expect(await page.locator('.about-line').count()).toBeGreaterThan(1);
 });
 

@@ -10,6 +10,7 @@ const DomainExpansion = dynamic(() => import('./domain/DomainExpansion'), { ssr:
 const BlackFlash = dynamic(() => import('./BlackFlash'), { ssr: false });
 const KoiNotice = dynamic(() => import('./KoiNotice'), { ssr: false });
 const KodamaNotice = dynamic(() => import('./KodamaNotice'), { ssr: false });
+const CrowHint = dynamic(() => import('./CrowHint'), { ssr: false });
 
 const HOLD_SELECTOR = '[data-station="stack"] .section-kanji';
 const editable = (el) => Boolean(el?.closest?.('input, textarea, select, [contenteditable="true"]'));
@@ -113,6 +114,7 @@ export default function EasterEggs() {
       {flash ? <BlackFlash key={flash.key} x={flash.x} y={flash.y} onDone={endFlash} /> : null}
       <KoiNotice />
       <KodamaNotice />
+      <CrowHint />
     </>
   );
 }
