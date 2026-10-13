@@ -2,7 +2,7 @@
 import { Component, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { journeyStore, useJourney } from '../../store/journey';
-import { hasWebGL } from '../../lib/webgl';
+import { webglMode } from '../../lib/webgl';
 import StaticBackdrop from './StaticBackdrop';
 
 // three/R3F só carregam no cliente, fora do bundle inicial
@@ -76,6 +76,7 @@ export default function SceneCanvas() {
   const [webgl, setWebgl] = useState(null);
   const [failed, setFailed] = useState(false);
   const quality = useJourney((s) => s.quality);
+  const lite = useJourney((s) => s.lite);
   const theme = useJourney((s) => s.theme);
   const mix = useJourney((s) => Math.round(s.seasonMix));
   const sceneReady = useJourney((s) => s.sceneReady);
@@ -89,7 +90,12 @@ export default function SceneCanvas() {
   // até lá o cenário pintado já está na tela
   const start = useSceneStart(!failed);
   useEffect(() => {
-    if (start && webgl === null) setWebgl(hasWebGL());
+    if (start && webgl === null) {
+      // Sem GPU (WebGL na CPU): a mesma cena, no modo leve (ver Canvas3D). Sem WebGL nenhum: pintada
+      const mode = webglMode();
+      journeyStore.getState().setLite(mode === 'software');
+      setWebgl(mode !== 'none');
+    }
   }, [start, webgl]);
 
   // Sem WebGL (ou se a cena falhar), o fundo estático é a cena
@@ -115,7 +121,7 @@ export default function SceneCanvas() {
   }
 
   return (
-    <div aria-hidden="true" data-scene="webgl" style={wrapperStyle}>
+    <div aria-hidden="true" data-scene="webgl" data-lite={lite ? '' : undefined} style={wrapperStyle}>
       {/* Até a cena 3D chegar: o mesmo cenário, pintado (some depois do fade da cena) */}
       {backdropGone ? null : <StaticBackdrop theme={theme} mix={mix} />}
       {webgl && quality && start ? (

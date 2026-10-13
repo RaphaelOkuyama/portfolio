@@ -16,6 +16,11 @@ function nativeProgress() {
 // Scroll suave (Lenis) guiado pelo ticker do GSAP; escreve o progresso na store
 export default function SmoothScroll() {
   const reducedMotion = useJourney((s) => s.reducedMotion);
+  // Sem GPU (cena leve): rolagem nativa. O Lenis move a página a cada quadro pela thread principal, e
+  // sem GPU ela está ocupada compondo a página na CPU: cada atraso virava um tranco. A rolagem nativa
+  // roda numa thread própria do navegador e fica lisa assim mesmo
+  const lite = useJourney((s) => s.lite);
+  const native = reducedMotion || lite;
   const loaderDone = useJourney((s) => s.loaderDone);
   const pathname = usePathname();
   const lenisRef = useRef(null);
@@ -23,7 +28,7 @@ export default function SmoothScroll() {
   useEffect(() => {
     const { setProgress } = journeyStore.getState();
 
-    if (reducedMotion) {
+    if (native) {
       const onScroll = () => setProgress(nativeProgress());
       onScroll();
       window.addEventListener('scroll', onScroll, { passive: true });
@@ -49,7 +54,7 @@ export default function SmoothScroll() {
       lenisRef.current = null;
       setLenis(null);
     };
-  }, [reducedMotion]);
+  }, [native]);
 
   // A altura da página mudou depois das medidas (fonte que chegou tarde, bloco que carregou sob
   // demanda): sem recalcular, os pins prendem no lugar antigo e a seção dá um tranco ao fixar

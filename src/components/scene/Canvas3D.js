@@ -8,6 +8,8 @@ import { CAMERA_PATH } from './config';
 import World from './World';
 import { HalfRateFrames, useSceneIdle } from './idleFrames';
 import { setOffscreenWarmup } from './warmup';
+import { setLiteNoise } from './glsl';
+import LiteTuner, { LiteLoop, LITE_DPR } from './LiteTuner';
 // Pós-processamento só é baixado quando a qualidade alta pede
 const Effects = lazy(() => import('./Effects'));
 import { trackPointer } from '../../lib/pointer';
@@ -24,6 +26,11 @@ export default function Canvas3D() {
   const loaderDone = useJourney((s) => s.loaderDone);
   // Uma camada cobre a tela inteira (o domínio do 無量空処): a cena para de desenhar
   const covered = useJourney((s) => s.covered);
+  // Sem GPU (WebGL na CPU): cena leve. Só o cenário, sem nada se mexendo sozinho, desenhado quando a
+  // câmera anda, com shaders mais baratos e a resolução medida (ver LiteTuner)
+  const lite = useJourney((s) => s.lite);
+  setLiteNoise(lite);
+  const [liteDpr, setLiteDpr] = useState(LITE_DPR.start);
   const [hidden, setHidden] = useState(false);
   const [warmedUp, setWarmedUp] = useState(false);
 
@@ -41,7 +48,7 @@ export default function Canvas3D() {
 
   useEffect(() => trackPointer(), []);
 
-  const settings = QUALITY_SETTINGS[quality];
+  const settings = lite ? { dpr: liteDpr, antialias: false, postprocessing: false } : QUALITY_SETTINGS[quality];
   // O aquecimento dos shaders compila também a variação usada pelo pós-processamento (ver warmup)
   setOffscreenWarmup(Boolean(settings.postprocessing));
   // Antialias só existe na criação do contexto: trocar de nível com ele recria o canvas
@@ -58,7 +65,8 @@ export default function Canvas3D() {
   // Parada (sem interação há 2s): "demand" a 30 fps em vez de 60 (ver idleFrames)
   const idle = useSceneIdle();
   const halfRate = idle && route !== 'frozen';
-  const frameloop = hidden || covered || compiledKey !== contextKey ? 'never' : route === 'frozen' || halfRate ? 'demand' : 'always';
+  // Cena leve: frameloop "never", quem desenha é o LiteLoop
+  const frameloop = lite || hidden || covered || compiledKey !== contextKey ? 'never' : route === 'frozen' || halfRate ? 'demand' : 'always';
 
   return (
     <Canvas
@@ -81,11 +89,13 @@ export default function Canvas3D() {
       gl={{ antialias: settings.antialias, powerPreference: 'high-performance' }}
     >
       {/* Fora do frameloop "always" os frames chegam em rajadas e o FPS medido não vale */}
-      {frameloop === 'always' && warmedUp ? (
+      {frameloop === 'always' && warmedUp && !lite ? (
         <PerformanceMonitor bounds={FPS_BOUNDS} onDecline={() => journeyStore.getState().downgradeQuality()} />
       ) : null}
       <World onReady={onCompiled} />
-      {halfRate && frameloop === 'demand' ? <HalfRateFrames /> : null}
+      {halfRate && frameloop === 'demand' && !lite ? <HalfRateFrames /> : null}
+      {lite && compiledKey === contextKey ? <LiteTuner onDpr={setLiteDpr} /> : null}
+      {lite && compiledKey === contextKey && !hidden && !covered ? <LiteLoop onDpr={setLiteDpr} /> : null}
       {settings.postprocessing ? (
         <Suspense fallback={null}>
           <Effects />

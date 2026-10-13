@@ -3636,6 +3636,8 @@ html:not(:lang(en)) [data-lang="en"] { display: none !important; }
   text-align: left;
 }
 .quality-option:hover, .quality-option:focus-visible { border-color: var(--accent); }
+.quality-option:disabled { opacity: 0.4; cursor: not-allowed; border-color: var(--border); }
+.quality-locked { margin: 10px 0 0; font-size: 0.75rem; line-height: 1.45; color: var(--text-secondary); }
 .quality-option[aria-checked='true'] {
   border-color: var(--accent);
   background: color-mix(in srgb, var(--accent) 14%, transparent);

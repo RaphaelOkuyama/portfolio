@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Color, Object3D, Vector3 } from 'three';
-import { journeyStore } from '../../store/journey';
+import { journeyStore, useJourney } from '../../store/journey';
 import { groundHeight } from '../../lib/journey/ground';
 import { wind } from '../../lib/journey/wind';
 import { TANABATA_COLORS, tanzakuLayout } from '../../lib/journey/tanabata';
@@ -21,6 +21,8 @@ const COUNTS = resumeData.pt.techSection.categories.map((c) => c.items.length);
 // ferramentas nas cores das áreas. As tiras balançam com o vento do scroll; a área escolhida no
 // Stack balança mais, cresce um pouco e brilha. Por cima do caminho, a corda com os 吹き流し
 export default function Tanabata() {
+  // Cena leve (sem GPU): sem os vagalumes
+  const lite = useJourney((s) => s.lite);
   const { range } = useGardenPlacement();
   const { wood, leaf, paper } = useAccentMaterials({
     wood: { accent: 'bamboo' },
@@ -121,7 +123,7 @@ export default function Tanabata() {
         </group>
       ))}
       <group position={[cx, groundHeight(cx, cz, GROUND), cz]}>
-        <Fireflies range={range} />
+        {lite ? null : <Fireflies range={range} />}
       </group>
     </>
   );

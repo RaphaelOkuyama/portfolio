@@ -47,10 +47,11 @@ test.describe('sem WebGL', () => {
 });
 
 test.describe('WebGL sem GPU (renderizador por software)', () => {
-  test('a cena dá lugar ao cenário pintado e os efeitos de CSS caros saem', async ({ page }) => {
+  test('a cena 3D entra no modo leve, os gráficos ficam no mínimo e os efeitos de CSS caros saem', async ({ page }) => {
     await page.addInitScript(() => {
       // Sem a chave dos testes (oku-3d) e com o WebGL respondendo como SwiftShader, na CPU
       localStorage.removeItem('oku-3d');
+      localStorage.setItem('oku-quality', 'high');
       const original = HTMLCanvasElement.prototype.getContext;
       HTMLCanvasElement.prototype.getContext = function getContext(type, ...args) {
         if (!/webgl/i.test(type)) return original.call(this, type, ...args);
@@ -63,9 +64,15 @@ test.describe('WebGL sem GPU (renderizador por software)', () => {
     });
     await page.goto('/');
     await page.mouse.move(300, 300);
-    await expect(page.locator('[data-scene="fallback"]')).toHaveCount(1, { timeout: 15_000 });
-    await expect(page.locator('[data-scene="webgl"] canvas')).toHaveCount(0);
+    const scene = page.locator('[data-scene="webgl"][data-lite]');
+    await expect(scene.locator('canvas')).toHaveCount(1, { timeout: 15_000 });
     await expect(page.locator('html')).toHaveClass(/no-gpu/);
     expect(await page.locator('nav').first().evaluate((el) => getComputedStyle(el).backdropFilter)).toBe('none');
+    // Mesmo com "alto" salvo, só o mínimo: médio e alto desabilitados, com o porquê
+    await page.locator('.quality-button').first().click();
+    await expect(page.getByRole('radio', { name: /Mínimo/ })).toHaveAttribute('aria-checked', 'true');
+    await expect(page.getByRole('radio', { name: /Médio/ })).toBeDisabled();
+    await expect(page.getByRole('radio', { name: /Alto/ })).toBeDisabled();
+    await expect(page.locator('.quality-locked')).toBeVisible();
   });
 });

@@ -33,7 +33,12 @@ export const NOISE = /* glsl */ `
   }
 `;
 
-// Menos oitavas no celular: o fbm roda por pixel em áreas grandes da tela
+// Menos oitavas no celular: o fbm roda por pixel em áreas grandes da tela. Na cena leve (WebGL na
+// CPU, sem GPU) só 2: o céu e o chão cobrem a tela inteira e eram metade do custo do quadro
+let lite = false;
+export function setLiteNoise(on) {
+  lite = on;
+}
 export function noiseDefines(quality) {
-  return { FBM_OCTAVES: quality === 'high' ? 4 : 3 };
+  return { FBM_OCTAVES: lite ? 2 : quality === 'high' ? 4 : 3 };
 }

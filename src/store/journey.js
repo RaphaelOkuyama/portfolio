@@ -40,6 +40,8 @@ export function createJourneyStore() {
     covered: false,
     // 木霊の森: os 5 kodama escondidos foram achados e a floresta dos espíritos está acesa
     spirit: false,
+    // Cena leve: o WebGL é por software (sem GPU). Só o cenário, desenhado quando a câmera anda
+    lite: false,
 
     setProgress: (p) => {
       const progress = clamp01(p);
@@ -73,6 +75,7 @@ export function createJourneyStore() {
     setTsukuyomi: (tsukuyomi) => set({ tsukuyomi }),
     setCovered: (covered) => set({ covered }),
     setSpirit: (spirit) => set({ spirit }),
+    setLite: (lite) => set({ lite }),
   }));
 }
 

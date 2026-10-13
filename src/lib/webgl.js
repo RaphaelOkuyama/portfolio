@@ -23,23 +23,24 @@ function forced() {
   }
 }
 
-// O contrário: ?2d na URL mostra a montanha pintada como se não houvesse GPU (para ver e testar)
-function flat() {
+// ?2d na URL: a montanha pintada (Canvas 2D) como se não houvesse WebGL. ?lite: a cena leve mesmo
+// com GPU. Os dois para ver e testar
+function flag(name) {
   try {
-    return new URLSearchParams(window.location.search).has('2d');
+    return new URLSearchParams(window.location.search).has(name);
   } catch {
     return false;
   }
 }
 
-// true se o navegador consegue criar um contexto WebGL acelerado pela GPU. Guardado: criar o
-// contexto de teste custa, e a cena pergunta duas vezes (ao baixar o three e ao montar)
+// Como a cena roda aqui: 'gpu' (a cena completa), 'software' (WebGL na CPU: a cena leve) ou 'none'
+// (sem WebGL: a montanha pintada). Guardado: criar o contexto de teste custa
 let cached = null;
-export function hasWebGL() {
+export function webglMode() {
   if (cached !== null) return cached;
-  if (flat()) {
+  if (flag('2d')) {
     document.documentElement.classList.add('no-gpu');
-    return (cached = false);
+    return (cached = 'none');
   }
   try {
     // failIfMajorPerformanceCaveat: o próprio navegador recusa quando só tem renderizador por software
@@ -51,24 +52,33 @@ export function hasWebGL() {
     const release = (ctx) => ctx?.getExtension('WEBGL_lose_context')?.loseContext();
     const ctx = open(force ? undefined : { failIfMajorPerformanceCaveat: true });
     let software = false;
+    let available = Boolean(ctx);
     if (ctx) software = !force && isSoftwareRenderer(rendererOf(ctx));
     else if (!force) {
       // Recusado com a ressalva mas aceito sem ela: tem WebGL, só que na CPU
       const plain = open();
       software = Boolean(plain);
+      available = software;
       release(plain);
     }
     // Libera o contexto de teste para não gastar um dos slots do navegador
     release(ctx);
+    if (!available) return (cached = 'none');
     // Sem GPU a composição da página também é na CPU: a classe desliga os efeitos de CSS caros
-    if (software) {
+    if (software || flag('lite')) {
       document.documentElement.classList.add('no-gpu');
-      console.info('[cena] WebGL sem GPU (renderizador por software): usando o cenário pintado. Ative a aceleração de hardware do navegador para ver a cena 3D.');
+      console.info('[cena] WebGL sem GPU (renderizador por software): cena leve. Ative a aceleração de hardware do navegador para a cena completa.');
+      return (cached = 'software');
     }
-    return (cached = Boolean(ctx) && !software);
+    return (cached = 'gpu');
   } catch {
-    return (cached = false);
+    return (cached = 'none');
   }
+}
+
+// true se o navegador consegue criar um contexto WebGL (com ou sem GPU)
+export function hasWebGL() {
+  return webglMode() !== 'none';
 }
 
 // Para os efeitos de tela cheia fora da cena (o vazio do domínio): mesmo teste, num contexto já criado

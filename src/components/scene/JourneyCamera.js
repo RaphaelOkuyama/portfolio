@@ -54,7 +54,10 @@ export default function JourneyCamera() {
       if (p >= 1) flight.current = null;
       state.invalidate();
     } else {
-      const k = journey.reducedMotion ? 1 : 1 - Math.exp(-delta * 3);
+      // Cena leve: depois de esperar a rolagem parar, o primeiro quadro chega com um delta longo; limitado,
+      // a câmera desliza até o lugar em vez de pular
+      const step = journey.lite ? Math.min(delta, 1 / 30) : delta;
+      const k = journey.reducedMotion ? 1 : 1 - Math.exp(-step * 3);
       current.current += (target - current.current) * k;
     }
 
@@ -66,7 +69,7 @@ export default function JourneyCamera() {
     state.camera.lookAt(position.x + tangent.x, position.y + tangent.y, position.z + tangent.z);
 
     // Cursor fora da janela (ou movimento reduzido): volta ao centro devagar
-    const follow = sway.fine && pointer.active && !journey.reducedMotion;
+    const follow = sway.fine && pointer.active && !journey.reducedMotion && !journey.lite;
     const ks = 1 - Math.exp(-delta * SWAY.speed);
     sway.x += ((follow ? pointer.x : 0) - sway.x) * ks;
     sway.y += ((follow ? pointer.y : 0) - sway.y) * ks;

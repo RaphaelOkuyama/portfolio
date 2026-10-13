@@ -101,6 +101,7 @@ const fragmentShader = /* glsl */ `
 export default function River() {
   const start = useJourney((s) => s.sectionRanges.contato?.[0]) ?? RIVER.fallbackStart;
   const quality = useJourney((s) => s.quality);
+  const lite = useJourney((s) => s.lite);
   const scene = useThree((s) => s.scene);
   const groupRef = useRef(null);
 
@@ -216,7 +217,8 @@ export default function River() {
     <group ref={groupRef} position={center}>
       <mesh geometry={geometry} material={material} rotation={[-Math.PI / 2, 0, 0]} />
       <Lanterns reflections={reflections} released={released} />
-      {withKoi ? <Koi river={material.uniforms} released={released} /> : null}
+      {/* Cena leve: sem as carpas (nadam sem parar) */}
+      {withKoi && !lite ? <Koi river={material.uniforms} released={released} /> : null}
       <RedThread released={released} />
     </group>
   );

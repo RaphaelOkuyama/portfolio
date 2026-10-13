@@ -1,7 +1,7 @@
 'use client';
 import { memo, useCallback, useEffect, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { journeyStore } from '../../store/journey';
+import { journeyStore, useJourney } from '../../store/journey';
 import { stepWind } from '../../lib/journey/wind';
 import Atmosphere from './Atmosphere';
 import JourneyCamera from './JourneyCamera';
@@ -40,14 +40,20 @@ const STAGES = [
   [River, Petals],
 ];
 
+// Cena leve (sem GPU): fica o cenário. Saem as partículas e o que vive sozinho (pássaros, cometa,
+// kodama, golpe da katana, pétalas, folhas, neve) e a névoa em camadas (transparente sobre a tela
+// toda: pintar a mesma área várias vezes é o que mais pesa sem GPU)
+const ANIMATED = new Set([Comet, Birds, KodamaHunt, KatanaSlash, Momiji, Snow, Petals, Kasumi]);
+
 // memo: montar o grupo seguinte não re-renderiza os anteriores
-const Stage = memo(function Stage({ index }) {
-  return STAGES[index].map((Part, i) => <Part key={i} />);
+const Stage = memo(function Stage({ index, lite }) {
+  return STAGES[index].filter((Part) => !lite || !ANIMATED.has(Part)).map((Part, i) => <Part key={i} />);
 });
 
 // Monta a cena; no frameloop "demand" qualquer mudança da store pede um frame
 export default function World({ onReady }) {
   const invalidate = useThree((s) => s.invalidate);
+  const lite = useJourney((s) => s.lite);
 
   useEffect(
     () =>
@@ -89,7 +95,7 @@ export default function World({ onReady }) {
 
   return (
     <>
-      {STAGES.slice(0, mounted).map((_, i) => <Stage key={i} index={i} />)}
+      {STAGES.slice(0, mounted).map((_, i) => <Stage key={i} index={i} lite={lite} />)}
       {mounted >= STAGES.length ? <ShaderWarmup onReady={handleReady} /> : null}
       {ready ? <LateWarmup /> : null}
     </>
