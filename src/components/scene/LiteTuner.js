@@ -121,7 +121,9 @@ export function LiteLoop({ onDpr }) {
       if (stage && now - lastScroll < 180) return;
       if (cap && now - lastDraw < cap - 2) return;
       lastDraw = now;
-      advance(now);
+      // Em segundos: com frameloop "never" o R3F usa o número direto como o relógio da cena (em ms,
+      // cada quadro achava que tinham passado mil vezes mais tempo e tudo corria acelerado)
+      advance(now / 1000);
       // A câmera ainda se mexeu neste quadro (amortecimento da rolagem): mais um
       if (!camera.matrixWorld.equals(seen)) {
         seen.copy(camera.matrixWorld);
