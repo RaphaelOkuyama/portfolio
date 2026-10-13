@@ -11,7 +11,10 @@ const Canvas3D = dynamic(loadCanvas, { ssr: false, loading: () => null });
 // Sem GPU: a montanha pintada e animada em Canvas 2D (leve, só baixa nesse caso)
 const PaintedScene = dynamic(() => import('./PaintedScene'), { ssr: false, loading: () => null });
 
-const wrapperStyle = { position: 'fixed', inset: 0, zIndex: -1, pointerEvents: 'none' };
+// Altura da tela com as barras do navegador recolhidas (lvh): fixa. Com inset: 0 a cena mudava de
+// tamanho toda vez que a barra do celular sumia ou voltava na rolagem (o renderizador, o bloom e as
+// camadas pintadas eram refeitos no meio do gesto)
+const wrapperStyle = { position: 'fixed', top: 0, left: 0, width: '100%', height: '100lvh', zIndex: -1, pointerEvents: 'none' };
 
 // A cena 3D (three.js ~240 KB, geometrias e shaders) é o trabalho mais pesado da página: feita no
 // carregamento, segurava a thread por segundos num celular. Agora a página abre com o cenário

@@ -5,9 +5,15 @@ export function toNdc(clientX, clientY, width, height) {
   return { x: (clientX / width) * 2 - 1, y: -((clientY / height) * 2 - 1) };
 }
 
+// Altura da cena: no celular ela é a tela com a barra recolhida (100lvh), maior que a janela
+// enquanto a barra aparece. Os raios do cursor e dos cliques usam esta, não a da janela
+export function sceneHeight() {
+  return document.querySelector('[data-scene]')?.clientHeight || window.innerHeight;
+}
+
 export function trackPointer() {
   const onMove = (e) => {
-    const { x, y } = toNdc(e.clientX, e.clientY, window.innerWidth, window.innerHeight);
+    const { x, y } = toNdc(e.clientX, e.clientY, window.innerWidth, sceneHeight());
     pointer.x = x;
     pointer.y = y;
     pointer.active = true;

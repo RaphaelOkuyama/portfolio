@@ -23,11 +23,24 @@ function forced() {
   }
 }
 
+// O contrário: ?2d na URL mostra a montanha pintada como se não houvesse GPU (para ver e testar)
+function flat() {
+  try {
+    return new URLSearchParams(window.location.search).has('2d');
+  } catch {
+    return false;
+  }
+}
+
 // true se o navegador consegue criar um contexto WebGL acelerado pela GPU. Guardado: criar o
 // contexto de teste custa, e a cena pergunta duas vezes (ao baixar o three e ao montar)
 let cached = null;
 export function hasWebGL() {
   if (cached !== null) return cached;
+  if (flat()) {
+    document.documentElement.classList.add('no-gpu');
+    return (cached = false);
+  }
   try {
     // failIfMajorPerformanceCaveat: o próprio navegador recusa quando só tem renderizador por software
     const force = forced();

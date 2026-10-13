@@ -37,7 +37,9 @@ body {
   font-family: var(--font-sans), 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  overflow-x: hidden;
+  /* clip (e no html também): no iOS o hidden só no body não impede a página de rolar de lado, e
+     qualquer peça que passe da borda (o cilindro do emakimono no fim do rolo) alargava a tela */
+  overflow-x: clip;
   /* 0.8s acompanha o crossfade da cena na troca 昼/夜 */
   transition: background-color 0.8s ease, color 0.8s ease;
 }
@@ -674,24 +676,18 @@ p, li { text-wrap: pretty; }
 }
 
 /* ============================================================
-   HERO SECTION — FIX IPHONE/ANDROID COM BARRAS DO BROWSER
-   
-   Problema: iOS Safari/Chrome têm barras de UI dinâmicas que
-   consomem ~15% da viewport. 100svh não desconta essas barras.
-   
-   Solução:
-   1. Usar 100dvh (dynamic viewport height) — desconta as barras
-   2. Fallback para 100svh em browsers mais antigos
-   3. Fallback final para 100vh
-   4. Retirar padding-bottom do hero e usar posicionamento
-      relativo no scroll indicator
+   HERO SECTION — CELULAR COM AS BARRAS DO NAVEGADOR
+
+   As barras do iOS/Android somem ao rolar para baixo e voltam ao subir. Com dvh a hero (e a página
+   toda) mudava de altura a cada vez, e a rolagem dava trancos. svh é a tela com as barras
+   visíveis: estável, a hero cabe sempre e não pula
    ============================================================ */
 .hero-section {
   /* Fallback para browsers sem suporte a dvh */
   height: calc(100vh - 80px);
   height: calc(100svh - 80px);
-  /* dvh = dynamic viewport height: desconta barras do browser */
-  height: calc(100dvh - 80px);
+  /* svh, não dvh: o dvh muda toda vez que a barra do navegador some ou volta na rolagem, e a página
+     inteira mudava de altura no meio do gesto (os triggers recalculavam e a rolagem dava trancos) */
   
   display: flex;
   flex-direction: column;
@@ -2322,7 +2318,7 @@ textarea.contact-input { resize: vertical; min-height: 130px; }
 /* Sem ancoragem de rolagem do navegador: quem posiciona a página são o Lenis e os pins do
    ScrollTrigger. Com ela ligada, o Chrome corrigia o scroll quando o pin do emakimono entrava
    e a seção dava um tranco (subia e voltava) */
-html { overflow-anchor: none; }
+html { overflow-anchor: none; overflow-x: clip; }
 
 /* Sem scroll enquanto o loader ensō cobre a página */
 html.is-loading,
@@ -2973,11 +2969,11 @@ html.no-gpu .washi {
 .site-footer {
   position: relative;
   width: 100%;
-  /* Última página do rolo: exatamente a altura da tela (dvh desconta as barras do navegador
-     no celular). A assinatura OKUYAMA encolhe para caber na sobra; só se o resto sozinho não
+  /* Última página do rolo: a altura da tela com as barras do navegador visíveis (svh: estável,
+     não muda quando elas somem na rolagem). A assinatura OKUYAMA encolhe para caber na sobra; só se o resto sozinho não
      couber (celular muito baixo) o rodapé cresce, em vez de cortar texto */
   min-height: 100vh;
-  min-height: 100dvh;
+  min-height: 100svh;
   display: flex;
   flex-direction: column;
   margin-top: auto;

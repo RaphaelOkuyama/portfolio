@@ -346,8 +346,9 @@ export default function PaintedScene({ onReady }) {
 
     // Tamanho: o canvas cobre a tela com uma fração dos pixels; a escala leva o desenho 1600×900 até ele
     const measure = () => {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
+      // Tamanho do canvas (a cena tem a altura da tela com a barra do celular recolhida, fixa)
+      const w = canvas.clientWidth || window.innerWidth;
+      const h = canvas.clientHeight || window.innerHeight;
       const q = Math.min(0.75, Math.sqrt(PIXELS[state.level] / (w * h)));
       canvas.width = Math.round(w * q);
       canvas.height = Math.round(h * q);
@@ -762,6 +763,8 @@ export default function PaintedScene({ onReady }) {
     });
     let resizeTimer = 0;
     const onResize = () => {
+      // A barra do celular sumindo ou voltando dispara resize sem mudar o canvas: nada a refazer
+      if (canvas.clientWidth === state.view.w && canvas.clientHeight === state.view.h) return;
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => {
         cache.clear();
@@ -772,7 +775,7 @@ export default function PaintedScene({ onReady }) {
     };
     const onPointer = (e) => {
       state.pointer.tx = (e.clientX / window.innerWidth) * 2 - 1;
-      state.pointer.ty = (e.clientY / window.innerHeight) * 2 - 1;
+      state.pointer.ty = (e.clientY / state.view.h) * 2 - 1;
       state.lastInput = performance.now();
     };
     // Clique no rio (fora do conteúdo): uma onda e as carpas vêm ver

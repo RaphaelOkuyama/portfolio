@@ -8,7 +8,7 @@ import {
 import { journeyStore } from '../../store/journey';
 import { mulberry32 } from '../../lib/journey/ridge';
 import { clampToZone, insideZone, orbitPoint, separation, swimStep } from '../../lib/journey/koi';
-import { pointer } from '../../lib/pointer';
+import { pointer, sceneHeight } from '../../lib/pointer';
 import { addRipple } from '../../lib/journey/ripples';
 import { isSceneClick } from '../../lib/journey/sceneClick';
 import KoiDragon from './KoiDragon';
@@ -326,7 +326,7 @@ export default function Koi({ river, released }) {
   useEffect(() => {
     const onClick = (e) => {
       if (journeyStore.getState().reducedMotion || !isSceneClick(e.target)) return;
-      pellets.click = { x: (e.clientX / window.innerWidth) * 2 - 1, y: -(e.clientY / window.innerHeight) * 2 + 1 };
+      pellets.click = { x: (e.clientX / window.innerWidth) * 2 - 1, y: -(e.clientY / sceneHeight()) * 2 + 1 };
     };
     window.addEventListener('click', onClick);
     return () => window.removeEventListener('click', onClick);

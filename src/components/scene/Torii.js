@@ -6,7 +6,7 @@ import ToriiGate, { useToriiMaterials } from './ToriiGate';
 import { getCameraCurve, useCameraMap } from './useCameraMap';
 import { TORII, GROUND } from './config';
 import { groundHeight } from '../../lib/journey/ground';
-import { toNdc } from '../../lib/pointer';
+import { sceneHeight, toNdc } from '../../lib/pointer';
 import { setToriiHitTester } from '../../lib/toriiHit';
 
 // Torii único do hero: a TORII.toriiDistance do início do caminho. A câmera acelera até ele
@@ -23,7 +23,7 @@ export default function Torii() {
     const ndc = new Vector2();
     return setToriiHitTester((clientX, clientY) => {
       if (!groupRef.current) return false;
-      const { x, y } = toNdc(clientX, clientY, window.innerWidth, window.innerHeight);
+      const { x, y } = toNdc(clientX, clientY, window.innerWidth, sceneHeight());
       raycaster.setFromCamera(ndc.set(x, y), camera);
       return raycaster.intersectObject(groupRef.current, true).length > 0;
     });

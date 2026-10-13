@@ -17,6 +17,8 @@ const vertexShader = /* glsl */ `
   uniform vec2 uPointer;
   uniform float uPointerActive;
   uniform float uAspect;
+  uniform vec3 uBaseMin;
+  uniform vec3 uBaseSize;
   uniform vec3 uVolumeMin;
   uniform vec3 uVolumeSize;
   varying vec2 vUv;
@@ -31,8 +33,9 @@ const vertexShader = /* glsl */ `
   void main() {
     float t = uTime * aParams.y;
 
+    // A posição sorteada na caixa original, levada para a caixa ajustada à tela (ver uVolume*)
+    vec3 p = uVolumeMin + (aOffset - uBaseMin) / uBaseSize * uVolumeSize;
     // Queda com vento: desce, deriva em x e oscila; volta ao topo ao sair do volume
-    vec3 p = aOffset;
     p.y = uVolumeMin.y + mod(p.y - uVolumeMin.y - t * 1.2, uVolumeSize.y);
     // Fūjin: a rajada acumulada (uGust) arrasta tudo para o lado, mais as peças mais leves
     p.x = uVolumeMin.x + mod(p.x - uVolumeMin.x + t * 0.8 + uGust * (0.6 + aParams.y) + sin(t + aParams.x) * 0.6, uVolumeSize.x);
@@ -109,6 +112,8 @@ export default function FallingLeaves({ volume, seed = 7, size = [0.22, 0.16], a
       uPointer: { value: new Vector2() },
       uPointerActive: { value: 0 },
       uAspect: { value: 1 },
+      uBaseMin: { value: new Vector3() },
+      uBaseSize: { value: new Vector3() },
       uVolumeMin: { value: new Vector3() },
       uVolumeSize: { value: new Vector3() },
       uColor: { value: new Color() },
@@ -117,8 +122,8 @@ export default function FallingLeaves({ volume, seed = 7, size = [0.22, 0.16], a
     }),
     [shape],
   );
-  uniforms.uVolumeMin.value.set(vx[0], vy[0], vz[0]);
-  uniforms.uVolumeSize.value.set(vx[1] - vx[0], vy[1] - vy[0], vz[1] - vz[0]);
+  uniforms.uBaseMin.value.set(vx[0], vy[0], vz[0]);
+  uniforms.uBaseSize.value.set(vx[1] - vx[0], vy[1] - vy[0], vz[1] - vz[0]);
 
   useFrame((state, delta) => {
     const mesh = meshRef.current;
@@ -133,7 +138,19 @@ export default function FallingLeaves({ volume, seed = 7, size = [0.22, 0.16], a
     uniforms.uColor.value.set(SCENE_ACCENTS[theme][accent]);
     uniforms.uPointer.value.set(pointer.x, pointer.y);
     uniforms.uPointerActive.value = pointer.active && !reducedMotion ? 1 : 0;
-    uniforms.uAspect.value = state.size.width / Math.max(1, state.size.height);
+    const aspect = state.size.width / Math.max(1, state.size.height);
+    uniforms.uAspect.value = aspect;
+    // Tela em pé (celular): a câmera vê uma faixa estreita e alta. A caixa, pensada para a tela
+    // deitada, deixava a maior parte das peças fora dos lados e as outras numa faixa horizontal.
+    // Aqui ela estreita e cresce para cima na proporção da tela (mesma quantidade, mais densas)
+    const portrait = Math.min(1, aspect);
+    const half = ((vx[1] - vx[0]) / 2) * Math.max(0.4, portrait);
+    const cx = (vx[0] + vx[1]) / 2;
+    const top = vy[1] + (1 / portrait - 1) * (vy[1] - vy[0]) * 0.6;
+    // ...e chega mais perto da câmera: em pé, a parte de baixo da tela é o chão logo à frente dela
+    const near = vz[1] + (1 / portrait - 1) * 10;
+    uniforms.uVolumeMin.value.set(cx - half, vy[0], vz[0]);
+    uniforms.uVolumeSize.value.set(half * 2, top - vy[0], near - vz[0]);
     if (!reducedMotion) {
       uniforms.uTime.value += delta;
       // A rajada empurra mais quanto mais forte (acumula: as peças não voltam quando o vento passa)
