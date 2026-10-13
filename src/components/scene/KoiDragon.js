@@ -5,33 +5,36 @@ import {
   AdditiveBlending, BufferAttribute, BufferGeometry, ConeGeometry, CylinderGeometry, DoubleSide, InstancedBufferAttribute,
   InstancedMesh, Matrix4, MeshBasicMaterial, NormalBlending, Object3D, Points, Quaternion, RingGeometry, ShaderMaterial, SphereGeometry, Vector3,
 } from 'three';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { mergeGeometries, mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { NOISE } from './glsl';
 import { koiGeometry } from './koiGeometry';
 import { warm } from './warmup';
 
-// 鯉の滝登り (登竜門): a carpa que vence a cachoeira vira dragão.
+// 鯉の滝登り (登竜門): a carpa que vence a cachoeira vira dragão, aqui um espírito de rio: o dragão
+// branco das águas (inspirado nos dragões de rio dos filmes de Miyazaki)
 //  0,0 s  a carpa dourada salta da água (espirro de gotas, anéis abrindo na superfície, névoa)
-//  0,5 s  no alto do salto, um clarão: ela vira dragão e a água sobe atrás numa coluna (a cachoeira
-//         que ela venceu). O corpo nasce incandescente e esfria até o ouro
-//  0,5–4,6 s o dragão sobe em espiral, serpenteando, atrás da pérola (宝珠) que brilha à frente:
-//         ouro metálico com escamas iridescentes, a barriga em placas de marfim, crista e leque da
-//         cauda em lâminas vermelhas, a crina e os bigodes em fitas que esvoaçam, chifres de cervo,
-//         olhos acesos; ruge no meio da subida. Um rastro de luz fica para trás
-//  4,6–5,9 s ele se desfaz em brasas, da cauda para a cabeça, no alto do céu
+//  0,5 s  no alto do salto, um clarão frio: ela vira dragão e a água sobe atrás numa coluna (a
+//         cachoeira que ela venceu). O corpo nasce luminoso e assenta no branco perolado
+//  0,5–4,6 s o dragão sobe em espiral, serpenteando: corpo longo de escamas brancas com brilho de
+//         madrepérola, a barriga em placas lilás, a crina verde-água e menta correndo pela espinha
+//         inteira até o tufo da cauda, cabeça de lobo com chifres finos cor de creme, orelhas, olhos
+//         verde-água acesos e bigodes longuíssimos fazendo laços no ar; patas finas, rosadas, com
+//         garras de ave. Ruge no meio da subida e deixa um rastro de água luminosa
+//  4,6–5,9 s ele se desfaz em borrifos de água, da cauda para a cabeça, no alto do céu
 // Fica montado (escondido) desde que as carpas aparecem: os shaders compilam antes, em segundo
 // plano, e o salto não espera a GPU. Coordenadas do rio (o grupo cresce com a distância da câmera)
 export const DRAGON = { duration: 6.2, segments: 88, sides: 14, length: 0.0189, rise: 0.5, dissolve: [4.6, 5.9] };
 
 const SEG = DRAGON.segments;
 const SIDES = DRAGON.sides;
-const SPINES = 26;
-const FIN = 9;
+const SPINES = 44;
+const FIN = 11;
 const LEGS = [[0.17, 1], [0.17, -1], [0.54, 1], [0.54, -1]];
-// Fitas: crina (mechas saindo da nuca), bigodes e as duas flâmulas da cauda; o rastro é à parte
-const MANE = 9;
-const MANE_PTS = 9;
-const WHISKER_PTS = 15;
+// Fitas: crina (mechas da nuca e, mais curtas, ao longo da espinha toda), os bigodes longos e as
+// duas mechas do tufo da cauda; o rastro é à parte
+const MANE = 52;
+const MANE_PTS = 8;
+const WHISKER_PTS = 26;
 const STREAMER_PTS = 10;
 const TRAIL_PTS = 30;
 const RIBBONS = [
@@ -67,8 +70,8 @@ const SHADE = /* glsl */ `
     vec3 col = mix(diffuse, metallic, metal);
     float spec = pow(max(dot(N, normalize(L + V)), 0.0), mix(18.0, 90.0, gloss));
     col += mix(vec3(1.0), albedo, metal * 0.5) * spec * (0.25 + gloss);
-    // Borda: luz fria da lua contornando a silhueta e um eco dourado
-    col += mix(vec3(0.55, 0.65, 1.0), vec3(1.0, 0.72, 0.3), metal) * fres * 0.55;
+    // Borda: luz fria da lua contornando a silhueta, com um eco verde-água (o brilho do rio)
+    col += mix(vec3(0.55, 0.65, 1.0), vec3(0.45, 0.95, 0.85), 0.35) * fres * 0.55;
     return col;
   }
   // Dissolução da cauda para a cabeça (u: 0 cabeça, 1 cauda); devolve a borda acesa (0..1)
@@ -116,40 +119,41 @@ const bodyFragment = /* glsl */ `
     vec2 id = floor(g);
     float r = length(vec2(f.x * 0.95, f.y - 0.5));
     float h = hash21(id);
-    // Cada escama tem um tom um pouco diferente (ouro, âmbar, um quase verde nas bordas: iridescência)
-    vec3 gold = mix(vec3(0.82, 0.38, 0.05), vec3(1.0, 0.62, 0.12), h);
-    vec3 albedo = gold * mix(0.5, 1.05, smoothstep(0.0, 0.42, r));
-    albedo *= 1.0 - smoothstep(0.42, 0.5, r) * 0.55;
-    // O dorso puxa para o laranja-vermelho, mais forte perto da cabeça
-    vec3 ember = mix(vec3(0.7, 0.1, 0.02), vec3(0.95, 0.3, 0.03), h);
-    albedo = mix(albedo, ember * mix(0.6, 1.0, smoothstep(0.0, 0.42, r)), back * (0.45 + 0.4 * smoothstep(0.4, 0.0, u)));
-    // Barriga: placas de marfim em faixas, com as emendas marcadas
-    float seam = smoothstep(0.8, 1.0, fract(u * 54.0));
-    vec3 ivory = mix(vec3(0.95, 0.78, 0.48), vec3(0.6, 0.38, 0.16), seam);
-    albedo = mix(albedo, ivory, belly);
+    // Escamas brancas, cada uma num branco um pouco diferente (marfim, gelo, um rosado)
+    vec3 pearl = mix(vec3(0.84, 0.84, 0.8), vec3(0.9, 0.88, 0.9), h);
+    vec3 albedo = pearl * mix(0.8, 1.02, smoothstep(0.0, 0.42, r));
+    // A borda de cada escama: um traço frio e fino
+    albedo = mix(albedo, vec3(0.55, 0.62, 0.68), smoothstep(0.43, 0.5, r) * 0.45);
+    // Barriga: placas lilás-acinzentadas em faixas, com as emendas marcadas
+    float seam = smoothstep(0.78, 1.0, fract(u * 54.0));
+    vec3 lilac = mix(vec3(0.46, 0.42, 0.58), vec3(0.26, 0.23, 0.36), seam);
+    albedo = mix(albedo, lilac, belly);
     // Cada escama inclinada um pouco: o reflexo pisca de escama em escama
     vec3 N = normalize(vNormalW);
     vec3 tilt = vec3(hash21(id + 7.1), hash21(id + 3.7), hash21(id + 1.3)) - 0.5;
-    N = normalize(N + tilt * 0.35 * (1.0 - belly) * smoothstep(0.5, 0.2, r));
+    N = normalize(N + tilt * 0.3 * (1.0 - belly) * smoothstep(0.5, 0.2, r));
     vec3 V = normalize(cameraPosition - vWorld);
-    vec3 col = shade(albedo, N, V, mix(0.92, 0.25, belly), mix(0.8, 0.4, belly));
-    // Iridescência: no rasante as escamas trocam o ouro por um verde-azulado frio
-    float graze = pow(1.0 - max(dot(N, V), 0.0), 2.0);
-    col += vec3(0.1, 0.55, 0.45) * graze * (1.0 - belly) * h * 0.35;
+    vec3 col = shade(albedo, N, V, mix(0.28, 0.12, belly), mix(0.85, 0.45, belly));
+    // Madrepérola: no rasante o branco passa por rosa, verde-água e lilás
+    float graze = pow(1.0 - max(dot(N, V), 0.0), 1.6);
+    vec3 nacre = 0.5 + 0.5 * cos(6.2832 * (graze * 1.3 + h * 0.4 + vec3(0.0, 0.33, 0.67)));
+    col += nacre * graze * (1.0 - belly) * 0.28;
     // A onda de luz que corre da cabeça à cauda
     float wave = exp(-pow((u - fract(uTime * 0.42)) * 10.0, 2.0));
-    col += vec3(1.5, 0.85, 0.25) * wave * 0.45 * (1.0 - belly * 0.6);
-    // Recém-nascido do clarão: incandescente, esfria até o ouro da cabeça para a cauda
-    col = mix(col, vec3(2.4, 1.6, 0.8), uHeat * smoothstep(-0.2, 0.6, uHeat - u * 0.6));
-    col = mix(col, vec3(3.0, 1.35, 0.3), burn);
+    col += vec3(0.5, 1.4, 1.2) * wave * 0.32 * (1.0 - belly * 0.6);
+    // Recém-nascido do clarão: luminoso, assenta no branco da cabeça para a cauda
+    col = mix(col, vec3(1.8, 2.3, 2.3), uHeat * smoothstep(-0.2, 0.6, uHeat - u * 0.6));
+    // Desfazendo-se em água: a borda acende em verde-água claro
+    col = mix(col, vec3(1.2, 2.6, 2.4), burn);
     gl_FragColor = vec4(col, 1.0);
     #include <colorspace_fragment>
   }
 `;
 
-// Peças facetadas (cabeça, mandíbula, patas, crista e leque): low-poly como o resto da cena, mas
-// no mesmo ouro do corpo. aKind: 0 ouro, 1 marfim (chifres, dentes, garras), 2 lâmina vermelha
-// (escurece na base e acende na ponta: aH), 3 olho aceso, 4 escuro (narinas, pupilas, boca)
+// Peças facetadas (cabeça, mandíbula, patas, tufos da crina e da cauda): low-poly como o resto da
+// cena, no mesmo branco perolado do corpo. aKind: 0 branco, 1 creme (chifres, dentes), 2 pelo da
+// crina (verde-água escuro na raiz, menta na ponta: aH), 3 olho aceso, 4 escuro (narinas, pupilas,
+// boca), 5 rosado (patas e garras)
 const facetVertex = /* glsl */ `
   attribute float aKind;
   attribute float aH;
@@ -193,21 +197,26 @@ const facetFragment = /* glsl */ `
     vec3 V = normalize(cameraPosition - vWorld);
     vec3 col;
     if (vKind < 0.5) {
-      col = shade(vec3(0.95, 0.52, 0.08), N, V, 0.92, 0.85);
+      col = shade(vec3(0.86, 0.86, 0.83), N, V, 0.25, 0.8);
+      float graze = pow(1.0 - max(dot(N, V), 0.0), 1.6);
+      col += (0.5 + 0.5 * cos(6.2832 * (graze * 1.3 + vec3(0.0, 0.33, 0.67)))) * graze * 0.25;
     } else if (vKind < 1.5) {
-      col = shade(vec3(0.95, 0.84, 0.62), N, V, 0.3, 0.6);
+      col = shade(vec3(0.86, 0.74, 0.52), N, V, 0.15, 0.55);
     } else if (vKind < 2.5) {
-      vec3 blade = mix(vec3(0.42, 0.02, 0.02), vec3(1.0, 0.32, 0.03), smoothstep(0.0, 0.75, vH));
-      blade = mix(blade, vec3(1.0, 0.75, 0.25), smoothstep(0.75, 1.0, vH));
-      col = shade(blade, N, V, 0.55, 0.7);
+      // Pelo: verde-água fundo na raiz, menta na ponta, com a ponta acesa pela lua
+      vec3 fur = mix(vec3(0.015, 0.2, 0.17), vec3(0.12, 0.55, 0.42), smoothstep(0.0, 0.7, vH));
+      fur = mix(fur, vec3(0.45, 0.9, 0.68), smoothstep(0.7, 1.0, vH));
+      col = shade(fur, N, V, 0.05, 0.3) + vec3(0.25, 0.7, 0.55) * pow(1.0 - max(dot(N, V), 0.0), 2.0) * 0.35 * vH;
     } else if (vKind < 3.5) {
-      // Olho: aceso por dentro (passa do limiar do bloom), pulsando de leve
-      col = vec3(3.2, 1.3, 0.2) * (0.85 + 0.15 * sin(uTime * 5.0));
+      // Olho: verde-água aceso por dentro (passa do limiar do bloom), pulsando de leve
+      col = vec3(0.35, 2.3, 1.7) * (0.88 + 0.12 * sin(uTime * 4.0));
+    } else if (vKind < 4.5) {
+      col = shade(vec3(0.03, 0.03, 0.04), N, V, 0.2, 0.9);
     } else {
-      col = shade(vec3(0.05, 0.02, 0.02), N, V, 0.2, 0.9);
+      col = shade(vec3(0.72, 0.5, 0.46), N, V, 0.1, 0.5);
     }
-    col = mix(col, vec3(2.4, 1.6, 0.8), uHeat * smoothstep(-0.2, 0.6, uHeat - vU * 0.6));
-    col = mix(col, vec3(3.0, 1.35, 0.3), burn);
+    col = mix(col, vec3(1.8, 2.3, 2.3), uHeat * smoothstep(-0.2, 0.6, uHeat - vU * 0.6));
+    col = mix(col, vec3(1.2, 2.6, 2.4), burn);
     gl_FragColor = vec4(col, 1.0);
     #include <colorspace_fragment>
   }
@@ -233,20 +242,20 @@ const ribbonFragment = /* glsl */ `
     vec3 col;
     float a;
     if (kind < 0.5) {
-      // Crina: vermelho escuro na raiz, chama laranja e a ponta dourada, em fios
-      col = mix(vec3(0.55, 0.03, 0.02), vec3(1.0, 0.36, 0.04), smoothstep(0.0, 0.65, t));
-      col = mix(col, vec3(1.0, 0.78, 0.3), smoothstep(0.7, 1.0, t));
-      col *= 0.72 + 0.28 * sin(vRib.y * 34.0 + t * 5.0);
+      // Crina: verde-água fundo na raiz, menta na ponta, em fios
+      col = mix(vec3(0.02, 0.24, 0.2), vec3(0.14, 0.6, 0.46), smoothstep(0.0, 0.6, t));
+      col = mix(col, vec3(0.5, 0.92, 0.72), smoothstep(0.65, 1.0, t));
+      col *= 0.7 + 0.3 * sin(vRib.y * 34.0 + t * 5.0);
       a = smoothstep(0.0, 0.35, across) * (1.0 - smoothstep(0.55, 1.0, t));
     } else if (kind < 1.5) {
-      col = mix(vec3(1.0, 0.72, 0.3), vec3(1.0, 0.95, 0.82), t);
+      col = mix(vec3(0.85, 0.86, 0.82), vec3(0.95, 1.0, 0.98), t);
       a = smoothstep(0.0, 0.55, across) * (1.0 - t * t);
     } else if (kind < 2.5) {
-      col = mix(vec3(0.7, 0.05, 0.02), vec3(1.0, 0.55, 0.1), t);
+      col = mix(vec3(0.03, 0.3, 0.24), vec3(0.45, 0.92, 0.7), t);
       a = smoothstep(0.0, 0.4, across) * (1.0 - smoothstep(0.45, 1.0, t));
     } else {
       // Rastro de luz (somado): mais forte perto da cauda, some no fim
-      col = vec3(1.6, 0.9, 0.3);
+      col = vec3(0.6, 1.5, 1.4);
       a = pow(across, 2.0) * (1.0 - t) * (1.0 - t) * 0.55;
     }
     gl_FragColor = vec4(col, a * uFade);
@@ -353,109 +362,123 @@ function piece(geometry, kind, { scale, root = [0, 0, 0], dir, h = false } = {})
   g.setAttribute('aU', new BufferAttribute(new Float32Array(n), 1));
   return g;
 }
-function join(pieces) {
-  const g = mergeGeometries(pieces);
+// `smooth`: solda os vértices iguais antes das normais (curvas lisas, não facetas): a cabeça, a
+// mandíbula e as patas; os tufos de pelo ficam facetados
+function join(pieces, smooth = false) {
+  let g = mergeGeometries(pieces);
+  if (smooth) g = mergeVertices(g, 1e-4);
   g.computeVertexNormals();
   return g;
 }
-const K = { GOLD: 0, IVORY: 1, RED: 2, EYE: 3, DARK: 4 };
+const K = { WHITE: 0, HORN: 1, FUR: 2, EYE: 3, DARK: 4, PINK: 5 };
 const sphere = (r, w = 10, h = 8) => new SphereGeometry(r, w, h);
 const cone = (r, len, sides = 6) => new ConeGeometry(r, len, sides);
 const cyl = (rt, rb, len, sides = 8) => new CylinderGeometry(rt, rb, len, sides);
 // Cilindro deitado ao longo de z (o topo, rt, para a frente), achatado na vertical
 function snout(rt, rb, len, flat) {
-  const g = cyl(rt, rb, len, 8);
+  const g = cyl(rt, rb, len, 12);
   g.scale(1, 1, flat);
   g.rotateX(Math.PI / 2);
   return g;
 }
 
-// Cabeça (frente em +z, alto em +y): crânio com testa marcada, focinho longo que sobe na ponta,
-// narinas, presas, olhos acesos sob as sobrancelhas, chifres de cervo, babados vermelhos nas
-// bochechas e a crista no alto
+// Cabeça (frente em +z, alto em +y), de lobo: crânio arredondado, focinho longo e esguio com a
+// ponte do nariz marcada, olhos amendoados verde-água sob a pálpebra pesada, orelhas pontudas para
+// trás, chifres finos cor de creme com duas pontas, e o pelo verde-água da crista e das bochechas
+// jogado para trás
 let headCache = null;
 function dragonHead() {
   if (headCache) return headCache;
+  const fur = (r, len, root, dir) => piece(cone(r, len, 5), K.FUR, { scale: [0.62, 1, 0.62], root, dir, h: true });
   const parts = [
-    piece(sphere(0.36, 12, 9), K.GOLD, { scale: [1, 0.78, 1.12] }),
-    piece(sphere(0.22, 10, 6), K.GOLD, { scale: [1.35, 0.55, 1.5], root: [0, 0.2, 0.16] }),
-    piece(snout(0.15, 0.27, 0.72, 0.72), K.GOLD, { root: [0, 0.0, 0.52] }),
-    piece(sphere(0.15, 10, 7), K.GOLD, { scale: [1.3, 0.85, 1], root: [0, 0.05, 0.88] }),
-    piece(sphere(0.045, 6, 5), K.DARK, { root: [0.075, 0.13, 0.96] }),
-    piece(sphere(0.045, 6, 5), K.DARK, { root: [-0.075, 0.13, 0.96] }),
-    // Céu da boca escuro entre as presas
-    piece(snout(0.1, 0.18, 0.55, 0.3), K.DARK, { root: [0, -0.12, 0.52] }),
+    piece(sphere(0.3, 14, 10), K.WHITE, { scale: [1, 0.82, 1.05], root: [0, 0.04, 0] }),
+    // Testa: a massa sobre os olhos, que desce para a ponte do nariz
+    piece(sphere(0.2, 12, 7), K.WHITE, { scale: [1.25, 0.5, 1.35], root: [0, 0.19, 0.17] }),
+    piece(snout(0.095, 0.23, 0.66, 0.66), K.WHITE, { root: [0, -0.02, 0.5] }),
+    // Bochechas: a massa do maxilar de lobo, emendando o focinho no crânio
+    piece(sphere(0.11, 12, 8), K.WHITE, { scale: [0.85, 0.75, 1.45], root: [0.14, -0.05, 0.24] }),
+    piece(sphere(0.11, 12, 8), K.WHITE, { scale: [0.85, 0.75, 1.45], root: [-0.14, -0.05, 0.24] }),
+    piece(snout(0.05, 0.11, 0.62, 0.55), K.WHITE, { root: [0, 0.085, 0.5] }),
+    // Almofada do nariz e as narinas
+    piece(sphere(0.095, 12, 8), K.WHITE, { scale: [1.02, 0.68, 1.15], root: [0, 0.03, 0.8] }),
+    piece(sphere(0.018, 8, 6), K.DARK, { scale: [1.4, 0.55, 1], root: [0.045, 0.07, 0.9] }),
+    piece(sphere(0.018, 8, 6), K.DARK, { scale: [1.4, 0.55, 1], root: [-0.045, 0.07, 0.9] }),
+    // A linha da boca, escura, entre o focinho e a mandíbula
+    piece(snout(0.065, 0.15, 0.52, 0.25), K.DARK, { root: [0, -0.09, 0.5] }),
   ];
   for (const sx of [-1, 1]) {
     parts.push(
-      // Presas
-      piece(cone(0.03, 0.17, 5), K.IVORY, { root: [sx * 0.1, -0.08, 0.74], dir: [sx * 0.1, -1, 0.1] }),
-      piece(cone(0.022, 0.1, 5), K.IVORY, { root: [sx * 0.13, -0.08, 0.55], dir: [0, -1, 0] }),
-      // Olho aceso, a pupila em fenda e a sobrancelha grossa jogada para trás
-      piece(sphere(0.08, 10, 8), K.EYE, { scale: [0.6, 0.9, 1.25], root: [sx * 0.21, 0.13, 0.3] }),
-      piece(sphere(0.07, 6, 6), K.DARK, { scale: [0.3, 1.0, 0.25], root: [sx * 0.245, 0.13, 0.33] }),
-      piece(cone(0.075, 0.42, 5), K.GOLD, { root: [sx * 0.19, 0.22, 0.38], dir: [sx * 0.35, 0.45, -1] }),
-      // Chifres: haste longa para trás e para cima, com duas pontas
-      piece(cyl(0.022, 0.055, 1.0, 6), K.IVORY, { root: [sx * 0.15, 0.3, 0.0], dir: [sx * 0.3, 0.55, -1] }),
-      piece(cone(0.03, 0.3, 5), K.IVORY, { root: [sx * 0.24, 0.47, -0.3], dir: [sx * 0.4, 1, 0.1] }),
-      piece(cone(0.025, 0.24, 5), K.IVORY, { root: [sx * 0.3, 0.59, -0.55], dir: [sx * 0.6, 0.9, 0.2] }),
-      // Bochechas: babado de lâminas vermelhas abrindo para trás
-      ...[[-0.2, 0.36], [0.12, 0.42], [0.42, 0.34], [-0.5, 0.28]].map(([up, len]) => piece(cone(0.06, len, 4), K.RED, {
-        scale: [1, 1, 0.35], root: [sx * 0.28, -0.04 + up * 0.08, 0.12], dir: [sx * 0.75, up, -1], h: true,
-      })),
+      // Presas pequenas
+      piece(cone(0.02, 0.1, 6), K.HORN, { root: [sx * 0.07, -0.085, 0.7], dir: [0, -1, 0.1] }),
+      // Olho amendoado aceso, a pupila em fenda e a pálpebra de cima, pesada (o olhar firme)
+      piece(sphere(0.07, 12, 8), K.EYE, { scale: [0.55, 0.72, 1.45], root: [sx * 0.2, 0.12, 0.33] }),
+      piece(sphere(0.06, 8, 6), K.DARK, { scale: [0.25, 0.95, 0.22], root: [sx * 0.232, 0.12, 0.36] }),
+      piece(sphere(0.085, 10, 6), K.WHITE, { scale: [0.72, 0.36, 1.5], root: [sx * 0.2, 0.175, 0.33] }),
+      // Orelha pontuda, deitada para trás
+      piece(cone(0.065, 0.28, 5), K.WHITE, { scale: [1, 1, 0.42], root: [sx * 0.2, 0.22, -0.1], dir: [sx * 0.7, 0.7, -0.55] }),
+      // Chifre: haste fina para trás e para cima, uma ponta para a frente e outra no alto
+      piece(cyl(0.017, 0.045, 0.85, 6), K.HORN, { root: [sx * 0.11, 0.29, 0.02], dir: [sx * 0.2, 0.55, -1] }),
+      piece(cone(0.022, 0.22, 5), K.HORN, { root: [sx * 0.15, 0.4, -0.18], dir: [sx * 0.2, 1, 0.35] }),
+      piece(cone(0.018, 0.2, 5), K.HORN, { root: [sx * 0.19, 0.5, -0.43], dir: [sx * 0.35, 0.9, -0.1] }),
+      // Pelo das bochechas, jogado para trás e para fora
+      ...[[0.16, 0.5], [0.08, 0.62], [0.0, 0.7], [-0.08, 0.66], [-0.16, 0.56], [-0.22, 0.44]].map(([y, len], i) => fur(0.085, len, [sx * 0.24, y, 0.04 - i * 0.06], [sx * 0.32, 0.18 - i * 0.09, -1])),
     );
   }
-  // Crista no alto da cabeça
-  [[0.32, 0.3, 0.06], [0.26, 0.1, 0.05], [0.18, -0.12, 0.045]].forEach(([y, z, r]) => parts.push(
-    piece(cone(r, 0.3, 4), K.RED, { scale: [0.4, 1, 1], root: [0, y, z], dir: [0, 0.8, -1], h: true }),
-  ));
-  headCache = join(parts);
+  // Crista de pelo: da testa até a nuca, cada tufo maior que o anterior, jogados para trás
+  for (let i = 0; i < 10; i += 1) {
+    const k = i / 9;
+    const x = (i % 2 ? 1 : -1) * (0.04 + (i % 3) * 0.03);
+    parts.push(fur(0.085 + k * 0.025, 0.42 + k * 0.42, [x, 0.27 - k * 0.05, 0.2 - k * 0.65], [x * 2.5, 0.65 - k * 0.3, -1]));
+  }
+  headCache = join(parts, true);
   return headCache;
 }
 
-// Mandíbula (dobradiça na origem): abre girando em x. Dentes para cima e a barbicha embaixo
+// Mandíbula (dobradiça na origem): abre girando em x. Dentes para cima e a barbicha de pelo embaixo
 let jawCache = null;
 function dragonJaw() {
   if (jawCache) return jawCache;
   const parts = [
-    piece(snout(0.1, 0.19, 0.6, 0.6), K.GOLD, { root: [0, -0.04, 0.34] }),
-    piece(snout(0.075, 0.14, 0.5, 0.35), K.DARK, { root: [0, 0.015, 0.34] }),
-    piece(cone(0.05, 0.45, 5), K.GOLD, { root: [0, -0.1, 0.26], dir: [0, -0.8, -1] }),
-    piece(cone(0.035, 0.32, 5), K.IVORY, { root: [0, -0.08, 0.46], dir: [0, -1, -0.6] }),
+    piece(snout(0.072, 0.16, 0.56, 0.55), K.WHITE, { root: [0, -0.04, 0.31] }),
+    piece(snout(0.055, 0.12, 0.46, 0.35), K.DARK, { root: [0, 0.012, 0.31] }),
+    piece(cone(0.06, 0.38, 5), K.FUR, { scale: [0.7, 1, 0.7], root: [0, -0.1, 0.24], dir: [0, -0.7, -1], h: true }),
+    piece(cone(0.045, 0.3, 5), K.FUR, { scale: [0.7, 1, 0.7], root: [0.06, -0.09, 0.12], dir: [0.3, -0.6, -1], h: true }),
+    piece(cone(0.045, 0.3, 5), K.FUR, { scale: [0.7, 1, 0.7], root: [-0.06, -0.09, 0.12], dir: [-0.3, -0.6, -1], h: true }),
   ];
   for (const sx of [-1, 1]) {
-    parts.push(piece(cone(0.025, 0.12, 5), K.IVORY, { root: [sx * 0.08, 0.02, 0.56], dir: [0, 1, 0.1] }));
-    parts.push(piece(cone(0.02, 0.08, 5), K.IVORY, { root: [sx * 0.11, 0.02, 0.4], dir: [0, 1, 0] }));
+    parts.push(piece(cone(0.018, 0.08, 6), K.HORN, { root: [sx * 0.06, 0.02, 0.5], dir: [0, 1, 0.1] }));
+    parts.push(piece(cone(0.014, 0.055, 6), K.HORN, { root: [sx * 0.09, 0.02, 0.38], dir: [0, 1, 0] }));
   }
-  jawCache = join(parts);
+  jawCache = join(parts, true);
   return jawCache;
 }
 
-// Pata: coxa, antebraço e quatro garras, ao longo de +y a partir da junta (garras para +z)
+// Pata fina: coxa branca, o tufo de pelo no cotovelo, a canela rosada e quatro garras de ave
 let legCache = null;
 function dragonLeg() {
   if (legCache) return legCache;
   const parts = [
-    piece(cyl(0.065, 0.1, 0.32, 7), K.GOLD, { root: [0, 0.16, 0] }),
-    piece(sphere(0.07, 7, 5), K.GOLD, { root: [0, 0.32, 0] }),
-    piece(cyl(0.045, 0.065, 0.28, 7), K.GOLD, { root: [0, 0.32, 0], dir: [0, 1, 0.45] }),
-    piece(cone(0.05, 0.22, 4), K.RED, { scale: [0.4, 1, 1], root: [0, 0.2, -0.05], dir: [0, 0.3, -1], h: true }),
+    piece(cyl(0.05, 0.08, 0.3, 7), K.WHITE, { root: [0, 0.15, 0] }),
+    piece(sphere(0.055, 7, 5), K.WHITE, { root: [0, 0.3, 0] }),
+    piece(cone(0.045, 0.24, 5), K.FUR, { scale: [0.6, 1, 0.6], root: [0, 0.3, -0.03], dir: [0, 0.2, -1], h: true }),
+    piece(cyl(0.028, 0.045, 0.3, 6), K.PINK, { root: [0, 0.3, 0], dir: [0, 1, 0.5] }),
   ];
-  [-0.06, -0.02, 0.02, 0.06].forEach((x) => parts.push(
-    piece(cone(0.02, 0.15, 5), K.IVORY, { root: [x, 0.56, 0.12], dir: [x * 4, 0.2, 1] }),
+  [-0.055, -0.018, 0.018, 0.055].forEach((x) => parts.push(
+    piece(cone(0.014, 0.16, 5), K.PINK, { root: [x, 0.56, 0.13], dir: [x * 5, 0.15, 1] }),
   ));
-  legCache = join(parts);
+  parts.push(piece(cone(0.014, 0.12, 5), K.PINK, { root: [0, 0.55, 0.08], dir: [0, 0.2, -1] }));
+  legCache = join(parts, true);
   return legCache;
 }
-// Lâmina da crista e do leque: fina (achatada em x), curva para trás
+// Tufo de pelo da crina e da cauda: fino, curvo para trás
 let bladeCache = null;
 function dragonBlade() {
   if (bladeCache) return bladeCache;
-  const g = cone(0.075, 0.32, 4);
-  g.translate(0, 0.16, 0);
+  const g = cone(0.09, 0.3, 6);
+  g.translate(0, 0.15, 0);
   const p = g.attributes.position;
-  for (let i = 0; i < p.count; i += 1) p.setZ(i, p.getZ(i) - (p.getY(i) / 0.32) ** 2 * 0.09);
-  bladeCache = join([piece(g, K.RED, { scale: [0.3, 1, 1], h: true })]);
+  for (let i = 0; i < p.count; i += 1) p.setZ(i, p.getZ(i) - (p.getY(i) / 0.3) ** 2 * 0.14);
+  bladeCache = join([piece(g, K.FUR, { scale: [0.62, 1, 0.95], h: true })]);
   return bladeCache;
 }
 
@@ -586,13 +609,13 @@ export default function KoiDragon({ run, onDone }) {
       const list = Array.from({ length: n }, () => ({ p: new Vector3(), v: new Vector3(), life: 0 }));
       return { geometry, material, points, list, next: 0 };
     };
-    const sparks = makePoints(160, new Vector3(1.4, 0.85, 0.35), 9, 1, true);
-    const embers = makePoints(220, new Vector3(1.8, 0.75, 0.2), 11, 1, true);
+    const sparks = makePoints(160, new Vector3(0.7, 1.3, 1.2), 8, 1, true);
+    const embers = makePoints(220, new Vector3(0.75, 1.35, 1.45), 10, 1, true);
     const drops = makePoints(80, new Vector3(0.85, 0.94, 1), 7, 0, false);
     const mist = makePoints(36, new Vector3(0.78, 0.86, 1), 150, 1, false, 0.22);
     const pearl = makePoints(1, new Vector3(2.2, 1.85, 1.3), 46, 1, true);
     const halo = makePoints(1, new Vector3(1.0, 0.7, 0.35), 160, 1, true, 0.45);
-    const flash = makePoints(1, new Vector3(1.4, 1.1, 0.7), 620, 1, true);
+    const flash = makePoints(1, new Vector3(1.15, 1.4, 1.45), 620, 1, true);
     return { koiMat, ringGeo, ringMats, sparks, embers, drops, mist, pearl, halo, flash };
   }, []);
 
@@ -849,19 +872,23 @@ export default function KoiDragon({ run, onDone }) {
       mesh.setMatrixAt(index, o.matrix);
     };
     for (let s = 0; s < SPINES; s += 1) {
-      const i = Math.round(3 + (s / (SPINES - 1)) * (SEG * 0.86 - 3));
-      tmp.tip.copy(tmp.p[i]).addScaledVector(tmp.b[i], tmp.r[i] * 0.85);
-      tmp.v.copy(tmp.b[i]).addScaledVector(tmp.t[i], -0.55).normalize();
-      const grow = Math.sin(Math.PI * Math.min(1, (s + 2) / SPINES));
-      placeBasis(s, tmp.tip, tmp.v, tmp.n[i], 0.45 + tmp.r[i] * 2.6 * grow, parts.blades);
+      const k = s / (SPINES - 1);
+      const i = Math.round(2 + k * (SEG * 0.92 - 2));
+      const lean = (s % 2 ? 1 : -1) * 0.28;
+      tmp.tip.copy(tmp.p[i]).addScaledVector(tmp.b[i], tmp.r[i] * 0.82).addScaledVector(tmp.n[i], lean * tmp.r[i] * 0.5);
+      // Deitados para trás sobre o dorso (pelo, não espinho), maiores na nuca
+      tmp.v.copy(tmp.b[i]).multiplyScalar(0.55).addScaledVector(tmp.t[i], -1.0).addScaledVector(tmp.n[i], lean).normalize();
+      const sway = 1 + Math.sin(age * 6 - s * 0.5) * 0.06;
+      placeBasis(s, tmp.tip, tmp.v, tmp.n[i], (0.5 + tmp.r[i] * 2.0) * (1.35 - k * 0.6) * sway, parts.blades);
     }
     // Leque da cauda: lâminas abrindo do dorso para a barriga, no fim do corpo
     const tailI = SEG - 3;
     for (let f = 0; f < FIN; f += 1) {
-      const a = -1.05 + (f / (FIN - 1)) * 2.1;
-      tmp.v.copy(tmp.b[tailI]).multiplyScalar(Math.sin(a)).addScaledVector(tmp.t[tailI], -Math.cos(a) * 1.3).normalize();
-      const flutter = 1 + Math.sin(age * 9 + f) * 0.08;
-      placeBasis(SPINES + f, tmp.p[tailI], tmp.v, tmp.n[tailI], tmp.tip.set(1.8, (2.9 - Math.abs(a) * 0.9) * flutter, 1.5), parts.blades);
+      const phi = (f / FIN) * Math.PI * 2;
+      tmp.v.copy(tmp.b[tailI]).multiplyScalar(Math.cos(phi) * 0.55).addScaledVector(tmp.n[tailI], Math.sin(phi) * 0.55)
+        .addScaledVector(tmp.t[tailI], -1.3).normalize();
+      const flutter = 1 + Math.sin(age * 8 + f) * 0.1;
+      placeBasis(SPINES + f, tmp.p[tailI], tmp.v, tmp.n[tailI], tmp.tip.set(1.7, (2.6 + (f % 3) * 0.35) * flutter, 1.7), parts.blades);
     }
     parts.blades.instanceMatrix.needsUpdate = true;
     // Patas: saem dos lados, para baixo e para trás, remando devagar
@@ -884,16 +911,18 @@ export default function KoiDragon({ run, onDone }) {
       head.quaternion.setFromRotationMatrix(tmp.m);
       head.position.copy(tmp.p[0]).addScaledVector(tmp.t[0], 0.08);
       const roar = Math.max(0, Math.sin(Math.PI * Math.min(1, Math.max(0, (age - 1.6) / 0.9))));
-      if (jawRef.current) jawRef.current.rotation.x = 0.1 + Math.sin(age * 3) * 0.04 + roar * 0.55;
+      if (jawRef.current) jawRef.current.rotation.x = 0.04 + Math.sin(age * 3) * 0.02 + roar * 0.32;
     }
 
     // Fitas: crina saindo da nuca e caindo para trás pelo caminho do corpo
     const rpos = parts.ribbonGeo.attributes.position;
     let start = 0;
     for (let m = 0; m < MANE; m += 1) {
-      const root = 1.5 + m * 0.9;
-      const around = Math.PI * 0.5 + (m % 2 ? 1 : -1) * (0.25 + (m % 4) * 0.22);
-      const len = 1.15 - (m / MANE) * 0.35;
+      const nape = m < 8;
+      const along01 = nape ? 0 : (m - 8) / (MANE - 9);
+      const root = nape ? 1.2 + m * 0.8 : 8 + along01 * (SEG * 0.85 - 8);
+      const around = Math.PI * 0.5 + (m % 2 ? 1 : -1) * (0.2 + (m % 4) * 0.2);
+      const len = nape ? 1.55 - m * 0.05 : 0.62 - along01 * 0.3;
       for (let k = 0; k < MANE_PTS; k += 1) {
         const f = root + k * 1.6 * len;
         const i = Math.min(SEG - 1, Math.round(f));
@@ -903,22 +932,24 @@ export default function KoiDragon({ run, onDone }) {
         const lift = tmp.r[i] * 0.85 + k * 0.05 * len;
         tmp.pts[k].addScaledVector(tmp.n[i], ca * lift).addScaledVector(tmp.b[i], sa * lift);
         tmp.pts[k].addScaledVector(tmp.n[i], Math.sin(age * 8 - k * 0.8 + m) * 0.025 * k);
-        tmp.widths[k] = (0.075 - k * 0.006) * len;
+        tmp.widths[k] = (0.1 - k * 0.009) * len;
       }
       writeRibbon(rpos, start, MANE_PTS);
       start += MANE_PTS;
     }
     // Bigodes: saem do focinho e seguem o caminho, abrindo para os lados e ondulando
     for (const side of [-1, 1]) {
-      tmp.tip.set(side * 0.13, 0.08, 0.9).multiplyScalar(1.08).applyQuaternion(head.quaternion).add(head.position);
+      tmp.tip.set(side * 0.1, 0.05, 0.86).multiplyScalar(1.22).applyQuaternion(head.quaternion).add(head.position);
       for (let k = 0; k < WHISKER_PTS; k += 1) {
-        const f = k * 1.35;
+        const f = k * 1.45;
         const i = Math.min(SEG - 1, Math.round(f));
         along(f, tmp.pts[k]).sub(tmp.p[0]).add(tmp.tip);
-        const spread = k * 0.045;
-        const wave = Math.sin(age * 6 - k * 0.55 + side) * 0.012 * k;
-        tmp.pts[k].addScaledVector(tmp.n[i], side * spread).addScaledVector(tmp.b[i], wave - k * 0.01);
-        tmp.widths[k] = 0.022 * (1 - k / WHISKER_PTS) + 0.004;
+        // Abrem para os lados e fazem laços lentos no ar, mais soltos na ponta
+        const loose = k / WHISKER_PTS;
+        const spread = k * 0.05 + Math.sin(age * 2.2 - k * 0.32 + side * 1.3) * 0.35 * loose * loose;
+        const wave = Math.sin(age * 3.1 - k * 0.38 + side) * 0.5 * loose * loose;
+        tmp.pts[k].addScaledVector(tmp.n[i], side * spread).addScaledVector(tmp.b[i], wave - k * 0.008);
+        tmp.widths[k] = 0.028 * (1 - loose) + 0.005;
       }
       writeRibbon(rpos, start, WHISKER_PTS);
       start += WHISKER_PTS;
@@ -947,13 +978,14 @@ export default function KoiDragon({ run, onDone }) {
     const lead = fx.pearl.list[0];
     headAt(t0 + 0.32, lead.p);
     lead.p.y += Math.sin(age * 3) * 0.08;
-    lead.life = born * (1 - Math.min(1, Math.max(0, (age - d0 + 0.3) / 0.6)));
+    // O espírito de rio não persegue pérola: ela fica apagada
+    lead.life = 0;
     fx.halo.list[0].p.copy(lead.p);
     fx.halo.list[0].life = lead.life * (0.8 + Math.sin(age * 4) * 0.2);
     flushPoints(fx.pearl, dt, 0, 0);
     flushPoints(fx.halo, dt, 0, 0);
 
-    // Faíscas soltas pelo corpo que flutuam e apagam; na dissolução, brasas subindo da borda
+    // Gotas brilhantes soltas pelo corpo que flutuam e apagam; na dissolução, o borrifo da borda
     if (alive && dissolve === 0) {
       for (let s = 0; s < 3; s += 1) {
         const i = Math.floor(Math.random() * SEG * 0.85);
@@ -971,7 +1003,8 @@ export default function KoiDragon({ run, onDone }) {
       }
     }
     flushPoints(fx.sparks, dt, 0, 1.0);
-    flushPoints(fx.embers, dt, -0.6, 0.9, 1.2);
+    // Borrifo: sobe com o impulso e cai de volta, como água
+    flushPoints(fx.embers, dt, 1.6, 0.85, 0.8);
   });
 
   const dragon = { dragon: true };
@@ -986,8 +1019,8 @@ export default function KoiDragon({ run, onDone }) {
       <primitive object={parts.blades} userData={dragon} />
       <primitive object={parts.legs} userData={dragon} />
       <group ref={headRef} userData={dragon}>
-        <mesh geometry={dragonHead()} material={body.facetMat} frustumCulled={false} scale={1.08} />
-        <mesh ref={jawRef} geometry={dragonJaw()} material={body.facetMat} frustumCulled={false} position={[0, -0.14, 0.11]} scale={1.08} />
+        <mesh geometry={dragonHead()} material={body.facetMat} frustumCulled={false} scale={1.22} />
+        <mesh ref={jawRef} geometry={dragonJaw()} material={body.facetMat} frustumCulled={false} position={[0, -0.155, 0.11]} scale={1.22} />
       </group>
       <mesh geometry={parts.ribbonGeo} material={parts.ribbonMat} renderOrder={5} frustumCulled={false} userData={dragon} />
       <mesh geometry={parts.trailGeo} material={parts.trailMat} renderOrder={5} frustumCulled={false} userData={dragon} />
