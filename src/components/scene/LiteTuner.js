@@ -85,6 +85,7 @@ export function LiteLoop({ onDpr }) {
     let lastScroll = 0;
     const gaps = [];
     const seen = camera.matrixWorld.clone();
+    const size = [0, 0];
     // As transições de cor (tema, estação) levam quase um segundo: segue desenhando um pouco
     const wake = () => { dirty = Math.max(dirty, 40); };
     const unsubscribe = journeyStore.subscribe((st, prev) => {
@@ -92,6 +93,7 @@ export function LiteLoop({ onDpr }) {
       wake();
     });
     window.addEventListener('resize', wake);
+    document.addEventListener('visibilitychange', wake);
     const tick = (now) => {
       raf = requestAnimationFrame(tick);
       // Intervalo entre quadros da página enquanto a cena desenha: mede se a máquina dá conta
@@ -116,6 +118,14 @@ export function LiteLoop({ onDpr }) {
           set(Math.min(LITE_DPR.max, current * 1.12));
         }
       }
+      // Canvas redimensionado (a resolução escolhida pelo teste, a janela): redimensionar apaga o
+      // desenho, então redesenha mesmo sem nada ter mudado na cena (senão a tela ficava preta até rolar)
+      const { width, height } = gl.domElement;
+      if (width !== size[0] || height !== size[1]) {
+        size[0] = width;
+        size[1] = height;
+        dirty = Math.max(dirty, 2);
+      }
       if (!dirty || document.hidden) return;
       // Máquina fraca: rolando, a cena espera (a câmera alcança quando a rolagem para)
       if (stage && now - lastScroll < 180) return;
@@ -135,6 +145,7 @@ export function LiteLoop({ onDpr }) {
       cancelAnimationFrame(raf);
       unsubscribe();
       window.removeEventListener('resize', wake);
+      document.removeEventListener('visibilitychange', wake);
     };
   }, [advance, camera, gl, onDpr]);
   return null;
