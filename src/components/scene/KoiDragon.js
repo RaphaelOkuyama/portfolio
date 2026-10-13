@@ -153,7 +153,7 @@ const bodyFragment = /* glsl */ `
 // Peças facetadas (cabeça, mandíbula, patas, tufos da crina e da cauda): low-poly como o resto da
 // cena, no mesmo branco perolado do corpo. aKind: 0 branco, 1 creme (chifres, dentes), 2 pelo da
 // crina (verde-água escuro na raiz, menta na ponta: aH), 3 olho aceso, 4 escuro (narinas, pupilas,
-// boca), 5 rosado (patas e garras)
+// boca), 5 rosado (patas e garras), 6 contorno do olho
 const facetVertex = /* glsl */ `
   attribute float aKind;
   attribute float aH;
@@ -212,8 +212,11 @@ const facetFragment = /* glsl */ `
       col = vec3(0.35, 2.3, 1.7) * (0.88 + 0.12 * sin(uTime * 4.0));
     } else if (vKind < 4.5) {
       col = shade(vec3(0.03, 0.03, 0.04), N, V, 0.2, 0.9);
-    } else {
+    } else if (vKind < 5.5) {
       col = shade(vec3(0.72, 0.5, 0.46), N, V, 0.1, 0.5);
+    } else {
+      // Contorno do olho: verde-água bem escuro (preto puro virava bolinha de frente)
+      col = shade(vec3(0.01, 0.09, 0.085), N, V, 0.3, 0.9);
     }
     col = mix(col, vec3(1.8, 2.3, 2.3), uHeat * smoothstep(-0.2, 0.6, uHeat - vU * 0.6));
     col = mix(col, vec3(1.2, 2.6, 2.4), burn);
@@ -338,8 +341,8 @@ const ringVertex = /* glsl */ `
 const UP = new Vector3(0, 1, 0);
 function piece(geometry, kind, { scale, root = [0, 0, 0], dir, h = false } = {}) {
   let g = geometry.index ? geometry.toNonIndexed() : geometry;
-  g.deleteAttribute('uv');
-  g.deleteAttribute('normal');
+  if (g.attributes.uv) g.deleteAttribute('uv');
+  if (g.attributes.normal) g.deleteAttribute('normal');
   if (scale) g.scale(...scale);
   const pos = g.attributes.position;
   const n = pos.count;
@@ -370,7 +373,7 @@ function join(pieces, smooth = false) {
   g.computeVertexNormals();
   return g;
 }
-const K = { WHITE: 0, HORN: 1, FUR: 2, EYE: 3, DARK: 4, PINK: 5 };
+const K = { WHITE: 0, HORN: 1, FUR: 2, EYE: 3, DARK: 4, PINK: 5, RIM: 6 };
 const sphere = (r, w = 10, h = 8) => new SphereGeometry(r, w, h);
 const cone = (r, len, sides = 6) => new ConeGeometry(r, len, sides);
 const cyl = (rt, rb, len, sides = 8) => new CylinderGeometry(rt, rb, len, sides);
@@ -382,72 +385,260 @@ function snout(rt, rb, len, flat) {
   return g;
 }
 
+// Escultura por seções (loft): uma superfície só, contínua, de trás para a frente. `rings` seções;
+// em cada uma, `at(s)` dá z, a meia-largura w, as alturas para cima (ht) e para baixo (hb) a partir
+// do centro cy, e `bump(s, a)` empurra a superfície para fora (ou para dentro) no ângulo a (0 = lado,
+// π/2 = em cima). A seção é uma superelipse (um pouco quadrada, como focinho). Pontas fechadas
+const keys = (frames) => (s) => {
+  // Catmull-Rom entre os quadros-chave [s, ...valores]
+  let i = 0;
+  while (i < frames.length - 2 && s > frames[i + 1][0]) i += 1;
+  const [s0, ...a] = frames[Math.max(0, i - 1)];
+  const [s1, ...b] = frames[i];
+  const [s2, ...c] = frames[i + 1];
+  const [, ...d] = frames[Math.min(frames.length - 1, i + 2)];
+  const t = Math.min(1, Math.max(0, (s - s1) / Math.max(1e-6, s2 - s1)));
+  const t2 = t * t;
+  const t3 = t2 * t;
+  void s0;
+  return b.map((p1, k) => {
+    const p0 = a[k];
+    const p2 = c[k];
+    const p3 = d[k];
+    return 0.5 * ((2 * p1) + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 + (-p0 + 3 * p1 - 3 * p2 + p3) * t3);
+  });
+};
+const gauss = (x, w) => Math.exp(-(x * x) / (w * w));
+function loft({ rings = 34, sides = 28, at, bump = () => 0, power = 2.4 }) {
+  const pos = [];
+  const index = [];
+  const e = 2 / power;
+  for (let r = 0; r < rings; r += 1) {
+    const s = r / (rings - 1);
+    const { z, w, ht, hb, cy } = at(s);
+    for (let j = 0; j < sides; j += 1) {
+      const a = (j / sides) * Math.PI * 2;
+      const c = Math.cos(a);
+      const n = Math.sin(a);
+      const k = 1 + bump(s, a);
+      const x = Math.sign(c) * Math.abs(c) ** e * w * k;
+      const y = cy + Math.sign(n) * Math.abs(n) ** e * (n >= 0 ? ht : hb) * k;
+      pos.push(x, y, z);
+    }
+  }
+  for (let r = 0; r < rings - 1; r += 1) {
+    for (let j = 0; j < sides; j += 1) {
+      const a = r * sides + j;
+      const b = r * sides + ((j + 1) % sides);
+      index.push(a, b, a + sides, b, b + sides, a + sides);
+    }
+  }
+  // Tampas: um ponto no centro de cada ponta
+  const back = pos.length / 3;
+  const b0 = at(0);
+  pos.push(0, b0.cy, b0.z - 0.01);
+  const front = back + 1;
+  const b1 = at(1);
+  pos.push(0, b1.cy, b1.z + 0.01);
+  const last = (rings - 1) * sides;
+  for (let j = 0; j < sides; j += 1) {
+    index.push(back, (j + 1) % sides, j);
+    index.push(front, last + j, last + ((j + 1) % sides));
+  }
+  const g = new BufferGeometry();
+  g.setAttribute('position', new BufferAttribute(new Float32Array(pos), 3));
+  g.setIndex(index);
+  g.setAttribute('uv', new BufferAttribute(new Float32Array((pos.length / 3) * 2), 2));
+  g.setAttribute('normal', new BufferAttribute(new Float32Array(pos.length), 3));
+  return g;
+}
+// Mecha de pelo (como os tufos desenhados nos filmes): lâmina ao longo de +y que afina até a ponta,
+// curva para trás (-z) e com uma quina no meio (pega a luz e dá volume). `bend` curva, `wave` ondula
+function lock(len, width, { bend = 0.35, wave = 0.08, steps = 12 } = {}) {
+  const pos = [];
+  const index = [];
+  for (let i = 0; i <= steps; i += 1) {
+    const t = i / steps;
+    const w = width * (1 - t) ** 0.75 * (0.55 + 0.45 * Math.sin(Math.PI * Math.min(1, t * 2.2 + 0.25)));
+    const y = t * len;
+    const z = -t * t * len * bend;
+    const x = Math.sin(t * Math.PI * 1.5) * len * wave;
+    const ridge = w * 0.22;
+    pos.push(x - w / 2, y, z, x, y, z + ridge, x + w / 2, y, z);
+    if (i < steps) {
+      const a = i * 3;
+      index.push(a, a + 3, a + 1, a + 1, a + 3, a + 4, a + 1, a + 4, a + 2, a + 2, a + 4, a + 5);
+    }
+  }
+  const g = new BufferGeometry();
+  g.setAttribute('position', new BufferAttribute(new Float32Array(pos), 3));
+  g.setIndex(index);
+  return g;
+}
+// Chifre: tubo que afina e curva para trás ao longo de +y
+function horn(len, r0, r1, { bend = 0.3, sides = 8, steps = 10 } = {}) {
+  const pos = [];
+  const index = [];
+  for (let i = 0; i <= steps; i += 1) {
+    const t = i / steps;
+    const r = r0 + (r1 - r0) * t;
+    const y = t * len;
+    const z = -t * t * len * bend;
+    for (let j = 0; j < sides; j += 1) {
+      const a = (j / sides) * Math.PI * 2;
+      pos.push(Math.cos(a) * r, y, z + Math.sin(a) * r);
+    }
+  }
+  for (let i = 0; i < steps; i += 1) {
+    for (let j = 0; j < sides; j += 1) {
+      const a = i * sides + j;
+      const b = i * sides + ((j + 1) % sides);
+      index.push(a, a + sides, b, b, a + sides, b + sides);
+    }
+  }
+  const g = new BufferGeometry();
+  g.setAttribute('position', new BufferAttribute(new Float32Array(pos), 3));
+  g.setIndex(index);
+  return g;
+}
+const rotated = (g, { x = 0, y = 0, z = 0 } = {}) => {
+  if (x) g.rotateX(x);
+  if (y) g.rotateY(y);
+  if (z) g.rotateZ(z);
+  return g;
+};
+
 // Cabeça (frente em +z, alto em +y), de lobo: crânio arredondado, focinho longo e esguio com a
 // ponte do nariz marcada, olhos amendoados verde-água sob a pálpebra pesada, orelhas pontudas para
 // trás, chifres finos cor de creme com duas pontas, e o pelo verde-água da crista e das bochechas
 // jogado para trás
+// Perfil da cabeça, de trás do crânio (s = 0) à ponta do focinho (s = 1):
+//   crânio largo e alto → arco das sobrancelhas → o "stop" (a testa desce) → focinho que afina, com
+//   a ponte do nariz e a almofada na ponta
+const HEAD = keys([
+  //  s     z      w      ht     hb     cy
+  [0.0, -0.36, 0.03, 0.03, 0.03, 0.05],
+  [0.07, -0.3, 0.2, 0.2, 0.17, 0.05],
+  [0.2, -0.17, 0.29, 0.27, 0.21, 0.06],
+  [0.33, -0.02, 0.3, 0.28, 0.21, 0.06],
+  [0.42, 0.1, 0.27, 0.26, 0.2, 0.05],
+  [0.5, 0.2, 0.22, 0.19, 0.17, 0.03],
+  [0.6, 0.33, 0.175, 0.145, 0.11, 0.015],
+  [0.72, 0.5, 0.145, 0.125, 0.075, 0.01],
+  [0.84, 0.66, 0.13, 0.12, 0.062, 0.01],
+  [0.93, 0.79, 0.086, 0.1, 0.05, 0.018],
+  [1.0, 0.86, 0.025, 0.035, 0.02, 0.025],
+]);
+const headAtS = (s) => {
+  const [z, w, ht, hb, cy] = HEAD(s);
+  return { z, w, ht, hb, cy };
+};
+// Relevos: o arco das sobrancelhas em cima dos olhos, a cavidade do olho, as bochechas embaixo dos
+// lados, a ponte do nariz no alto do focinho e as abas das narinas na ponta
+const headBump = (s, a) => {
+  const side = Math.abs(Math.cos(a));
+  const up = Math.sin(a);
+  let k = 0;
+  k += 0.14 * gauss(s - 0.4, 0.06) * gauss(up - 0.72, 0.18) * side;
+  k -= 0.09 * gauss(s - 0.43, 0.05) * gauss(up - 0.32, 0.16) * side;
+  k += 0.1 * gauss(s - 0.5, 0.09) * gauss(up + 0.35, 0.3) * side;
+  k += 0.08 * gauss(s - 0.82, 0.14) * gauss(up - 1, 0.25);
+  k += 0.05 * gauss(s - 0.93, 0.04) * gauss(up - 0.55, 0.2) * side;
+  return k;
+};
+// Posição na superfície da cabeça na seção s e ângulo a (para encaixar olhos, narinas e chifres)
+function onHead(s, a, out = 0) {
+  const { z, w, ht, hb, cy } = headAtS(s);
+  const c = Math.cos(a);
+  const n = Math.sin(a);
+  const k = 1 + headBump(s, a) + out;
+  const e = 2 / 2.4;
+  return [Math.sign(c) * Math.abs(c) ** e * w * k, cy + Math.sign(n) * Math.abs(n) ** e * (n >= 0 ? ht : hb) * k, z];
+}
+
+// Cabeça de lobo, esculpida numa superfície só (ver HEAD); por cima, os olhos amendoados verde-água
+// com o contorno escuro, a pupila em fenda e a pálpebra pesada, as narinas, as orelhas pontudas, os
+// chifres finos cor de creme e o pelo verde-água da crista e das bochechas jogado para trás
 let headCache = null;
 function dragonHead() {
   if (headCache) return headCache;
-  const fur = (r, len, root, dir) => piece(cone(r, len, 5), K.FUR, { scale: [0.62, 1, 0.62], root, dir, h: true });
+  const fur = (r, len, root, dir, bend = 0.35) => piece(lock(len, r * 2.2, { bend }), K.FUR, { root, dir, h: true });
   const parts = [
-    piece(sphere(0.3, 14, 10), K.WHITE, { scale: [1, 0.82, 1.05], root: [0, 0.04, 0] }),
-    // Testa: a massa sobre os olhos, que desce para a ponte do nariz
-    piece(sphere(0.2, 12, 7), K.WHITE, { scale: [1.25, 0.5, 1.35], root: [0, 0.19, 0.17] }),
-    piece(snout(0.095, 0.23, 0.66, 0.66), K.WHITE, { root: [0, -0.02, 0.5] }),
-    // Bochechas: a massa do maxilar de lobo, emendando o focinho no crânio
-    piece(sphere(0.11, 12, 8), K.WHITE, { scale: [0.85, 0.75, 1.45], root: [0.14, -0.05, 0.24] }),
-    piece(sphere(0.11, 12, 8), K.WHITE, { scale: [0.85, 0.75, 1.45], root: [-0.14, -0.05, 0.24] }),
-    piece(snout(0.05, 0.11, 0.62, 0.55), K.WHITE, { root: [0, 0.085, 0.5] }),
-    // Almofada do nariz e as narinas
-    piece(sphere(0.095, 12, 8), K.WHITE, { scale: [1.02, 0.68, 1.15], root: [0, 0.03, 0.8] }),
-    piece(sphere(0.018, 8, 6), K.DARK, { scale: [1.4, 0.55, 1], root: [0.045, 0.07, 0.9] }),
-    piece(sphere(0.018, 8, 6), K.DARK, { scale: [1.4, 0.55, 1], root: [-0.045, 0.07, 0.9] }),
-    // A linha da boca, escura, entre o focinho e a mandíbula
-    piece(snout(0.065, 0.15, 0.52, 0.25), K.DARK, { root: [0, -0.09, 0.5] }),
+    piece(loft({ rings: 40, sides: 30, at: headAtS, bump: headBump }), K.WHITE),
+    // A linha da boca, escura e fina, ao longo da parte de baixo do focinho
+    piece(snout(0.05, 0.13, 0.5, 0.18), K.DARK, { root: [0, -0.075, 0.5] }),
   ];
   for (const sx of [-1, 1]) {
+    // Olho: no fundo da cavidade, virado para o lado e um pouco para a frente
+    const [ex, ey, ez] = onHead(0.435, 0.33, -0.02);
+    const turn = sx * 0.42;
+    const eye = (r, sc, kind, push = 0) => piece(rotated(sphere(r, 14, 10).scale(...sc), { y: turn, z: -sx * 0.12 }), kind, {
+      root: [sx * (ex + push), ey, ez],
+    });
     parts.push(
-      // Presas pequenas
-      piece(cone(0.02, 0.1, 6), K.HORN, { root: [sx * 0.07, -0.085, 0.7], dir: [0, -1, 0.1] }),
-      // Olho amendoado aceso, a pupila em fenda e a pálpebra de cima, pesada (o olhar firme)
-      piece(sphere(0.07, 12, 8), K.EYE, { scale: [0.55, 0.72, 1.45], root: [sx * 0.2, 0.12, 0.33] }),
-      piece(sphere(0.06, 8, 6), K.DARK, { scale: [0.25, 0.95, 0.22], root: [sx * 0.232, 0.12, 0.36] }),
-      piece(sphere(0.085, 10, 6), K.WHITE, { scale: [0.72, 0.36, 1.5], root: [sx * 0.2, 0.175, 0.33] }),
-      // Orelha pontuda, deitada para trás
-      piece(cone(0.065, 0.28, 5), K.WHITE, { scale: [1, 1, 0.42], root: [sx * 0.2, 0.22, -0.1], dir: [sx * 0.7, 0.7, -0.55] }),
-      // Chifre: haste fina para trás e para cima, uma ponta para a frente e outra no alto
-      piece(cyl(0.017, 0.045, 0.85, 6), K.HORN, { root: [sx * 0.11, 0.29, 0.02], dir: [sx * 0.2, 0.55, -1] }),
-      piece(cone(0.022, 0.22, 5), K.HORN, { root: [sx * 0.15, 0.4, -0.18], dir: [sx * 0.2, 1, 0.35] }),
-      piece(cone(0.018, 0.2, 5), K.HORN, { root: [sx * 0.19, 0.5, -0.43], dir: [sx * 0.35, 0.9, -0.1] }),
-      // Pelo das bochechas, jogado para trás e para fora
-      ...[[0.16, 0.5], [0.08, 0.62], [0.0, 0.7], [-0.08, 0.66], [-0.16, 0.56], [-0.22, 0.44]].map(([y, len], i) => fur(0.085, len, [sx * 0.24, y, 0.04 - i * 0.06], [sx * 0.32, 0.18 - i * 0.09, -1])),
+      eye(0.066, [0.42, 0.62, 1.48], K.RIM, -0.002),
+      eye(0.064, [0.42, 0.6, 1.44], K.EYE, 0.007),
+      eye(0.05, [0.12, 0.72, 0.17], K.DARK, 0.02),
+      // Pálpebra de cima, pesada: o olhar firme
+      piece(rotated(sphere(0.07, 14, 8).scale(0.5, 0.3, 1.6), { y: turn, z: -sx * 0.25 }), K.WHITE, { root: [sx * (ex + 0.004), ey + 0.04, ez - 0.004] }),
     );
+    // Narina: um corte escuro e alongado na aba da ponta
+    const [nx, ny, nz] = onHead(0.9, 0.95, -0.01);
+    parts.push(piece(rotated(sphere(0.017, 8, 6).scale(1.6, 0.5, 1.2), { y: sx * 0.6 }), K.DARK, { root: [sx * Math.max(0.035, nx), ny, nz] }));
+    // Presas pequenas, aparecendo sob o lábio
+    parts.push(piece(cone(0.018, 0.09, 6), K.HORN, { root: [sx * 0.07, -0.07, 0.66], dir: [0, -1, 0.1] }));
+    // Orelha pontuda, deitada para trás
+    const [ox, oy, oz] = onHead(0.24, 0.85, -0.02);
+    parts.push(piece(cone(0.055, 0.24, 6), K.WHITE, { scale: [1, 1, 0.42], root: [sx * ox, oy, oz], dir: [sx * 0.6, 0.45, -0.9] }));
+    // Chifre: sai do alto da testa, fino, para trás e para cima, com uma ponta para a frente e outra no alto
+    const [hx, hy, hz] = onHead(0.3, 1.25, -0.03);
+    parts.push(
+      piece(horn(0.95, 0.042, 0.008, { bend: -0.25 }), K.HORN, { root: [sx * hx, hy, hz], dir: [sx * 0.2, 0.75, -1] }),
+      piece(horn(0.24, 0.02, 0.004, { bend: 0.4 }), K.HORN, { root: [sx * (hx + 0.04), hy + 0.13, hz - 0.18], dir: [sx * 0.25, 1, 0.4] }),
+      piece(horn(0.2, 0.016, 0.003, { bend: 0.4 }), K.HORN, { root: [sx * (hx + 0.08), hy + 0.3, hz - 0.42], dir: [sx * 0.4, 1, -0.05] }),
+    );
+    // Pelo das bochechas, rente à cabeça, fluindo para trás
+    [[0.2, 0.5], [0.14, 0.62], [0.08, 0.72], [0.02, 0.78], [-0.04, 0.74], [-0.1, 0.66], [-0.16, 0.54]].forEach(([y, len], i) => {
+      parts.push(fur(0.1, len, [sx * 0.25, y, 0.04 - i * 0.045], [sx * (0.22 + (i % 2) * 0.12), 0.14 - i * 0.07, -1], 0.22));
+    });
   }
   // Crista de pelo: da testa até a nuca, cada tufo maior que o anterior, jogados para trás
-  for (let i = 0; i < 10; i += 1) {
-    const k = i / 9;
-    const x = (i % 2 ? 1 : -1) * (0.04 + (i % 3) * 0.03);
-    parts.push(fur(0.085 + k * 0.025, 0.42 + k * 0.42, [x, 0.27 - k * 0.05, 0.2 - k * 0.65], [x * 2.5, 0.65 - k * 0.3, -1]));
+  for (let i = 0; i < 18; i += 1) {
+    const k = i / 17;
+    const x = ((i % 3) - 1) * 0.07 + (i % 2 ? 0.02 : -0.02);
+    const [, topY, topZ] = onHead(0.42 - k * 0.36, Math.PI / 2, 0);
+    parts.push(fur(0.1 + k * 0.035, 0.45 + k * 0.5, [x, topY - 0.01, topZ], [x * 2.2, 0.32 - k * 0.15, -1], 0.3));
   }
   headCache = join(parts, true);
   return headCache;
 }
 
-// Mandíbula (dobradiça na origem): abre girando em x. Dentes para cima e a barbicha de pelo embaixo
+// Mandíbula esculpida (dobradiça na origem): abre girando em x. Dentes pequenos e a barbicha de pelo
+const JAW = keys([
+  //  s     z      w      ht     hb     cy
+  [0.0, -0.04, 0.04, 0.03, 0.03, -0.05],
+  [0.12, 0.04, 0.16, 0.04, 0.085, -0.05],
+  [0.45, 0.3, 0.13, 0.035, 0.07, -0.045],
+  [0.8, 0.56, 0.095, 0.03, 0.05, -0.04],
+  [1.0, 0.68, 0.035, 0.02, 0.025, -0.035],
+]);
 let jawCache = null;
 function dragonJaw() {
   if (jawCache) return jawCache;
+  const at = (s) => {
+    const [z, w, ht, hb, cy] = JAW(s);
+    return { z, w, ht, hb, cy };
+  };
   const parts = [
-    piece(snout(0.072, 0.16, 0.56, 0.55), K.WHITE, { root: [0, -0.04, 0.31] }),
-    piece(snout(0.055, 0.12, 0.46, 0.35), K.DARK, { root: [0, 0.012, 0.31] }),
-    piece(cone(0.06, 0.38, 5), K.FUR, { scale: [0.7, 1, 0.7], root: [0, -0.1, 0.24], dir: [0, -0.7, -1], h: true }),
-    piece(cone(0.045, 0.3, 5), K.FUR, { scale: [0.7, 1, 0.7], root: [0.06, -0.09, 0.12], dir: [0.3, -0.6, -1], h: true }),
-    piece(cone(0.045, 0.3, 5), K.FUR, { scale: [0.7, 1, 0.7], root: [-0.06, -0.09, 0.12], dir: [-0.3, -0.6, -1], h: true }),
+    piece(loft({ rings: 24, sides: 22, at, power: 2.2 }), K.WHITE),
+    piece(snout(0.05, 0.11, 0.46, 0.25), K.DARK, { root: [0, -0.015, 0.31] }),
+    piece(lock(0.42, 0.12, { bend: 0.3 }), K.FUR, { root: [0, -0.1, 0.24], dir: [0, -0.7, -1], h: true }),
+    piece(lock(0.34, 0.1, { bend: 0.3 }), K.FUR, { root: [0.06, -0.09, 0.12], dir: [0.3, -0.6, -1], h: true }),
+    piece(lock(0.34, 0.1, { bend: 0.3 }), K.FUR, { root: [-0.06, -0.09, 0.12], dir: [-0.3, -0.6, -1], h: true }),
   ];
   for (const sx of [-1, 1]) {
-    parts.push(piece(cone(0.018, 0.08, 6), K.HORN, { root: [sx * 0.06, 0.02, 0.5], dir: [0, 1, 0.1] }));
-    parts.push(piece(cone(0.014, 0.055, 6), K.HORN, { root: [sx * 0.09, 0.02, 0.38], dir: [0, 1, 0] }));
+    parts.push(piece(cone(0.016, 0.07, 6), K.HORN, { root: [sx * 0.055, -0.02, 0.5], dir: [0, 1, 0.1] }));
+    parts.push(piece(cone(0.013, 0.05, 6), K.HORN, { root: [sx * 0.085, -0.02, 0.36], dir: [0, 1, 0] }));
   }
   jawCache = join(parts, true);
   return jawCache;
@@ -474,11 +665,7 @@ function dragonLeg() {
 let bladeCache = null;
 function dragonBlade() {
   if (bladeCache) return bladeCache;
-  const g = cone(0.09, 0.3, 6);
-  g.translate(0, 0.15, 0);
-  const p = g.attributes.position;
-  for (let i = 0; i < p.count; i += 1) p.setZ(i, p.getZ(i) - (p.getY(i) / 0.3) ** 2 * 0.14);
-  bladeCache = join([piece(g, K.FUR, { scale: [0.62, 1, 0.95], h: true })]);
+  bladeCache = join([piece(lock(0.32, 0.16, { bend: 0.45, wave: 0.06 }), K.FUR, { h: true })]);
   return bladeCache;
 }
 
@@ -1020,7 +1207,7 @@ export default function KoiDragon({ run, onDone }) {
       <primitive object={parts.legs} userData={dragon} />
       <group ref={headRef} userData={dragon}>
         <mesh geometry={dragonHead()} material={body.facetMat} frustumCulled={false} scale={1.22} />
-        <mesh ref={jawRef} geometry={dragonJaw()} material={body.facetMat} frustumCulled={false} position={[0, -0.155, 0.11]} scale={1.22} />
+        <mesh ref={jawRef} geometry={dragonJaw()} material={body.facetMat} frustumCulled={false} position={[0, -0.067, 0.11]} scale={1.22} />
       </group>
       <mesh geometry={parts.ribbonGeo} material={parts.ribbonMat} renderOrder={5} frustumCulled={false} userData={dragon} />
       <mesh geometry={parts.trailGeo} material={parts.trailMat} renderOrder={5} frustumCulled={false} userData={dragon} />
