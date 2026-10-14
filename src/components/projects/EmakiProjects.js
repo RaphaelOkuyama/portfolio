@@ -87,9 +87,37 @@ export default function EmakiProjects({ projects, labels }) {
         },
       });
 
+      // O conteúdo de cada painel surge ao entrar pela direita (tinta assentando no papel): de
+      // quando a borda esquerda do painel entra na tela até chegar a 72% dela. Sem clip-path: o
+      // painel nunca aparece cortado, e o último termina aberto no fim do rolo. A revelação segue
+      // a posição do rolo a cada quadro (não a rolagem): num salto de rolagem (um link do menu) o
+      // rolo chega atrasado (scrub) e a tinta acompanha até ele assentar, sem ficar pela metade.
+      // As posições são medidas só no começo e a cada refresh
+      const reveals = gsap.utils.toArray('.emaki-panel', track).map((panel) => ({
+        panel,
+        left: 0,
+        tween: gsap.from(panel.children, { opacity: 0, x: 36, stagger: 0.05, ease: 'power2.out', paused: true }),
+      }));
+      let trackLeft = 0;
+      const measurePanels = () => {
+        const x = Number(gsap.getProperty(track, 'x'));
+        const box = track.getBoundingClientRect();
+        trackLeft = box.left - x;
+        reveals.forEach((r) => { r.left = r.panel.getBoundingClientRect().left - box.left; });
+      };
+      const revealPanels = () => {
+        const x = Number(gsap.getProperty(track, 'x'));
+        const w = window.innerWidth;
+        reveals.forEach((r) => {
+          r.tween.progress(gsap.utils.clamp(0, 1, (w - (trackLeft + r.left + x)) / (w * 0.28)));
+        });
+      };
+      measurePanels();
+
       const scrollTween = gsap.to(track, {
         x: () => -distance(),
         ease: 'none',
+        onUpdate: revealPanels,
         scrollTrigger: {
           trigger: pinRef.current,
           // Fixa abaixo da navbar para o título não ficar escondido atrás dela
@@ -107,26 +135,15 @@ export default function EmakiProjects({ projects, labels }) {
         },
       });
       scrollTweenRef.current = scrollTween;
-
-      // O conteúdo de cada painel surge ao entrar pela direita (tinta assentando no papel).
-      // Sem clip-path: o painel nunca aparece cortado, e o último termina aberto no fim do rolo
-      gsap.utils.toArray('.emaki-panel', track).forEach((panel) => {
-        gsap.from(panel.children, {
-          opacity: 0,
-          x: 36,
-          stagger: 0.05,
-          ease: 'power2.out',
-          scrollTrigger: {
-            trigger: panel,
-            containerAnimation: scrollTween,
-            start: 'left 100%',
-            end: 'left 72%',
-            scrub: true,
-          },
-        });
-      });
+      const onRefresh = () => {
+        measurePanels();
+        revealPanels();
+      };
+      ScrollTrigger.addEventListener('refresh', onRefresh);
+      revealPanels();
 
       return () => {
+        ScrollTrigger.removeEventListener('refresh', onRefresh);
         scrollTweenRef.current = null;
         if (rollerRef.current) rollerRef.current.style.opacity = '';
         resetUnroll();
