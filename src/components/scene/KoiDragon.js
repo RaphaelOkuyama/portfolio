@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import {
-  AdditiveBlending, BufferAttribute, BufferGeometry, ConeGeometry, CylinderGeometry, DoubleSide, InstancedBufferAttribute,
+  AdditiveBlending, BackSide, BufferAttribute, FrontSide, BufferGeometry, ConeGeometry, CylinderGeometry, DoubleSide, InstancedBufferAttribute,
   InstancedMesh, Matrix4, MeshBasicMaterial, NormalBlending, Object3D, Points, Quaternion, RingGeometry, ShaderMaterial, SphereGeometry, Vector3,
 } from 'three';
 import { mergeGeometries, mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -60,18 +60,21 @@ const SHADE = /* glsl */ `
     vec3 env = mix(vec3(1.0, 0.55, 0.18), sky, smoothstep(-0.05, 0.3, r.y));
     return mix(vec3(0.02, 0.03, 0.06), env, smoothstep(-0.55, -0.1, r.y));
   }
+  // Sombreado de anime, como nos quadros pintados à mão: duas faixas (luz e sombra) com a passagem
+  // curta de um pincel, a sombra fria puxando para o lilás, o rebatido verde-água do rio por baixo,
+  // o brilho numa mancha nítida e um fio de contraluz. metal deixa um pouco do reflexo do céu
   vec3 shade(vec3 albedo, vec3 N, vec3 V, float metal, float gloss) {
     vec3 L = normalize(vec3(-0.35, 0.85, 0.4));
-    float wrap = max((dot(N, L) + 0.35) / 1.35, 0.0);
-    vec3 R = reflect(-V, N);
-    float fres = pow(1.0 - max(dot(N, V), 0.0), 3.0);
-    vec3 diffuse = albedo * (0.22 + 0.85 * wrap);
-    vec3 metallic = albedo * (envAt(R) * 1.7 + 0.12) + albedo * wrap * 0.35;
-    vec3 col = mix(diffuse, metallic, metal);
-    float spec = pow(max(dot(N, normalize(L + V)), 0.0), mix(18.0, 90.0, gloss));
-    col += mix(vec3(1.0), albedo, metal * 0.5) * spec * (0.25 + gloss);
-    // Borda: luz fria da lua contornando a silhueta, com um eco verde-água (o brilho do rio)
-    col += mix(vec3(0.55, 0.65, 1.0), vec3(0.45, 0.95, 0.85), 0.35) * fres * 0.55;
+    float ndl = dot(N, L);
+    float lit = smoothstep(-0.04, 0.1, ndl);
+    vec3 shadow = albedo * vec3(0.5, 0.5, 0.68);
+    vec3 col = mix(shadow, albedo, lit);
+    col += albedo * vec3(0.1, 0.24, 0.24) * smoothstep(0.1, -0.7, N.y) * (1.0 - lit);
+    col += albedo * envAt(reflect(-V, N)) * metal * 0.35;
+    float spec = smoothstep(0.9, 0.93, dot(N, normalize(L + V)));
+    col += vec3(1.0) * spec * gloss * 0.45;
+    float rim = smoothstep(0.66, 0.78, 1.0 - max(dot(N, V), 0.0));
+    col += vec3(0.6, 0.78, 1.0) * rim * 0.22;
     return col;
   }
   // Dissolução da cauda para a cabeça (u: 0 cabeça, 1 cauda); devolve a borda acesa (0..1)
@@ -137,7 +140,7 @@ const bodyFragment = /* glsl */ `
     // Madrepérola: no rasante o branco passa por rosa, verde-água e lilás
     float graze = pow(1.0 - max(dot(N, V), 0.0), 1.6);
     vec3 nacre = 0.5 + 0.5 * cos(6.2832 * (graze * 1.3 + h * 0.4 + vec3(0.0, 0.33, 0.67)));
-    col += nacre * graze * (1.0 - belly) * 0.28;
+    col += nacre * graze * (1.0 - belly) * 0.1;
     // A onda de luz que corre da cabeça à cauda
     float wave = exp(-pow((u - fract(uTime * 0.42)) * 10.0, 2.0));
     col += vec3(0.5, 1.4, 1.2) * wave * 0.32 * (1.0 - belly * 0.6);
@@ -153,7 +156,7 @@ const bodyFragment = /* glsl */ `
 // Peças facetadas (cabeça, mandíbula, patas, tufos da crina e da cauda): low-poly como o resto da
 // cena, no mesmo branco perolado do corpo. aKind: 0 branco, 1 creme (chifres, dentes), 2 pelo da
 // crina (verde-água escuro na raiz, menta na ponta: aH), 3 olho aceso, 4 escuro (narinas, pupilas,
-// boca), 5 rosado (patas e garras), 6 contorno do olho
+// boca), 5 rosado (patas e garras), 6 contorno do olho, 7 o ponto de brilho do olho
 const facetVertex = /* glsl */ `
   attribute float aKind;
   attribute float aH;
@@ -199,7 +202,7 @@ const facetFragment = /* glsl */ `
     if (vKind < 0.5) {
       col = shade(vec3(0.86, 0.86, 0.83), N, V, 0.25, 0.8);
       float graze = pow(1.0 - max(dot(N, V), 0.0), 1.6);
-      col += (0.5 + 0.5 * cos(6.2832 * (graze * 1.3 + vec3(0.0, 0.33, 0.67)))) * graze * 0.25;
+      col += (0.5 + 0.5 * cos(6.2832 * (graze * 1.3 + vec3(0.0, 0.33, 0.67)))) * graze * 0.08;
     } else if (vKind < 1.5) {
       col = shade(vec3(0.86, 0.74, 0.52), N, V, 0.15, 0.55);
     } else if (vKind < 2.5) {
@@ -214,9 +217,12 @@ const facetFragment = /* glsl */ `
       col = shade(vec3(0.03, 0.03, 0.04), N, V, 0.2, 0.9);
     } else if (vKind < 5.5) {
       col = shade(vec3(0.72, 0.5, 0.46), N, V, 0.1, 0.5);
-    } else {
+    } else if (vKind < 6.5) {
       // Contorno do olho: verde-água bem escuro (preto puro virava bolinha de frente)
       col = shade(vec3(0.01, 0.09, 0.085), N, V, 0.3, 0.9);
+    } else {
+      // O ponto de brilho do olho (dá vida ao olhar, como nos desenhos)
+      col = vec3(1.7);
     }
     col = mix(col, vec3(1.8, 2.3, 2.3), uHeat * smoothstep(-0.2, 0.6, uHeat - vU * 0.6));
     col = mix(col, vec3(1.2, 2.6, 2.4), burn);
@@ -262,6 +268,25 @@ const ribbonFragment = /* glsl */ `
       a = pow(across, 2.0) * (1.0 - t) * (1.0 - t) * 0.55;
     }
     gl_FragColor = vec4(col, a * uFade);
+    #include <colorspace_fragment>
+  }
+`;
+
+// Contorno de nanquim: a mesma malha inflada pela normal, só as faces de trás, num azul-tinta
+const outlineVertex = /* glsl */ `
+  uniform float uThick;
+  void main() {
+    mat4 m = modelMatrix;
+    #ifdef USE_INSTANCING
+      m = m * instanceMatrix;
+    #endif
+    vec4 world = m * vec4(position + normalize(normal) * uThick, 1.0);
+    gl_Position = projectionMatrix * viewMatrix * world;
+  }
+`;
+const outlineFragment = /* glsl */ `
+  void main() {
+    gl_FragColor = vec4(0.025, 0.035, 0.075, 1.0);
     #include <colorspace_fragment>
   }
 `;
@@ -373,7 +398,7 @@ function join(pieces, smooth = false) {
   g.computeVertexNormals();
   return g;
 }
-const K = { WHITE: 0, HORN: 1, FUR: 2, EYE: 3, DARK: 4, PINK: 5, RIM: 6 };
+const K = { WHITE: 0, HORN: 1, FUR: 2, EYE: 3, DARK: 4, PINK: 5, RIM: 6, SHINE: 7 };
 const sphere = (r, w = 10, h = 8) => new SphereGeometry(r, w, h);
 const cone = (r, len, sides = 6) => new ConeGeometry(r, len, sides);
 const cyl = (rt, rb, len, sides = 8) => new CylinderGeometry(rt, rb, len, sides);
@@ -524,10 +549,10 @@ const HEAD = keys([
   [0.42, 0.1, 0.27, 0.26, 0.2, 0.05],
   [0.5, 0.2, 0.22, 0.19, 0.17, 0.03],
   [0.6, 0.33, 0.175, 0.145, 0.11, 0.015],
-  [0.72, 0.5, 0.145, 0.125, 0.075, 0.01],
-  [0.84, 0.66, 0.13, 0.12, 0.062, 0.01],
-  [0.93, 0.79, 0.086, 0.1, 0.05, 0.018],
-  [1.0, 0.86, 0.025, 0.035, 0.02, 0.025],
+  [0.72, 0.52, 0.135, 0.122, 0.072, 0.01],
+  [0.84, 0.69, 0.12, 0.115, 0.06, 0.012],
+  [0.93, 0.83, 0.084, 0.098, 0.05, 0.02],
+  [1.0, 0.9, 0.025, 0.035, 0.02, 0.026],
 ]);
 const headAtS = (s) => {
   const [z, w, ht, hb, cy] = HEAD(s);
@@ -576,9 +601,10 @@ function dragonHead() {
       root: [sx * (ex + push), ey, ez],
     });
     parts.push(
-      eye(0.066, [0.42, 0.62, 1.48], K.RIM, -0.002),
-      eye(0.064, [0.42, 0.6, 1.44], K.EYE, 0.007),
-      eye(0.05, [0.12, 0.72, 0.17], K.DARK, 0.02),
+      eye(0.074, [0.42, 0.66, 1.5], K.RIM, -0.002),
+      eye(0.071, [0.42, 0.64, 1.44], K.EYE, 0.008),
+      eye(0.056, [0.14, 0.74, 0.2], K.DARK, 0.022),
+      piece(sphere(0.016, 8, 6), K.SHINE, { root: [sx * (ex + 0.03), ey + 0.025, ez + 0.035] }),
       // Pálpebra de cima, pesada: o olhar firme
       piece(rotated(sphere(0.07, 14, 8).scale(0.5, 0.3, 1.6), { y: turn, z: -sx * 0.25 }), K.WHITE, { root: [sx * (ex + 0.004), ey + 0.04, ez - 0.004] }),
     );
@@ -698,6 +724,8 @@ export default function KoiDragon({ run, onDone }) {
   const headRef = useRef(null);
   const jawRef = useRef(null);
   const ringRefs = useRef([]);
+  // Contornos: somem quando ele começa a se desfazer em água (a casca não acompanha a dissolução)
+  const outlineRefs = useRef([]);
   const gl = useThree((s) => s.gl);
   const camera = useThree((s) => s.camera);
   const scene = useThree((s) => s.scene);
@@ -730,7 +758,9 @@ export default function KoiDragon({ run, onDone }) {
     const material = new ShaderMaterial({ vertexShader: bodyVertex, fragmentShader: bodyFragment, side: DoubleSide, uniforms });
     // As peças facetadas dividem o relógio, a dissolução e o calor com o corpo
     const facetMat = new ShaderMaterial({ vertexShader: facetVertex, fragmentShader: facetFragment, side: DoubleSide, uniforms });
-    return { geometry, material, facetMat, uniforms };
+    const outline = (thick, side = BackSide) => new ShaderMaterial({ vertexShader: outlineVertex, fragmentShader: outlineFragment, side, uniforms: { uThick: { value: thick } } });
+    // O corpo é montado com as faces na ordem inversa: o "lado de trás" dele é o FrontSide
+    return { geometry, material, facetMat, uniforms, outlineBody: outline(0.024, FrontSide), outlineLegs: outline(0.022), outlineHead: outline(0.02) };
   }, []);
 
   const column = useMemo(() => {
@@ -758,6 +788,10 @@ export default function KoiDragon({ run, onDone }) {
     const legGeo = dragonLeg().clone();
     legGeo.setAttribute('aU', new InstancedBufferAttribute(new Float32Array(LEGS.map(([k]) => k)), 1));
     const legs = new InstancedMesh(legGeo, body.facetMat, LEGS.length);
+    // O contorno das patas usa as mesmas matrizes de instância
+    const legsOutline = new InstancedMesh(legGeo, body.outlineLegs, LEGS.length);
+    legsOutline.instanceMatrix = legs.instanceMatrix;
+    legsOutline.frustumCulled = false;
     blades.frustumCulled = false;
     legs.frustumCulled = false;
     const ribbonMat = new ShaderMaterial({
@@ -768,7 +802,7 @@ export default function KoiDragon({ run, onDone }) {
     });
     const ribbonGeo = ribbonGeometry(RIBBONS);
     const trailGeo = ribbonGeometry([[TRAIL_PTS, 3]]);
-    return { bladeGeo, blades, legGeo, legs, ribbonMat, trailMat, ribbonGeo, trailGeo };
+    return { bladeGeo, blades, legGeo, legs, legsOutline, ribbonMat, trailMat, ribbonGeo, trailGeo };
   }, [body]);
 
   // O salto da carpa e os efeitos de água e luz
@@ -810,6 +844,9 @@ export default function KoiDragon({ run, onDone }) {
     body.geometry.dispose();
     body.material.dispose();
     body.facetMat.dispose();
+    body.outlineBody.dispose();
+    body.outlineLegs.dispose();
+    body.outlineHead.dispose();
     column.geometry.dispose();
     column.material.dispose();
     [parts.bladeGeo, parts.legGeo, parts.ribbonGeo, parts.trailGeo, parts.ribbonMat, parts.trailMat].forEach((x) => x.dispose());
@@ -1044,6 +1081,7 @@ export default function KoiDragon({ run, onDone }) {
     parts.trailMat.uniforms.uFade.value = fade;
     const alive = born > 0 && dissolve < 1;
     group.children.forEach((c) => { if (c.userData.dragon) c.visible = alive; });
+    outlineRefs.current.forEach((o) => { if (o) o.visible = alive && dissolve < 0.02 && u.uHeat.value < 0.15; });
 
     // Crista: lâminas no dorso, inclinadas para trás, maiores no meio
     const o = tmp.o;
@@ -1203,11 +1241,17 @@ export default function KoiDragon({ run, onDone }) {
       ))}
       <mesh geometry={column.geometry} material={column.material} renderOrder={3} frustumCulled={false} />
       <mesh geometry={body.geometry} material={body.material} frustumCulled={false} userData={dragon} />
+      <mesh ref={(el) => { outlineRefs.current[0] = el; }} geometry={body.geometry} material={body.outlineBody} frustumCulled={false} userData={dragon} />
       <primitive object={parts.blades} userData={dragon} />
       <primitive object={parts.legs} userData={dragon} />
+      <primitive ref={(el) => { outlineRefs.current[1] = el; }} object={parts.legsOutline} userData={dragon} />
       <group ref={headRef} userData={dragon}>
         <mesh geometry={dragonHead()} material={body.facetMat} frustumCulled={false} scale={1.22} />
-        <mesh ref={jawRef} geometry={dragonJaw()} material={body.facetMat} frustumCulled={false} position={[0, -0.067, 0.11]} scale={1.22} />
+        <mesh ref={(el) => { outlineRefs.current[2] = el; }} geometry={dragonHead()} material={body.outlineHead} frustumCulled={false} scale={1.22} />
+        <group ref={jawRef} position={[0, -0.067, 0.11]} scale={1.22}>
+          <mesh geometry={dragonJaw()} material={body.facetMat} frustumCulled={false} />
+          <mesh ref={(el) => { outlineRefs.current[3] = el; }} geometry={dragonJaw()} material={body.outlineHead} frustumCulled={false} />
+        </group>
       </group>
       <mesh geometry={parts.ribbonGeo} material={parts.ribbonMat} renderOrder={5} frustumCulled={false} userData={dragon} />
       <mesh geometry={parts.trailGeo} material={parts.trailMat} renderOrder={5} frustumCulled={false} userData={dragon} />
