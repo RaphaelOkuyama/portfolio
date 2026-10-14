@@ -418,13 +418,13 @@ const rotated = (g, { x = 0, y = 0, z = 0 } = {}) => {
   return g;
 };
 
-// Cabeça (frente em +z, alto em +y), de lobo: crânio arredondado, focinho longo e esguio com a
-// ponte do nariz marcada, olhos amendoados verde-água sob a pálpebra pesada, orelhas pontudas para
-// trás, chifres finos cor de creme com duas pontas, e o pelo verde-água da crista e das bochechas
-// jogado para trás
+// Cabeça (frente em +z, alto em +y), de lobo: crânio arredondado, focinho do tamanho do crânio,
+// esguio e com a ponta fina (sem bulbo), a ponte do nariz suave, olhos amendoados verde-água
+// grandes sob a pálpebra pesada, orelhas pontudas para trás, chifres finos cor de creme com duas
+// pontas, e o pelo verde-água da crista e das bochechas jogado para trás
 // Perfil da cabeça, de trás do crânio (s = 0) à ponta do focinho (s = 1):
-//   crânio largo e alto → arco das sobrancelhas → o "stop" (a testa desce) → focinho que afina, com
-//   a ponte do nariz e a almofada na ponta
+//   crânio largo e alto → arco das sobrancelhas → o "stop" (a testa desce) → focinho que afina até
+//   a ponta fina
 const HEAD = keys([
   //  s     z      w      ht     hb     cy
   [0.0, -0.36, 0.03, 0.03, 0.03, 0.05],
@@ -432,12 +432,12 @@ const HEAD = keys([
   [0.2, -0.17, 0.29, 0.27, 0.21, 0.06],
   [0.33, -0.02, 0.3, 0.28, 0.21, 0.06],
   [0.42, 0.1, 0.27, 0.26, 0.2, 0.05],
-  [0.5, 0.2, 0.22, 0.19, 0.17, 0.03],
-  [0.6, 0.33, 0.175, 0.145, 0.11, 0.015],
-  [0.72, 0.52, 0.135, 0.122, 0.072, 0.01],
-  [0.84, 0.69, 0.12, 0.115, 0.06, 0.012],
-  [0.93, 0.83, 0.084, 0.098, 0.05, 0.02],
-  [1.0, 0.9, 0.025, 0.035, 0.02, 0.026],
+  [0.5, 0.18, 0.21, 0.18, 0.165, 0.03],
+  [0.6, 0.27, 0.15, 0.132, 0.112, 0.015],
+  [0.72, 0.38, 0.11, 0.108, 0.082, 0.008],
+  [0.84, 0.49, 0.092, 0.094, 0.066, 0.004],
+  [0.93, 0.57, 0.078, 0.076, 0.054, 0.002],
+  [1.0, 0.615, 0.035, 0.03, 0.025, 0.0],
 ]);
 const headAtS = (s) => {
   const [z, w, ht, hb, cy] = HEAD(s);
@@ -452,8 +452,8 @@ const headBump = (s, a) => {
   k += 0.14 * gauss(s - 0.4, 0.06) * gauss(up - 0.72, 0.18) * side;
   k -= 0.09 * gauss(s - 0.43, 0.05) * gauss(up - 0.32, 0.16) * side;
   k += 0.1 * gauss(s - 0.5, 0.09) * gauss(up + 0.35, 0.3) * side;
-  k += 0.08 * gauss(s - 0.82, 0.14) * gauss(up - 1, 0.25);
-  k += 0.05 * gauss(s - 0.93, 0.04) * gauss(up - 0.55, 0.2) * side;
+  k += 0.025 * gauss(s - 0.78, 0.14) * gauss(up - 1, 0.25);
+  k += 0.03 * gauss(s - 0.93, 0.04) * gauss(up - 0.55, 0.2) * side;
   return k;
 };
 // Posição na superfície da cabeça na seção s e ângulo a (para encaixar olhos, narinas e chifres)
@@ -476,7 +476,7 @@ function dragonHead() {
   const parts = [
     piece(loft({ rings: 40, sides: 30, at: headAtS, bump: headBump }), K.WHITE),
     // A linha da boca, escura e fina, ao longo da parte de baixo do focinho
-    piece(snout(0.05, 0.13, 0.5, 0.18), K.DARK, { root: [0, -0.075, 0.5] }),
+    piece(snout(0.06, 0.13, 0.36, 0.18), K.DARK, { root: [0, -0.072, 0.4] }),
   ];
   for (const sx of [-1, 1]) {
     // Olho: no fundo da cavidade, virado para o lado e um pouco para a frente
@@ -486,10 +486,10 @@ function dragonHead() {
       root: [sx * (ex + push), ey, ez],
     });
     parts.push(
-      eye(0.074, [0.42, 0.66, 1.5], K.RIM, -0.002),
-      eye(0.071, [0.42, 0.64, 1.44], K.EYE, 0.008),
-      eye(0.056, [0.14, 0.74, 0.2], K.DARK, 0.022),
-      piece(sphere(0.016, 8, 6), K.SHINE, { root: [sx * (ex + 0.03), ey + 0.025, ez + 0.035] }),
+      eye(0.086, [0.36, 0.64, 1.5], K.RIM, -0.002),
+      eye(0.082, [0.36, 0.62, 1.44], K.EYE, 0.006),
+      eye(0.064, [0.12, 0.74, 0.22], K.DARK, 0.02),
+      piece(sphere(0.02, 8, 6), K.SHINE, { root: [sx * (ex + 0.034), ey + 0.032, ez + 0.04] }),
       // Pálpebra de cima, pesada: o olhar firme
       piece(rotated(sphere(0.07, 14, 8).scale(0.5, 0.3, 1.6), { y: turn, z: -sx * 0.25 }), K.WHITE, { root: [sx * (ex + 0.004), ey + 0.04, ez - 0.004] }),
     );
@@ -497,7 +497,7 @@ function dragonHead() {
     const [nx, ny, nz] = onHead(0.9, 0.95, -0.01);
     parts.push(piece(rotated(sphere(0.017, 8, 6).scale(1.6, 0.5, 1.2), { y: sx * 0.6 }), K.DARK, { root: [sx * Math.max(0.035, nx), ny, nz] }));
     // Presas pequenas, aparecendo sob o lábio
-    parts.push(piece(cone(0.018, 0.09, 6), K.HORN, { root: [sx * 0.07, -0.07, 0.66], dir: [0, -1, 0.1] }));
+    parts.push(piece(cone(0.018, 0.09, 6), K.HORN, { root: [sx * 0.07, -0.07, 0.5], dir: [0, -1, 0.1] }));
     // Orelha pontuda, deitada para trás
     const [ox, oy, oz] = onHead(0.24, 0.85, -0.02);
     parts.push(piece(cone(0.055, 0.24, 6), K.WHITE, { scale: [1, 1, 0.42], root: [sx * ox, oy, oz], dir: [sx * 0.6, 0.45, -0.9] }));
@@ -529,9 +529,9 @@ const JAW = keys([
   //  s     z      w      ht     hb     cy
   [0.0, -0.04, 0.04, 0.03, 0.03, -0.05],
   [0.12, 0.04, 0.16, 0.04, 0.085, -0.05],
-  [0.45, 0.3, 0.13, 0.035, 0.07, -0.045],
-  [0.8, 0.56, 0.095, 0.03, 0.05, -0.04],
-  [1.0, 0.68, 0.035, 0.02, 0.025, -0.035],
+  [0.45, 0.23, 0.125, 0.035, 0.07, -0.045],
+  [0.8, 0.41, 0.095, 0.03, 0.052, -0.04],
+  [1.0, 0.5, 0.045, 0.022, 0.03, -0.035],
 ]);
 let jawCache = null;
 function dragonJaw() {
@@ -542,14 +542,14 @@ function dragonJaw() {
   };
   const parts = [
     piece(loft({ rings: 24, sides: 22, at, power: 2.2 }), K.WHITE),
-    piece(snout(0.05, 0.11, 0.46, 0.25), K.DARK, { root: [0, -0.015, 0.31] }),
+    piece(snout(0.06, 0.11, 0.34, 0.25), K.DARK, { root: [0, -0.015, 0.25] }),
     piece(lock(0.42, 0.12, { bend: 0.3 }), K.FUR, { root: [0, -0.1, 0.24], dir: [0, -0.7, -1], h: true }),
     piece(lock(0.34, 0.1, { bend: 0.3 }), K.FUR, { root: [0.06, -0.09, 0.12], dir: [0.3, -0.6, -1], h: true }),
     piece(lock(0.34, 0.1, { bend: 0.3 }), K.FUR, { root: [-0.06, -0.09, 0.12], dir: [-0.3, -0.6, -1], h: true }),
   ];
   for (const sx of [-1, 1]) {
-    parts.push(piece(cone(0.016, 0.07, 6), K.HORN, { root: [sx * 0.055, -0.02, 0.5], dir: [0, 1, 0.1] }));
-    parts.push(piece(cone(0.013, 0.05, 6), K.HORN, { root: [sx * 0.085, -0.02, 0.36], dir: [0, 1, 0] }));
+    parts.push(piece(cone(0.016, 0.07, 6), K.HORN, { root: [sx * 0.055, -0.02, 0.37], dir: [0, 1, 0.1] }));
+    parts.push(piece(cone(0.013, 0.05, 6), K.HORN, { root: [sx * 0.085, -0.02, 0.27], dir: [0, 1, 0] }));
   }
   jawCache = join(parts, true);
   return jawCache;
