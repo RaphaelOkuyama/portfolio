@@ -399,6 +399,10 @@ function join(pieces, smooth = false) {
   g.computeVertexNormals();
   return g;
 }
+// Tamanho da cabeça na cena (proporcional ao corpo fino: ~2 diâmetros do pescoço, como o dragão
+// do Haku) e a dobradiça da mandíbula, nas coordenadas da geometria da cabeça
+const HEAD_SCALE = 0.95;
+const JAW_PIVOT = [0, -0.055, 0.09];
 const K = { WHITE: 0, HORN: 1, FUR: 2, EYE: 3, DARK: 4, PINK: 5, RIM: 6, SHINE: 7 };
 const sphere = (r, w = 10, h = 8) => new SphereGeometry(r, w, h);
 const cone = (r, len, sides = 6) => new ConeGeometry(r, len, sides);
@@ -486,10 +490,10 @@ function dragonHead() {
       root: [sx * (ex + push), ey, ez],
     });
     parts.push(
-      eye(0.086, [0.36, 0.64, 1.5], K.RIM, -0.002),
-      eye(0.082, [0.36, 0.62, 1.44], K.EYE, 0.006),
-      eye(0.064, [0.12, 0.74, 0.22], K.DARK, 0.02),
-      piece(sphere(0.02, 8, 6), K.SHINE, { root: [sx * (ex + 0.034), ey + 0.032, ez + 0.04] }),
+      eye(0.078, [0.38, 0.62, 1.5], K.RIM, -0.002),
+      eye(0.075, [0.38, 0.6, 1.44], K.EYE, 0.006),
+      eye(0.059, [0.13, 0.72, 0.21], K.DARK, 0.02),
+      piece(sphere(0.017, 8, 6), K.SHINE, { root: [sx * (ex + 0.031), ey + 0.028, ez + 0.036] }),
       // Pálpebra de cima, pesada: o olhar firme
       piece(rotated(sphere(0.07, 14, 8).scale(0.5, 0.3, 1.6), { y: turn, z: -sx * 0.25 }), K.WHITE, { root: [sx * (ex + 0.004), ey + 0.04, ez - 0.004] }),
     );
@@ -1049,7 +1053,7 @@ export default function KoiDragon({ run, onDone }) {
     }
     // Bigodes: saem do focinho e seguem o caminho, abrindo para os lados e ondulando
     for (const side of [-1, 1]) {
-      tmp.tip.set(side * 0.1, 0.05, 0.86).multiplyScalar(1.22).applyQuaternion(head.quaternion).add(head.position);
+      tmp.tip.set(side * 0.08, 0.04, 0.58).multiplyScalar(HEAD_SCALE).applyQuaternion(head.quaternion).add(head.position);
       for (let k = 0; k < WHISKER_PTS; k += 1) {
         const f = k * 1.45;
         const i = Math.min(SEG - 1, Math.round(f));
@@ -1131,9 +1135,9 @@ export default function KoiDragon({ run, onDone }) {
       <primitive object={parts.legs} userData={dragon} />
       <primitive ref={(el) => { outlineRefs.current[1] = el; }} object={parts.legsOutline} userData={dragon} />
       <group ref={headRef} userData={dragon}>
-        <mesh geometry={dragonHead()} material={body.facetMat} frustumCulled={false} scale={1.22} />
-        <mesh ref={(el) => { outlineRefs.current[2] = el; }} geometry={dragonHead()} material={body.outlineHead} frustumCulled={false} scale={1.22} />
-        <group ref={jawRef} position={[0, -0.067, 0.11]} scale={1.22}>
+        <mesh geometry={dragonHead()} material={body.facetMat} frustumCulled={false} scale={HEAD_SCALE} />
+        <mesh ref={(el) => { outlineRefs.current[2] = el; }} geometry={dragonHead()} material={body.outlineHead} frustumCulled={false} scale={HEAD_SCALE} />
+        <group ref={jawRef} position={JAW_PIVOT.map((v) => v * HEAD_SCALE)} scale={HEAD_SCALE}>
           <mesh geometry={dragonJaw()} material={body.facetMat} frustumCulled={false} />
           <mesh ref={(el) => { outlineRefs.current[3] = el; }} geometry={dragonJaw()} material={body.outlineHead} frustumCulled={false} />
         </group>
