@@ -1,7 +1,9 @@
 'use client';
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { BackSide, Color, DoubleSide, FrontSide, MeshBasicMaterial, Vector3, Vector4 } from 'three';
+import {
+  BufferGeometry, Color, DoubleSide, Float32BufferAttribute, FrontSide, MeshBasicMaterial, Vector3, Vector4,
+} from 'three';
 import { journeyStore } from '../../store/journey';
 import { useCameraMap } from './useCameraMap';
 import { iwakuraGeometry } from './iwakuraGeometry';
@@ -55,17 +57,56 @@ function cutMaterial(side, faces) {
   return { material, uniforms };
 }
 
-// Duas metades, cada uma com as faces da frente (a pedra) e as de trás (o miolo da pedra cortada,
-// numa cor mais clara: olhando pelo corte, as faces de trás fazem a vez da tampa)
+// A face do corte: onde a superfície da pedra cruza o plano, um contorno fechado preenchido em
+// leque a partir do centro (a pedra é quase convexa). As pedrinhas do chão ficam de fora
+function capGeometry(rock) {
+  const pos = rock.getAttribute('position');
+  const index = rock.getIndex();
+  const n = PLANE_NORMAL;
+  const u = new Vector3(0, 1, 0).projectOnPlane(n).normalize();
+  const v = new Vector3().crossVectors(n, u);
+  const a = new Vector3();
+  const b = new Vector3();
+  const points = [];
+  const triangles = (index ? index.count : pos.count) / 3;
+  const at = (i) => (index ? index.getX(i) : i);
+  for (let t = 0; t < triangles; t += 1) {
+    for (let e = 0; e < 3; e += 1) {
+      a.fromBufferAttribute(pos, at(t * 3 + e));
+      b.fromBufferAttribute(pos, at(t * 3 + ((e + 1) % 3)));
+      const da = n.dot(a) - PLANE.w;
+      const db = n.dot(b) - PLANE.w;
+      if ((da < 0) === (db < 0)) continue;
+      const p = a.clone().lerp(b, da / (da - db));
+      if (p.y > IWAKURA_CUT.capFloor) points.push(p);
+    }
+  }
+  const center = points.reduce((c, p) => c.add(p), new Vector3()).divideScalar(Math.max(1, points.length));
+  const angle = (p) => Math.atan2(p.clone().sub(center).dot(v), p.clone().sub(center).dot(u));
+  points.sort((p, q) => angle(p) - angle(q));
+  const out = [];
+  points.forEach((p, i) => {
+    const q = points[(i + 1) % points.length];
+    out.push(center.x, center.y, center.z, p.x, p.y, p.z, q.x, q.y, q.z);
+  });
+  const g = new BufferGeometry();
+  g.setAttribute('position', new Float32BufferAttribute(out, 3));
+  return g;
+}
+
+// Duas metades, cada uma com a pedra recortada e a face do corte (o miolo, um tom mais claro)
 function useCutMaterials() {
   const set = useMemo(() => Object.fromEntries([1, -1].map((side) => [side, {
     rock: cutMaterial(side, FrontSide),
-    core: cutMaterial(side, BackSide),
     rope: cutMaterial(side, DoubleSide),
     paper: cutMaterial(side, DoubleSide),
   }])), []);
-  useEffect(() => () => Object.values(set).forEach((half) => Object.values(half).forEach((m) => m.material.dispose())), [set]);
-  return set;
+  const cap = useMemo(() => ({ material: new MeshBasicMaterial({ side: DoubleSide }) }), []);
+  useEffect(() => () => {
+    Object.values(set).forEach((half) => Object.values(half).forEach((m) => m.material.dispose()));
+    cap.material.dispose();
+  }, [set, cap]);
+  return { ...set, cap };
 }
 
 const CORE = new Color(IWAKURA_CUT.core);
@@ -77,6 +118,8 @@ export default function Iwakura() {
   const materials = useAccentMaterials(PARTS);
   const cut = useCutMaterials();
   const geometry = iwakuraGeometry();
+  const cap = useMemo(() => capGeometry(geometry.rock), [geometry]);
+  useEffect(() => () => cap.dispose(), [cap]);
   // Celular em pé: não há espaço ao lado do torii sem a pedra ficar cortada atrás do texto
   const roomy = useThree((s) => s.size.width / s.size.height >= IWAKURA.minAspect);
   const wholeRef = useRef(null);
@@ -101,15 +144,18 @@ export default function Iwakura() {
       wholeRef.current.visible = false;
       halvesRef.current.visible = true;
     }
-    if (a.t > IWAKURA_CUT.glow + IWAKURA_CUT.slide + 0.5) return;
-    a.t += Math.min(delta, 1 / 20);
-    // As cores seguem as da paleta (dia/noite); o miolo é a pedra clara de dentro
+    // As cores seguem as da paleta (dia/noite), também depois do corte; o miolo é a pedra clara
+    cut.cap.material.color.copy(materials.rock.color).lerp(CORE, IWAKURA_CUT.coreMix);
     [1, -1].forEach((side) => {
       const half = cut[side];
       half.rock.material.color.copy(materials.rock.color);
-      half.core.material.color.copy(materials.rock.color).lerp(CORE, 0.18);
       half.rope.material.color.copy(materials.rope.color);
       half.paper.material.color.copy(materials.paper.color);
+    });
+    if (a.t > IWAKURA_CUT.glow + IWAKURA_CUT.slide + 0.5) return;
+    a.t += Math.min(delta, 1 / 20);
+    [1, -1].forEach((side) => {
+      const half = cut[side];
       // O fio vermelho acende de uma vez e apaga devagar enquanto a metade escorrega
       const glow = Math.max(0, 1 - Math.max(0, a.t - IWAKURA_CUT.glow * 0.5) / IWAKURA_CUT.glow);
       Object.values(half).forEach((m) => { m.uniforms.uGlow.value = glow; });
@@ -129,7 +175,7 @@ export default function Iwakura() {
   const parts = (half) => (
     <>
       <mesh geometry={geometry.rock} material={half.rock.material} dispose={null} />
-      <mesh geometry={geometry.rock} material={half.core.material} dispose={null} />
+      <mesh geometry={cap} material={cut.cap.material} />
       <mesh geometry={geometry.rope} material={half.rope.material} dispose={null} />
       <mesh geometry={geometry.straw} material={half.rope.material} dispose={null} />
       <mesh geometry={geometry.paper} material={half.paper.material} dispose={null} />
