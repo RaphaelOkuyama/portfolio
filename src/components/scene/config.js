@@ -80,6 +80,13 @@ export const TORII = {
 // unidades da cena; turn gira a frente (com a corda e os papéis) para o começo do caminho
 // minAspect: abaixo dessa proporção (celular em pé) a pedra não aparece
 export const IWAKURA = { offset: [10.5, 2.5], scale: 2.25, sink: 0.55, turn: -0.35, minAspect: 0.75 };
+// O corte do iwakura pelo 黒閃 da katana (ver Iwakura.js): plano do corte no espaço da pedra
+// (ponto e normal), cor do miolo, quanto a metade de cima escorrega e inclina, as durações do fio
+// vermelho e da escorregada (s) e até onde do caminho a pedra está à vista
+export const IWAKURA_CUT = {
+  point: [0, 1.3, 0], normal: [0.55, 1, 0.2], core: '#d8d2c4',
+  distance: 0.62, tilt: 0.1, glow: 0.45, slide: 0.8, heroProgress: 0.06,
+};
 
 // 狛犬: o par de guardiões nos pés do torii, um de cada lado, um pouco à frente do portão e
 // virados para dentro do caminho (para quem chega)
