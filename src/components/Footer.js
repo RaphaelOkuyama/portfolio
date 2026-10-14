@@ -71,6 +71,12 @@ function useFitWordmark(rootRef) {
 
 // Rodapé como a última página do emakimono: fecho, navegação, relógios Brasil/Japão
 // e a assinatura OKUYAMA de ponta a ponta, com o hanko 奥山 (easter egg) ao lado
+// Modelos 3D de terceiros usados na cena (Sketchfab, CC BY 4.0: o crédito é obrigatório)
+const MODEL_CREDITS = [
+  { title: 'Crow', author: 'Alexei Ostapenko', href: 'https://sketchfab.com/3d-models/crow-d5a9b0df4da3493688b63ce42c8a83e2' },
+  { title: 'Shinto Guard Dog (Komainu)', author: 'mechaghost', href: 'https://sketchfab.com/3d-models/shinto-guard-dog-komainu-99c77426329d4e2c89027d14767cf76e' },
+];
+
 export default function Footer() {
   const { currentData, language } = useSettings();
   const t = currentData.footer;
@@ -198,7 +204,14 @@ export default function Footer() {
             © {new Date().getFullYear()} Raphael Okuyama. {t.rights}
           </p>
           <p className="sf-credit">
-            {t.credit.label}: <a href="https://sketchfab.com/3d-models/crow-d5a9b0df4da3493688b63ce42c8a83e2" target="_blank" rel="noopener noreferrer">&ldquo;Crow&rdquo;</a> {t.credit.by} Alexei Ostapenko (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">{t.credit.license}</a>)
+            {t.credit.label}:{' '}
+            {MODEL_CREDITS.map(({ title, author, href }, i) => (
+              <span key={href}>
+                {i > 0 ? ' · ' : ''}
+                <a href={href} target="_blank" rel="noopener noreferrer">&ldquo;{title}&rdquo;</a> {t.credit.by} {author}
+              </span>
+            ))}{' '}
+            (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">{t.credit.license}</a>)
           </p>
         </div>
       </div>

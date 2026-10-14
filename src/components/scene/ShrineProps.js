@@ -1,30 +1,106 @@
 'use client';
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { BufferAttribute, MeshBasicMaterial, Vector3 } from 'three';
 import { useFrame } from '@react-three/fiber';
-import { journeyStore } from '../../store/journey';
+import { journeyStore, useJourney } from '../../store/journey';
 import { groundHeight } from '../../lib/journey/ground';
 import { useCameraMap, getCameraCurve } from './useCameraMap';
 import { useAccentMaterials } from './useAccentMaterials';
 import { besideTorii } from './toriiFrame';
 import {
-  katanaGeometry, komainuGeometry, pagodaGeometry, shishiOdoshiGeometry, SHISHI_PIVOT_Y, stoneLanternGeometry, taikobashiGeometry,
+  katanaGeometry, KOMAINU_SEAT, komainuGeometry, komainuPedestalGeometry, pagodaGeometry, shishiOdoshiGeometry, SHISHI_PIVOT_Y, stoneLanternGeometry, taikobashiGeometry,
 } from './shrineGeometry';
 import { gangiGeometry, sandoGeometry } from './pathGeometry';
 import {
   GROUND, KATANA, KOMAINU, PAGODA, RIVER, RIVERSIDE, SHISHI_ODOSHI, STONE_LANTERNS, TAIKOBASHI,
 } from './config';
 
-// 狛犬: o par de guardiões nos pés do torii. À esquerda o "a" (boca aberta), à direita o "un"
+// 狛犬: o par de guardiões nos pés do torii, virados para quem chega. A figura é o escaneamento
+// "Shinto Guard Dog (Komainu)" de mechaghost (Sketchfab, CC BY 4.0, crédito no rodapé), otimizado
+// para a web (public/models/komainu.glb); a da direita é o espelho da esquerda. Enquanto o modelo
+// não chega (e no modo leve, sem GPU), ficam as figuras procedurais
+const KOMAINU_MODEL = '/models/komainu.glb';
+// Profundidade da figura (do focinho à cauda) sobre o pedestal, e o clareamento da textura (a
+// pedra escaneada é escura; a cor da paleta tinge por cima, como nas outras pedras)
+const KOMAINU_DEPTH = 1.55;
+const KOMAINU_BOOST = 2.3;
+
+// Lê o modelo uma vez: a malha vira uma geometria com a pose embutida, de frente para +z, centrada
+// em x/z, com a base em y = 0
+let komainuFigure = null;
+function loadKomainuFigure() {
+  komainuFigure ??= (async () => {
+    const [{ GLTFLoader }, { MeshoptDecoder }] = await Promise.all([
+      import('three/examples/jsm/loaders/GLTFLoader.js'),
+      import('three/examples/jsm/libs/meshopt_decoder.module.js'),
+    ]);
+    const gltf = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(KOMAINU_MODEL);
+    gltf.scene.updateMatrixWorld(true);
+    let mesh = null;
+    gltf.scene.traverse((o) => { if (!mesh && o.isMesh) mesh = o; });
+    // O arquivo guarda posições e normais quantizadas (inteiros normalizados): passam para float
+    // antes de embutir a transformação, senão os valores saem de [-1, 1] e são cortados
+    const geometry = mesh.geometry.clone();
+    ['position', 'normal'].forEach((name) => {
+      const src = geometry.getAttribute(name);
+      if (!src) return;
+      const out = new Float32Array(src.count * 3);
+      for (let i = 0; i < src.count; i += 1) {
+        out[i * 3] = src.getX(i);
+        out[i * 3 + 1] = src.getY(i);
+        out[i * 3 + 2] = src.getZ(i);
+      }
+      geometry.setAttribute(name, new BufferAttribute(out, 3));
+    });
+    geometry.applyMatrix4(mesh.matrixWorld);
+    // O escaneamento olha para -x
+    geometry.rotateY(Math.PI / 2);
+    geometry.computeBoundingBox();
+    const box = geometry.boundingBox;
+    const size = box.getSize(new Vector3());
+    geometry.translate(-(box.min.x + box.max.x) / 2, -box.min.y, -(box.min.z + box.max.z) / 2);
+    geometry.scale(KOMAINU_DEPTH / size.z, KOMAINU_DEPTH / size.z, KOMAINU_DEPTH / size.z);
+    return { geometry, map: mesh.material.map };
+  })();
+  return komainuFigure;
+}
+
 export function Komainu() {
   const { params } = useCameraMap();
+  const lite = useJourney((s) => s.lite);
   const materials = useAccentMaterials({ stone: { accent: 'granite' } });
+  const [figure, setFigure] = useState(null);
+  const figureMaterial = useMemo(() => (figure ? new MeshBasicMaterial({ map: figure.map }) : null), [figure]);
   const pair = useMemo(() => [-1, 1].map((side) => {
     const { x, y, z, facing } = besideTorii(params.toriiT, side * KOMAINU.right, KOMAINU.ahead);
     // Virados um pouco para dentro do caminho, encarando quem chega
     return { side, position: [x, y, z], rotationY: facing + side * KOMAINU.turnIn };
   }), [params.toriiT]);
 
-  return pair.map(({ side, position, rotationY }) => (
+  // O modelo carrega quando o navegador sossega (~220 KB)
+  useEffect(() => {
+    if (lite) return undefined;
+    let cancelled = false;
+    const idle = window.requestIdleCallback ?? ((fn) => setTimeout(fn, 1200));
+    const cancel = window.cancelIdleCallback ?? clearTimeout;
+    const id = idle(() => {
+      loadKomainuFigure().then((f) => { if (!cancelled) setFigure(f); }).catch(() => {});
+    }, { timeout: 4000 });
+    return () => { cancelled = true; cancel(id); };
+  }, [lite]);
+  useEffect(() => () => figureMaterial?.dispose(), [figureMaterial]);
+
+  // A pedra da figura acompanha o tom das outras pedras (dia/noite)
+  useFrame(() => {
+    if (figureMaterial) figureMaterial.color.copy(materials.stone.color).multiplyScalar(KOMAINU_BOOST);
+  });
+
+  return pair.map(({ side, position, rotationY }) => (figure && !lite ? (
+    <group key={side} position={position} rotation={[0, rotationY, 0]} scale={KOMAINU.scale}>
+      <mesh geometry={komainuPedestalGeometry()} material={materials.stone} dispose={null} />
+      <mesh geometry={figure.geometry} material={figureMaterial} position={[0, KOMAINU_SEAT, 0]} scale={[side, 1, 1]} dispose={null} />
+    </group>
+  ) : (
     <mesh
       key={side}
       geometry={komainuGeometry(side < 0 ? 'a' : 'un')}
@@ -34,7 +110,7 @@ export function Komainu() {
       scale={KOMAINU.scale}
       dispose={null}
     />
-  ));
+  )));
 }
 
 // Lanternas da trilha (pares ladeando o caminho) e das cabeceiras da ponte, viradas para o caminho

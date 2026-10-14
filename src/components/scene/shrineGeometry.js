@@ -80,6 +80,30 @@ function weather(geometry, axisZ) {
   return geometry;
 }
 
+// Pedestal do komainu: laje com musgo, chanfro, bloco com painel em moldura, capa e almofada.
+// A figura senta em KOMAINU_SEAT (a procedural daqui ou o modelo escaneado, ver ShrineProps)
+export const KOMAINU_SEAT = 1.09;
+function komainuPedestal() {
+  const moss = [0.86, 0.92, 0.8];
+  return [
+    placed(tinted(new BoxGeometry(1.62, 0.26, 1.32), moss), { y: 0.13 }),
+    placed(tinted(new CylinderGeometry(0.98, 1.06, 0.1, 4, 1), [0.9, 0.94, 0.86]), { y: 0.31, rotY: Math.PI / 4 }),
+    box(1.24, 0.56, 1.0, { y: 0.64 }),
+    ...[0.5, -0.5].flatMap((z) => [
+      box(1.0, 0.06, 0.04, { y: 0.83, z }), box(1.0, 0.06, 0.04, { y: 0.45, z }),
+      box(0.06, 0.38, 0.04, { x: -0.47, y: 0.64, z }), box(0.06, 0.38, 0.04, { x: 0.47, y: 0.64, z }),
+    ]),
+    // Florão em relevo no centro do painel
+    blob(0.09, [1.4, 1, 0.35], { y: 0.64, z: 0.5 }, 0.96),
+    placed(paint(new CylinderGeometry(1.0, 0.92, 0.1, 4, 1)), { y: 0.97, rotY: Math.PI / 4 }),
+    placed(paint(new CylinderGeometry(0.76, 0.84, 0.07, 4, 1), [0.94, 0.94, 0.94]), { y: 1.055, rotY: Math.PI / 4 }),
+  ];
+}
+
+export function komainuPedestalGeometry() {
+  return cached('komainu-pedestal', () => weather(assemble(komainuPedestal()), () => 0));
+}
+
 // 狛犬 (komainu): o par de leões guardiões do santuário, sentados num pedestal. O "a" fica de
 // boca aberta, com presas, e a pata sobre a joia (玉); o "un", de boca fechada, com o chifre e
 // o filhote sob a pata. Cabeça grande (quase 1/3 da figura), olhos saltados, juba em cachos
@@ -87,22 +111,8 @@ function weather(geometry, axisZ) {
 export function komainuGeometry(variant) {
   return cached(`komainu-${variant}`, () => {
     const open = variant === 'a';
-    const moss = [0.86, 0.92, 0.8];
-    const parts = [
-      // Pedestal: laje com musgo, chanfro, bloco com painel em moldura, capa e almofada
-      placed(tinted(new BoxGeometry(1.62, 0.26, 1.32), moss), { y: 0.13 }),
-      placed(tinted(new CylinderGeometry(0.98, 1.06, 0.1, 4, 1), [0.9, 0.94, 0.86]), { y: 0.31, rotY: Math.PI / 4 }),
-      box(1.24, 0.56, 1.0, { y: 0.64 }),
-      ...[0.5, -0.5].flatMap((z) => [
-        box(1.0, 0.06, 0.04, { y: 0.83, z }), box(1.0, 0.06, 0.04, { y: 0.45, z }),
-        box(0.06, 0.38, 0.04, { x: -0.47, y: 0.64, z }), box(0.06, 0.38, 0.04, { x: 0.47, y: 0.64, z }),
-      ]),
-      // Florão em relevo no centro do painel
-      blob(0.09, [1.4, 1, 0.35], { y: 0.64, z: 0.5 }, 0.96),
-      placed(paint(new CylinderGeometry(1.0, 0.92, 0.1, 4, 1)), { y: 0.97, rotY: Math.PI / 4 }),
-      placed(paint(new CylinderGeometry(0.76, 0.84, 0.07, 4, 1), [0.94, 0.94, 0.94]), { y: 1.055, rotY: Math.PI / 4 }),
-    ];
-    const y0 = 1.09;
+    const parts = komainuPedestal();
+    const y0 = KOMAINU_SEAT;
     parts.push(
       // Ancas (patas de trás dobradas), patas de trás e o tronco inclinado para trás
       blob(0.27, [0.8, 0.9, 1.2], { x: -0.3, y: y0 + 0.27, z: -0.14 }),
