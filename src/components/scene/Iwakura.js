@@ -16,22 +16,21 @@ const PARTS = {
 };
 
 // 水の呼吸: o 黒閃 da katana (o 3º golpe, lá embaixo no rio) corta o iwakura ao meio, como o
-// Tanjiro cortando a pedra no fim do treino. O golpe fica guardado e o corte só aparece quando a
-// pessoa volta à hero: um fio vermelho atravessa a pedra e a metade de cima escorrega pelo plano
-// do corte (a corda e os papéis vão juntos). Vale até recarregar a página
+// Tanjiro partindo a pedra gigante no fim do treino (episódio 3): um corte só, do topo ao chão,
+// bem no meio. O golpe fica guardado e o corte só aparece quando a pessoa volta à hero: um fio
+// vermelho desce pela pedra e as duas metades se afastam, inclinando para fora e abrindo a fenda
+// (a corda e os papéis partem junto). Vale até recarregar a página
 let cutPending = false;
 if (typeof window !== 'undefined') {
   window.addEventListener('black-flash', () => { cutPending = true; });
 }
 
-// Plano do corte no espaço da pedra: diagonal, como o golpe de uma espada
+// Plano do corte no espaço da pedra: quase vertical, pelo meio
 const PLANE_NORMAL = new Vector3(...IWAKURA_CUT.normal).normalize();
 const PLANE = new Vector4(PLANE_NORMAL.x, PLANE_NORMAL.y, PLANE_NORMAL.z, PLANE_NORMAL.dot(new Vector3(...IWAKURA_CUT.point)));
-// A metade de cima desliza pelo plano, para o lado que desce
-const SLIDE = new Vector3(0, -1, 0).projectOnPlane(PLANE_NORMAL).normalize();
 
 // Material que só desenha um lado do plano (no espaço do objeto, então acompanha a metade que
-// desliza). `side` 1 = acima do plano, -1 = abaixo. `glow` acende a borda do corte em vermelho
+// se afasta). `side` 1 = de um lado do plano, -1 = do outro. `glow` acende a borda do corte em vermelho
 function cutMaterial(side, faces) {
   const uniforms = { uPlane: { value: PLANE }, uSide: { value: side }, uGlow: { value: 0 } };
   const material = new MeshBasicMaterial({ vertexColors: true, side: faces });
@@ -82,7 +81,7 @@ export default function Iwakura() {
   const roomy = useThree((s) => s.size.width / s.size.height >= IWAKURA.minAspect);
   const wholeRef = useRef(null);
   const halvesRef = useRef(null);
-  const topRef = useRef(null);
+  const halfRefs = useRef({});
   const anim = useRef({ cut: false, t: -1 });
 
   // Afunda um pouco no chão: pedra assentada, não pousada
@@ -108,18 +107,22 @@ export default function Iwakura() {
     [1, -1].forEach((side) => {
       const half = cut[side];
       half.rock.material.color.copy(materials.rock.color);
-      half.core.material.color.copy(materials.rock.color).lerp(CORE, 0.55);
+      half.core.material.color.copy(materials.rock.color).lerp(CORE, 0.18);
       half.rope.material.color.copy(materials.rope.color);
       half.paper.material.color.copy(materials.paper.color);
       // O fio vermelho acende de uma vez e apaga devagar enquanto a metade escorrega
       const glow = Math.max(0, 1 - Math.max(0, a.t - IWAKURA_CUT.glow * 0.5) / IWAKURA_CUT.glow);
       Object.values(half).forEach((m) => { m.uniforms.uGlow.value = glow; });
     });
-    // Metade de cima: parada enquanto o fio brilha, depois escorrega, acelerando, e assenta
+    // As metades: paradas enquanto o fio brilha, depois se afastam devagar (pedra pesada),
+    // cada uma para o seu lado do plano, tombando um pouco para fora a partir da base
     const k = Math.min(1, Math.max(0, (a.t - IWAKURA_CUT.glow) / IWAKURA_CUT.slide));
-    const e = k * k * (3 - 2 * k);
-    topRef.current.position.copy(SLIDE).multiplyScalar(IWAKURA_CUT.distance * e);
-    topRef.current.rotation.z = -IWAKURA_CUT.tilt * e;
+    const e = 1 - (1 - k) ** 3;
+    [1, -1].forEach((side) => {
+      const half = halfRefs.current[side];
+      half.position.copy(PLANE_NORMAL).multiplyScalar(side * IWAKURA_CUT.distance * e).setY(0);
+      half.rotation.set(side * PLANE_NORMAL.z * IWAKURA_CUT.tilt * e, 0, -side * PLANE_NORMAL.x * IWAKURA_CUT.tilt * e);
+    });
     state.invalidate();
   });
 
@@ -142,8 +145,8 @@ export default function Iwakura() {
         <mesh geometry={geometry.paper} material={materials.paper} dispose={null} />
       </group>
       <group ref={halvesRef} visible={false}>
-        <group ref={topRef}>{parts(cut[1])}</group>
-        {parts(cut[-1])}
+        <group ref={(el) => { halfRefs.current[1] = el; }}>{parts(cut[1])}</group>
+        <group ref={(el) => { halfRefs.current[-1] = el; }}>{parts(cut[-1])}</group>
       </group>
     </group>
   );
