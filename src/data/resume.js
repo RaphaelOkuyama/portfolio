@@ -22,6 +22,7 @@ export const resumeData = {
     nav: { home: "Home", projects: "Projetos", certificates: "Certificados", contact: "Contato" },
     footer: {
       rights: "Todos os direitos reservados.",
+      credit: { label: "Corvo 3D", by: "de", license: "CC BY 4.0" },
       lead: "Obrigado por adentrar a montanha comigo.",
       top: "Voltar ao topo",
       navTitle: "Navegação",
@@ -401,6 +402,7 @@ export const resumeData = {
     nav: { home: "Home", projects: "Projects", certificates: "Certificates", contact: "Contact" },
     footer: {
       rights: "All rights reserved.",
+      credit: { label: "3D crow", by: "by", license: "CC BY 4.0" },
       lead: "Thanks for walking deep into the mountain with me.",
       top: "Back to top",
       navTitle: "Navigation",

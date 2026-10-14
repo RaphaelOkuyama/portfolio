@@ -3192,6 +3192,10 @@ html.no-gpu .washi {
 .sf-name { color: var(--text-primary); font-weight: 600; }
 .sf-name .font-jp { margin-left: 6px; color: var(--text-secondary); font-weight: 400; }
 .sf-rights { margin-left: auto !important; }
+/* Crédito do modelo 3D do corvo (CC BY): discreto, numa linha própria abaixo da assinatura */
+.sf-credit { width: 100%; font-size: 0.7rem; opacity: 0.6; }
+.sf-credit a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.sf-credit a:hover { opacity: 1; color: var(--text-primary); }
 
 /* Tablet e celular: tudo precisa caber em uma tela, então o rodapé fica compacto.
    Navegação e redes lado a lado; relógios e microestação dividem a última linha */

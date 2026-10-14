@@ -1,71 +1,40 @@
 'use client';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import {
-  AdditiveBlending, BufferAttribute, ConeGeometry, CylinderGeometry, DoubleSide, Matrix4, PlaneGeometry,
-  Quaternion, Raycaster, ShaderMaterial, SphereGeometry, Vector2, Vector3,
+  AdditiveBlending, ConeGeometry, CylinderGeometry, Group, Mesh, MeshBasicMaterial, PlaneGeometry, Raycaster,
+  ShaderMaterial, Vector2, Vector3,
 } from 'three';
-import { mergeGeometries, mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { journeyStore } from '../../store/journey';
 import { CROW, CROW_CAW, setCrowHitTester } from '../../lib/crow';
 import { sceneHeight, toNdc } from '../../lib/pointer';
-import { keys, lock, loft } from './sculpt';
 
 // 八咫烏 (Yatagarasu): o corvo de três pernas, mensageiro do sol que guia os perdidos. Quando a
-// pessoa fica um tempo parada na hero, ele chega voando, pousa no alto do torii e fica ali, vivo
-// (vira a cabeça, ajeita as penas, dá um pulinho); clicado, grasna e dá uma dica (ver CrowHint).
-// Se a pessoa rola para longe, ele vai embora. Preto com o brilho iridescente das penas de corvo,
-// olhos com um brilho âmbar, as três pernas agarradas na viga e um halo dourado sutil atrás (o sol)
-// Coordenadas: as do torii (o grupo é posto no topo do kasagi); frente do corvo em +z, pés em y = 0
+// pessoa fica um tempo parada na hero, ele chega voando, pousa no alto do torii e fica ali (olha em
+// volta, bica a viga); clicado, grasna e dá uma dica (ver CrowHint). Se a pessoa rola para longe,
+// ele vai embora. Atrás dele, um halo dourado sutil (o sol)
+// O corvo é o modelo "Crow" de Alexei Ostapenko (Sketchfab, CC BY 4.0, crédito no rodapé),
+// otimizado para a web (public/models/crow.glb), com a terceira perna acrescentada aqui
+// Coordenadas: as do torii (o grupo fica no topo do kasagi); frente do corvo em +z, pés em y = 0
 
-const vertexShader = /* glsl */ `
-  attribute float aKind;
-  varying float vKind;
-  varying vec3 vNormalW;
-  varying vec3 vWorld;
+const MODEL = '/models/crow.glb';
+// Trechos da animação do modelo (segundos): pousado olhando e bicando, voo e pouso
+const CLIP = { idle: [0, 6.8], fly: [8.4, 9.9], land: [9.9, 10.5] };
+// Topo do kasagi no centro (viga arqueada: base + espessura + curva + chanfro)
+const PERCH_TOP = 10.1;
+// Comprimento do corvo em unidades da cena: proporcional ao torii (10 de altura)
+const LENGTH = 1.3;
+// Chegada: de cima e da direita até o pouso; saída: para cima e para a esquerda
+const ARRIVE = { from: new Vector3(9, 7, 6), via: new Vector3(4, 4.5, -3), duration: 2.4 };
+const LEAVE = { to: new Vector3(-10, 9, 4), via: new Vector3(-3, 3.5, -2), duration: 1.9 };
+const bezier = (a, b, c, t, out) => out.set(0, 0, 0).addScaledVector(a, (1 - t) ** 2).addScaledVector(b, 2 * (1 - t) * t).addScaledVector(c, t * t);
+
+const haloVertex = /* glsl */ `
+  varying vec2 vUv;
   void main() {
-    vKind = aKind;
-    vec4 world = modelMatrix * vec4(position, 1.0);
-    vNormalW = normalize(mat3(modelMatrix) * normal);
-    vWorld = world.xyz;
-    gl_Position = projectionMatrix * viewMatrix * world;
-  }
-`;
-const fragmentShader = /* glsl */ `
-  uniform float uOpacity;
-  uniform float uDay;
-  varying float vKind;
-  varying vec3 vNormalW;
-  varying vec3 vWorld;
-  void main() {
-    vec3 N = normalize(vNormalW) * (gl_FrontFacing ? 1.0 : -1.0);
-    vec3 V = normalize(cameraPosition - vWorld);
-    vec3 L = normalize(vec3(-0.35, 0.85, 0.4));
-    float lit = smoothstep(-0.05, 0.12, dot(N, L));
-    float rim = smoothstep(0.6, 0.76, 1.0 - max(dot(N, V), 0.0));
-    float spec = smoothstep(0.9, 0.94, dot(N, normalize(L + V)));
-    vec3 col;
-    if (vKind < 0.5) {
-      // Pena de corvo em traço de anime: preto-azulado em duas faixas, o contraluz violeta-azul
-      // (o brilho das penas de corvo) e uma mancha de brilho fria
-      col = mix(vec3(0.016, 0.018, 0.032), vec3(0.07, 0.078, 0.13), lit);
-      col += vec3(0.32, 0.3, 0.78) * rim * 0.55;
-      col += vec3(0.5, 0.58, 0.85) * spec * 0.4;
-      col += vec3(0.05, 0.06, 0.09) * uDay * lit;
-    } else if (vKind < 1.5) {
-      // Bico e pernas: cinza-chumbo
-      col = mix(vec3(0.03, 0.03, 0.035), vec3(0.13, 0.13, 0.14), lit) + vec3(0.7) * spec * 0.4 + vec3(0.3, 0.32, 0.45) * rim * 0.25;
-    } else if (vKind < 2.5) {
-      // Íris âmbar acesa (o mensageiro do sol)
-      col = vec3(1.5, 0.72, 0.12);
-    } else if (vKind < 3.5) {
-      col = vec3(0.01);
-    } else {
-      // O ponto de brilho do olho
-      col = vec3(1.8);
-    }
-    gl_FragColor = vec4(col, uOpacity);
-    #include <colorspace_fragment>
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   }
 `;
 const haloFragment = /* glsl */ `
@@ -80,166 +49,117 @@ const haloFragment = /* glsl */ `
     gl_FragColor = vec4(vec3(1.0, 0.72, 0.28) * (disc + ring), (disc + ring) * uOpacity);
   }
 `;
-const haloVertex = /* glsl */ `
-  varying vec2 vUv;
-  void main() {
-    vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`;
 
-const K = { FEATHER: 0, BEAK: 1, EYE: 2, PUPIL: 3, SHINE: 4 };
-const UP = new Vector3(0, 1, 0);
-
-// Peça com o tipo; base na origem apontando para `dir`, depois movida para `root`
-function piece(geometry, kind, { scale, root = [0, 0, 0], dir, rotX = 0 } = {}) {
-  let g = geometry.index ? geometry.toNonIndexed() : geometry;
-  if (g.attributes.uv) g.deleteAttribute('uv');
-  if (g.attributes.normal) g.deleteAttribute('normal');
-  if (scale) g.scale(...scale);
-  if (rotX) g.rotateX(rotX);
-  if (dir) {
-    g.computeBoundingBox();
-    g.translate(0, -g.boundingBox.min.y, 0);
-    g.applyMatrix4(new Matrix4().makeRotationFromQuaternion(new Quaternion().setFromUnitVectors(UP, new Vector3(...dir).normalize())));
-  }
-  g.translate(...root);
-  g.setAttribute('aKind', new BufferAttribute(new Float32Array(g.attributes.position.count).fill(kind), 1));
-  return g;
-}
-function join(pieces) {
-  const g = mergeVertices(mergeGeometries(pieces), 1e-4);
-  g.computeVertexNormals();
-  return g;
-}
-const sphere = (r, w = 16, h = 12) => new SphereGeometry(r, w, h);
-
-// Silhueta de corvo esculpida (loft): da raiz da cauda até o pescoço; barriga funda, peito cheio e
-// a linha das costas reta. O corpo vai inclinado, com o peito para cima, como corvo pousado
-const BODY_SHAPE = keys([
-  //  s     z      w      ht     hb     cy
-  [0.0, -0.42, 0.045, 0.04, 0.04, 0.0],
-  [0.2, -0.28, 0.14, 0.12, 0.13, 0.0],
-  [0.45, -0.08, 0.19, 0.16, 0.2, -0.01],
-  [0.7, 0.08, 0.17, 0.16, 0.18, 0.02],
-  [0.88, 0.18, 0.125, 0.13, 0.12, 0.05],
-  [1.0, 0.24, 0.1, 0.1, 0.09, 0.07],
-]);
-const BODY_PITCH = -0.38;
-const BODY_Y = 0.48;
-const at = (shape) => (s) => {
-  const [z, w, ht, hb, cy] = shape(s);
-  return { z, w, ht, hb, cy };
-};
-// Cabeça (pivô no alto do pescoço): testa achatada, olhos de lado, a base do bico larga
-const HEAD_SHAPE = keys([
-  [0.0, -0.11, 0.05, 0.05, 0.05, 0.0],
-  [0.3, -0.05, 0.11, 0.11, 0.095, 0.01],
-  [0.62, 0.03, 0.115, 0.105, 0.09, 0.015],
-  [0.86, 0.1, 0.08, 0.075, 0.06, 0.005],
-  [1.0, 0.135, 0.045, 0.04, 0.035, 0.0],
-]);
-
-let bodyCache = null;
-function crowBody() {
-  if (bodyCache) return bodyCache;
-  const parts = [
-    piece(loft({ rings: 30, sides: 22, at: at(BODY_SHAPE), power: 2.1 }), K.FEATHER, { rotX: BODY_PITCH, root: [0, BODY_Y, 0] }),
-  ];
-  // Cauda em cunha: penas longas saindo da raiz, para trás e para baixo
-  const tail = [0, BODY_Y - 0.15, -0.39];
-  for (let i = 0; i < 7; i += 1) {
-    const x = (i - 3) * 0.03;
-    parts.push(piece(lock(0.5 - Math.abs(i - 3) * 0.03, 0.1, { bend: -0.05, wave: 0 }), K.FEATHER, { root: [x, tail[1], tail[2]], dir: [x * 2, -0.5, -1] }));
-  }
-  // O "calção" de penas no alto das pernas
-  [[-0.06, -0.06], [0.06, -0.06], [0, 0.06]].forEach(([x, z]) => parts.push(piece(sphere(0.06, 10, 8), K.FEATHER, { scale: [0.9, 1.3, 0.9], root: [x, BODY_Y - 0.12, z] })));
-  // 三本足: as três pernas, espalhadas ao longo do corpo (de perfil aparecem as três), cada uma com
-  // três dedos para a frente e um para trás agarrando a viga
-  [[-0.06, -0.1], [0, 0.02], [0.06, 0.13]].forEach(([x, z]) => {
-    parts.push(piece(new CylinderGeometry(0.013, 0.019, BODY_Y - 0.1, 8), K.BEAK, { root: [x, 0.0, z], dir: [0, 1, -0.12] }));
-    [-0.45, 0, 0.45].forEach((a2) => parts.push(piece(new ConeGeometry(0.011, 0.09, 6), K.BEAK, { root: [x, 0.01, z], dir: [Math.sin(a2), -0.15, Math.cos(a2)] })));
-    parts.push(piece(new ConeGeometry(0.01, 0.07, 6), K.BEAK, { root: [x, 0.01, z], dir: [0, -0.15, -1] }));
-  });
-  bodyCache = join(parts);
-  return bodyCache;
-}
-// Onde fica o alto do pescoço (o pivô da cabeça), já com a inclinação do corpo
-const NECK = (() => {
-  const { z, cy } = at(BODY_SHAPE)(1);
-  const c = Math.cos(BODY_PITCH);
-  const sn = Math.sin(BODY_PITCH);
-  return [0, BODY_Y + cy * c - z * sn + 0.02, cy * sn + z * c - 0.02];
-})();
-
-let headCache = null;
-function crowHead() {
-  if (headCache) return headCache;
-  const parts = [
-    piece(loft({ rings: 20, sides: 20, at: at(HEAD_SHAPE), power: 2.1 }), K.FEATHER, { rotX: -0.12 }),
-    // Bico de cima: longo, grosso na base, com a ponta curvada (o bico de corvo)
-    piece(new ConeGeometry(0.05, 0.27, 12), K.BEAK, { scale: [0.72, 1, 1.08], root: [0, 0.012, 0.11], dir: [0, -0.16, 1] }),
-    // As cerdas sobre as narinas, na base do bico
-    piece(lock(0.09, 0.05, { bend: -0.2, wave: 0 }), K.FEATHER, { root: [0, 0.04, 0.09], dir: [0, 0.15, 1] }),
-  ];
-  for (const sx of [-1, 1]) {
-    parts.push(
-      piece(sphere(0.024, 12, 10), K.EYE, { scale: [0.6, 1, 1], root: [sx * 0.088, 0.035, 0.04] }),
-      piece(sphere(0.014, 10, 8), K.PUPIL, { scale: [0.6, 1, 1], root: [sx * 0.098, 0.035, 0.045] }),
-      piece(sphere(0.006, 6, 6), K.SHINE, { root: [sx * 0.102, 0.045, 0.05] }),
-    );
-  }
-  headCache = join(parts);
-  return headCache;
-}
-// Bico de baixo (abre no grasnado), dobradiça na origem
-let jawCache = null;
-function crowJaw() {
-  if (jawCache) return jawCache;
-  jawCache = join([piece(new ConeGeometry(0.038, 0.22, 10), K.BEAK, { scale: [0.72, 1, 0.6], dir: [0, -0.3, 1] })]);
-  return jawCache;
-}
-// Asa (a direita; a esquerda é a mesma espelhada), ao longo de +x a partir do ombro (aberta): o
-// braço coberto e as rêmiges longas em leque. Fechada ela gira para trás e as pontas cruzam a cauda
-let wingCache = null;
-function crowWing() {
-  if (wingCache) return wingCache;
-  const parts = [piece(sphere(0.1, 12, 8), K.FEATHER, { scale: [2.3, 0.3, 1.2], root: [0.16, 0, -0.02] })];
-  for (let i = 0; i < 8; i += 1) {
-    const a2 = -0.1 + i * 0.075;
-    parts.push(piece(lock(0.36 + i * 0.03, 0.11, { bend: 0.06, wave: 0 }), K.FEATHER, { root: [0.22 + i * 0.022, -0.004 * i, -0.03], dir: [Math.cos(a2), -0.04, -Math.sin(a2) - 0.16] }));
-  }
-  wingCache = join(parts);
-  return wingCache;
+// A cena não tem luzes (tudo é pintado nos materiais): o corvo usa a textura do modelo num material
+// sem luz, com um contraluz violeta-azul na borda (o brilho das penas de corvo) somado no shader
+function crowMaterial(map) {
+  const material = new MeshBasicMaterial({ map, color: '#b9bfd8' });
+  material.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vRimN;\nvarying vec3 vRimV;')
+      .replace('#include <project_vertex>', '#include <project_vertex>\nvRimN = normalize(normalMatrix * objectNormal);\nvRimV = normalize(-mvPosition.xyz);');
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vRimN;\nvarying vec3 vRimV;')
+      .replace('#include <opaque_fragment>', 'float rim = smoothstep(0.55, 0.85, 1.0 - max(dot(normalize(vRimN), normalize(vRimV)), 0.0));\noutgoingLight += vec3(0.45, 0.45, 0.95) * rim * 0.7;\n#include <opaque_fragment>');
+  };
+  return material;
 }
 
-const PERCH_TOP = 9.64;
-// Proporcional ao torii (~1/10 da altura do portão)
-const SCALE = 1.05;
-// Chegada: de cima e da direita até o pouso; saída: para cima e para a esquerda (coordenadas do torii)
-const ARRIVE = { from: new Vector3(9, 7, 6), via: new Vector3(4, 4.5, -3), duration: 2.1 };
-const LEAVE = { to: new Vector3(-10, 9, 4), via: new Vector3(-3, 3.5, -2), duration: 1.7 };
-const bezier = (a, b, c, t, out) => out.set(0, 0, 0).addScaledVector(a, (1 - t) ** 2).addScaledVector(b, 2 * (1 - t) * t).addScaledVector(c, t * t);
+// 三本足: a terceira perna, no mesmo cinza das outras: canela fina, três dedos para a frente e um
+// para trás (presa ao quadril do esqueleto, acompanha o corpo)
+function thirdLeg(length, color) {
+  const toe = (dir, len) => {
+    const g = new ConeGeometry(length * 0.035, len, 6);
+    g.translate(0, len / 2, 0);
+    g.rotateX(Math.PI / 2);
+    g.rotateY(dir);
+    g.translate(0, length * 0.02, 0);
+    return g;
+  };
+  const shin = new CylinderGeometry(length * 0.03, length * 0.045, length, 8);
+  shin.translate(0, length / 2, 0);
+  const g = mergeGeometries([shin, ...[-0.5, 0, 0.5].map((a) => toe(a, length * 0.32)), toe(Math.PI, length * 0.24)].map((p) => {
+    const flat = p.toNonIndexed();
+    flat.deleteAttribute('uv');
+    return flat;
+  }));
+  return new Mesh(g, new MeshBasicMaterial({ color }));
+}
 
 export default function Yatagarasu({ position, rotationY }) {
   const camera = useThree((s) => s.camera);
-  const groupRef = useRef(null);
   const birdRef = useRef(null);
-  const headRef = useRef(null);
-  const jawRef = useRef(null);
-  const wingR = useRef(null);
-  const wingL = useRef(null);
   const haloRef = useRef(null);
-  const state = useRef({ mode: 'hidden', t: 0, lastActive: performance.now(), caw: -10, hop: 0, nextHop: 5 });
+  const [rig, setRig] = useState(null);
+  const state = useRef({ mode: 'hidden', t: 0, lastActive: performance.now(), caw: -10, clock: 0 });
 
-  const material = useMemo(() => new ShaderMaterial({
-    vertexShader, fragmentShader, side: DoubleSide, transparent: true, uniforms: { uOpacity: { value: 1 }, uDay: { value: 0 } },
-  }), []);
   const halo = useMemo(() => ({
-    geometry: new PlaneGeometry(2.6, 2.6),
+    geometry: new PlaneGeometry(2.4, 2.4),
     material: new ShaderMaterial({ vertexShader: haloVertex, fragmentShader: haloFragment, transparent: true, depthWrite: false, blending: AdditiveBlending, uniforms: { uOpacity: { value: 0 } } }),
   }), []);
-  useEffect(() => () => { material.dispose(); halo.geometry.dispose(); halo.material.dispose(); }, [material, halo]);
+  useEffect(() => () => { halo.geometry.dispose(); halo.material.dispose(); }, [halo]);
+
+  // O modelo carrega em segundo plano, quando o navegador sossega (é pequeno: ~230 KB)
+  useEffect(() => {
+    let cancelled = false;
+    const idle = window.requestIdleCallback ?? ((fn) => setTimeout(fn, 1500));
+    const cancel = window.cancelIdleCallback ?? clearTimeout;
+    const id = idle(async () => {
+      const [{ GLTFLoader }, { MeshoptDecoder }, { AnimationMixer }] = await Promise.all([
+        import('three/examples/jsm/loaders/GLTFLoader.js'),
+        import('three/examples/jsm/libs/meshopt_decoder.module.js'),
+        import('three'),
+      ]);
+      const gltf = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(MODEL);
+      if (cancelled) return;
+      const model = gltf.scene;
+      model.traverse((o) => {
+        if (o.isMesh) {
+          o.frustumCulled = false;
+          o.material = crowMaterial(o.material.map);
+        }
+      });
+      const mixer = new AnimationMixer(model);
+      const action = mixer.clipAction(gltf.animations[0]);
+      action.play();
+      action.paused = true;
+      mixer.setTime(0);
+      const pivot = new Group();
+      pivot.add(model);
+      pivot.updateMatrixWorld(true);
+      // O carregador troca espaços por _ nos nomes dos nós
+      const bone = (name) => model.getObjectByName(name.replace(/\s/g, '_'));
+      const at = (o) => o.getWorldPosition(new Vector3());
+      // Frente do corvo: da pelve para a cabeça, no plano do chão. O modelo gira para olhar para +z
+      const pelvis = bone('CROW_ Pelvis_02');
+      const head = bone('CROW_ Head_05');
+      const forward = at(head).sub(at(pelvis)).setY(0).normalize();
+      model.rotation.y = -Math.atan2(forward.x, forward.z);
+      // Tamanho pela caixa da malha na pose atual (o arquivo traz rotação e escala internas, e a
+      // distância entre ossos não bate com a malha): o comprimento vira LENGTH e os pés vão a y = 0
+      let skinned = null;
+      model.traverse((o) => { if (!skinned && o.isSkinnedMesh) skinned = o; });
+      const poseBox = () => {
+        pivot.updateMatrixWorld(true);
+        skinned.computeBoundingBox();
+        return skinned.boundingBox.clone().applyMatrix4(skinned.matrixWorld);
+      };
+      model.scale.multiplyScalar(LENGTH / Math.max(1e-6, poseBox().getSize(new Vector3()).z));
+      const box = poseBox();
+      model.position.y -= box.min.y;
+      model.position.x -= (box.min.x + box.max.x) / 2;
+      model.position.z -= (box.min.z + box.max.z) / 2;
+      pivot.updateMatrixWorld(true);
+      // A terceira perna: entre as duas, um pouco atrás, do quadril até o chão
+      const hip = at(bone('CROW_ L Thigh_040')).add(at(bone('CROW_ R Thigh_050'))).multiplyScalar(0.5);
+      const leg = thirdLeg(Math.max(0.05, hip.y * 0.92), '#6c7280');
+      leg.position.set(hip.x, 0, hip.z - LENGTH * 0.05);
+      pivot.add(leg);
+      pelvis.attach(leg);
+      setRig({ pivot, mixer, action, head });
+    }, { timeout: 5000 });
+    return () => { cancelled = true; cancel(id); };
+  }, []);
 
   // Atividade: rolar, teclar, clicar ou tocar (mexer o mouse para ler não conta)
   useEffect(() => {
@@ -254,7 +174,7 @@ export default function Yatagarasu({ position, rotationY }) {
     };
   }, []);
 
-  // Clique: a página pergunta se acertou o corvo pousado
+  // Clique: a página pergunta se acertou o corvo pousado (com folga: ele é pequeno na tela)
   useEffect(() => {
     const raycaster = new Raycaster();
     const ndc = new Vector2();
@@ -263,8 +183,7 @@ export default function Yatagarasu({ position, rotationY }) {
       if (!birdRef.current || (s.mode !== 'perched' && s.mode !== 'landing')) return false;
       const { x, y } = toNdc(clientX, clientY, window.innerWidth, sceneHeight());
       raycaster.setFromCamera(ndc.set(x, y), camera);
-      // Folga: uma esfera em volta do corpo (o corvo é pequeno na tela)
-      const center = birdRef.current.getWorldPosition(new Vector3()).add(new Vector3(0, 0.5 * SCALE, 0));
+      const center = birdRef.current.getWorldPosition(new Vector3()).add(new Vector3(0, LENGTH * 0.4, 0));
       return raycaster.ray.distanceSqToPoint(center) < 1.5 ** 2;
     });
   }, [camera]);
@@ -274,13 +193,12 @@ export default function Yatagarasu({ position, rotationY }) {
   useFrame((_, delta) => {
     const s = state.current;
     const bird = birdRef.current;
-    if (!bird) return;
+    if (!bird || !rig) return;
     const now = performance.now();
     const time = now / 1000;
     const dt = Math.min(delta, 1 / 20);
     const journey = journeyStore.getState();
     const atHero = journey.route === 'journey' && journey.progress < CROW.heroProgress;
-    material.uniforms.uDay.value += ((journey.theme === 'day' ? 1 : 0) - material.uniforms.uDay.value) * Math.min(1, dt * 3);
 
     if (s.mode === 'hidden') {
       bird.visible = false;
@@ -294,90 +212,62 @@ export default function Yatagarasu({ position, rotationY }) {
     bird.visible = true;
     haloRef.current.visible = true;
     s.t += dt;
-    // Foi embora da hero: ele levanta voo
     if ((s.mode === 'perched' || s.mode === 'landing') && !atHero) {
       s.mode = journey.reducedMotion ? 'hidden' : 'leaving';
       s.t = 0;
     }
 
-    let flap = 0;
-    let open = 0;
-    if (s.mode === 'arriving') {
-      const k = Math.min(1, s.t / ARRIVE.duration);
-      const e = 1 - (1 - k) ** 2.2;
-      bezier(ARRIVE.from, ARRIVE.via, tmp.perch, e, tmp.p);
-      bezier(ARRIVE.from, ARRIVE.via, tmp.perch, Math.min(1, e + 0.02), tmp.q);
-      bird.position.copy(tmp.p);
-      bird.rotation.y = Math.atan2(tmp.q.x - tmp.p.x, tmp.q.z - tmp.p.z);
-      bird.rotation.x = 0;
-      open = 1;
-      flap = Math.sin(time * (k > 0.8 ? 11 : 8)) * (1 - k * 0.3);
-      if (k >= 1) { s.mode = 'landing'; s.t = 0; }
-    } else if (s.mode === 'leaving') {
-      const k = Math.min(1, s.t / LEAVE.duration);
-      const e = k ** 1.8;
-      bezier(tmp.perch, LEAVE.via, LEAVE.to, e, tmp.p);
-      bezier(tmp.perch, LEAVE.via, LEAVE.to, Math.min(1, e + 0.02), tmp.q);
+    // Pose do modelo: o trecho da animação de cada momento, tocado pelo relógio daqui
+    s.clock += dt;
+    const [a, b] = s.mode === 'arriving' || s.mode === 'leaving' ? CLIP.fly : s.mode === 'landing' ? CLIP.land : CLIP.idle;
+    rig.action.time = s.mode === 'landing' ? Math.min(b, a + s.t) : a + (s.clock % (b - a));
+    rig.mixer.update(0);
+
+    if (s.mode === 'arriving' || s.mode === 'leaving') {
+      const leaving = s.mode === 'leaving';
+      const path = leaving ? LEAVE : ARRIVE;
+      const k = Math.min(1, s.t / path.duration);
+      const e = leaving ? k ** 1.8 : 1 - (1 - k) ** 2.2;
+      const from = leaving ? tmp.perch : ARRIVE.from;
+      const to = leaving ? LEAVE.to : tmp.perch;
+      bezier(from, path.via, to, e, tmp.p);
+      bezier(from, path.via, to, Math.min(1, e + 0.02), tmp.q);
       bird.position.copy(tmp.p);
       bird.rotation.set(0, Math.atan2(tmp.q.x - tmp.p.x, tmp.q.z - tmp.p.z), 0);
-      open = 1;
-      flap = Math.sin(time * 10);
-      if (k >= 1) { s.mode = 'hidden'; s.lastActive = now; }
+      if (k >= 1) {
+        s.t = 0;
+        if (leaving) {
+          s.mode = 'hidden';
+          s.lastActive = now;
+        } else s.mode = 'landing';
+      }
     } else {
       // Pousado: virado de três quartos para quem chega pelo caminho (a câmera vem de -z)
       bird.position.copy(tmp.perch);
-      const settle = s.mode === 'landing' ? Math.min(1, s.t / 0.45) : 1;
-      if (s.mode === 'landing' && settle >= 1) s.mode = 'perched';
-      open = 1 - settle;
-      flap = Math.sin(time * 12) * (1 - settle) * 0.6;
-      // Pulinho de vez em quando, trocando o lado para onde olha
-      s.nextHop -= dt;
-      if (s.nextHop < 0) { s.hop = 1; s.nextHop = 5 + Math.random() * 5; }
-      s.hop = Math.max(0, s.hop - dt * 2.5);
-      bird.position.y += Math.sin(Math.PI * s.hop) * 0.12;
-      bird.rotation.set(0, Math.PI + 1.05 + Math.sin(time * 0.3) * 0.12, 0);
+      bird.rotation.set(0, Math.PI + 1.05, 0);
+      if (s.mode === 'landing' && s.t >= CLIP.land[1] - CLIP.land[0]) {
+        s.mode = 'perched';
+        s.clock = 0;
+      }
     }
 
-    // Cabeça: olha em volta aos trancos (como os corvos), e no grasnado sobe com o bico aberto
+    // Grasnado: a cabeça sobe e volta (o modelo não tem osso de bico)
     const cawT = time - s.caw;
     const caw = cawT >= 0 && cawT < 0.7 ? Math.sin(Math.PI * (cawT / 0.7)) : 0;
-    if (headRef.current) {
-      const look = Math.round(Math.sin(time * 0.7) * 2) / 2;
-      headRef.current.rotation.set(-caw * 0.45, look * 0.6, Math.sin(time * 1.3) * 0.05);
-    }
-    if (jawRef.current) jawRef.current.rotation.x = 0.04 + caw * 0.5;
-    if (s.mode === 'perched') bird.position.y -= caw * 0.03;
-
-    // Asas: abertas e batendo no voo, recolhidas para trás pousado (com um ajeitar de penas)
-    const fold = 1 - open;
-    const ruffle = s.mode === 'perched' ? Math.max(0, Math.sin(time * 0.9)) ** 30 * 0.25 : 0;
-    if (wingR.current && wingL.current) {
-      wingR.current.rotation.set(-0.32 * fold, fold * (Math.PI / 2 + 0.12), flap * 0.9 + ruffle);
-      wingL.current.rotation.set(-0.32 * fold, -fold * (Math.PI / 2 + 0.12), -(flap * 0.9 + ruffle));
-    }
+    if (caw > 0) rig.head.rotateX(-caw * 0.55);
 
     // O halo do sol: acende no pouso e fica fraco atrás dele
-    const haloTarget = s.mode === 'perched' || s.mode === 'landing' ? 0.42 + caw * 0.5 : s.mode === 'arriving' ? 0.15 : 0;
+    const haloTarget = s.mode === 'perched' || s.mode === 'landing' ? 0.38 + caw * 0.5 : 0;
     halo.material.uniforms.uOpacity.value += (haloTarget - halo.material.uniforms.uOpacity.value) * Math.min(1, dt * 3);
-    haloRef.current.position.copy(bird.position).add(tmp.q.set(0, 0.55 * SCALE, -0.05));
+    haloRef.current.position.copy(bird.position).add(tmp.q.set(0, LENGTH * 0.45, -0.05));
     haloRef.current.quaternion.copy(camera.quaternion);
   });
 
   return (
-    <group ref={groupRef} position={position} rotation={[0, rotationY, 0]}>
+    <group position={position} rotation={[0, rotationY, 0]}>
       <mesh ref={haloRef} geometry={halo.geometry} material={halo.material} visible={false} renderOrder={1} />
-      <group ref={birdRef} visible={false} scale={SCALE}>
-        <mesh geometry={crowBody()} material={material} />
-        <group ref={headRef} position={NECK}>
-          <mesh geometry={crowHead()} material={material} />
-          <mesh ref={jawRef} geometry={crowJaw()} material={material} position={[0, -0.018, 0.1]} />
-        </group>
-        <group ref={wingR} position={[0.15, BODY_Y + 0.1, 0.08]}>
-          <mesh geometry={crowWing()} material={material} />
-        </group>
-        <group ref={wingL} position={[-0.15, BODY_Y + 0.1, 0.08]} scale={[-1, 1, 1]}>
-          <mesh geometry={crowWing()} material={material} />
-        </group>
+      <group ref={birdRef} visible={false}>
+        {rig ? <primitive object={rig.pivot} /> : null}
       </group>
     </group>
   );

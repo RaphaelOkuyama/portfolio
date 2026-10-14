@@ -197,6 +197,9 @@ export default function Footer() {
           <p className="sf-rights">
             © {new Date().getFullYear()} Raphael Okuyama. {t.rights}
           </p>
+          <p className="sf-credit">
+            {t.credit.label}: <a href="https://sketchfab.com/3d-models/crow-d5a9b0df4da3493688b63ce42c8a83e2" target="_blank" rel="noopener noreferrer">&ldquo;Crow&rdquo;</a> {t.credit.by} Alexei Ostapenko (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">{t.credit.license}</a>)
+          </p>
         </div>
       </div>
     </footer>
