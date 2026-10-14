@@ -605,13 +605,6 @@ p, li { text-wrap: pretty; }
   font-size: 0.82rem;
   color: var(--text-secondary);
 }
-.hero-available-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #4cc38a;
-  box-shadow: 0 0 0 3px color-mix(in srgb, #4cc38a 22%, transparent);
-}
 .hero-actions {
   display: flex;
   flex-wrap: wrap;

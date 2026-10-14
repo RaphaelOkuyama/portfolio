@@ -76,7 +76,7 @@ export function Komainu() {
   const [figures, setFigures] = useState(null);
   const pair = useMemo(() => [-1, 1].map((side) => {
     const { x, y, z, facing } = besideTorii(params.toriiT, side * KOMAINU.right, KOMAINU.ahead);
-    // Virados um pouco para dentro do caminho, encarando quem chega
+    // De frente para quem chega (KOMAINU.turnIn os vira para dentro do caminho)
     return { side, variant: side < 0 ? 'a' : 'un', position: [x, y, z], rotationY: facing + side * KOMAINU.turnIn };
   }), [params.toriiT]);
 

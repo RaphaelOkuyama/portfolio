@@ -64,7 +64,6 @@ export default function Home() {
             </Link>
           </div>
           <p className="hero-available">
-            <span className="hero-available-dot" aria-hidden="true" />
             <Lang
               pt={`${pt.hero.available} ${pt.contactPage.availability.join(' · ')}`}
               en={`${en.hero.available} ${en.contactPage.availability.join(' · ')}`}

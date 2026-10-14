@@ -89,8 +89,8 @@ export const IWAKURA_CUT = {
 };
 
 // 狛犬: o par de guardiões nos pés do torii, um de cada lado, um pouco à frente do portão e
-// virados para dentro do caminho (para quem chega)
-export const KOMAINU = { right: 5.3, ahead: -1.6, scale: 1.25, turnIn: 0.45 };
+// de frente para quem chega pelo caminho (turnIn > 0 os vira para dentro do caminho)
+export const KOMAINU = { right: 5.3, ahead: -1.6, scale: 1.25, turnIn: 0 };
 
 // 石灯籠: lanternas de pedra ladeando a trilha depois do torii (pulam o jardim zen, em z -21 a -8).
 // Acendem à noite; `glow` > 1 dispara o bloom na qualidade alta
