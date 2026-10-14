@@ -157,7 +157,7 @@ const bodyFragment = /* glsl */ `
 // Peças facetadas (cabeça, mandíbula, patas, tufos da crina e da cauda): low-poly como o resto da
 // cena, no mesmo branco perolado do corpo. aKind: 0 branco, 1 creme (chifres, dentes), 2 pelo da
 // crina (verde-água escuro na raiz, menta na ponta: aH), 3 olho aceso, 4 escuro (narinas, pupilas,
-// boca), 5 rosado (patas e garras), 6 contorno do olho, 7 o ponto de brilho do olho
+// boca), 5 cinza-lilás (canelas e garras), 6 contorno do olho, 7 o ponto de brilho do olho
 const facetVertex = /* glsl */ `
   attribute float aKind;
   attribute float aH;
@@ -217,7 +217,7 @@ const facetFragment = /* glsl */ `
     } else if (vKind < 4.5) {
       col = shade(vec3(0.03, 0.03, 0.04), N, V, 0.2, 0.9);
     } else if (vKind < 5.5) {
-      col = shade(vec3(0.72, 0.5, 0.46), N, V, 0.1, 0.5);
+      col = shade(vec3(0.6, 0.54, 0.6), N, V, 0.1, 0.5);
     } else if (vKind < 6.5) {
       // Contorno do olho: verde-água bem escuro (preto puro virava bolinha de frente)
       col = shade(vec3(0.01, 0.09, 0.085), N, V, 0.3, 0.9);
@@ -559,20 +559,27 @@ function dragonJaw() {
   return jawCache;
 }
 
-// Pata fina: coxa branca, o tufo de pelo no cotovelo, a canela rosada e quatro garras de ave
+// Pata de ave, como as do dragão do Haku: curta e fina, a coxa branca com o tufo de pelo, o
+// joelho dobrado (a canela volta para a frente, em Z), a canela escamada cinza-lilás e três dedos
+// com garras curvas, mais o esporão de trás. Local: +y desce pela perna, +z é a frente
 let legCache = null;
 function dragonLeg() {
   if (legCache) return legCache;
+  const knee = [0, 0.17, -0.05];
+  const ankle = [0, 0.32, 0.04];
   const parts = [
-    piece(cyl(0.05, 0.08, 0.3, 7), K.WHITE, { root: [0, 0.15, 0] }),
-    piece(sphere(0.055, 7, 5), K.WHITE, { root: [0, 0.3, 0] }),
-    piece(cone(0.045, 0.24, 5), K.FUR, { scale: [0.6, 1, 0.6], root: [0, 0.3, -0.03], dir: [0, 0.2, -1], h: true }),
-    piece(cyl(0.028, 0.045, 0.3, 6), K.PINK, { root: [0, 0.3, 0], dir: [0, 1, 0.5] }),
+    piece(cyl(0.042, 0.062, 0.18, 8), K.WHITE, { root: [0, 0, 0], dir: [0, 1, -0.3] }),
+    piece(sphere(0.045, 8, 6), K.WHITE, { root: knee }),
+    piece(cone(0.04, 0.2, 5), K.FUR, { scale: [0.6, 1, 0.6], root: [0, 0.12, -0.04], dir: [0, 0.35, -1], h: true }),
+    piece(cyl(0.022, 0.03, 0.17, 6), K.PINK, { root: knee, dir: [0, 1, 0.6] }),
+    piece(sphere(0.026, 6, 5), K.PINK, { root: ankle }),
   ];
-  [-0.055, -0.018, 0.018, 0.055].forEach((x) => parts.push(
-    piece(cone(0.014, 0.16, 5), K.PINK, { root: [x, 0.56, 0.13], dir: [x * 5, 0.15, 1] }),
+  [-0.5, 0, 0.5].forEach((spread) => parts.push(
+    piece(horn(0.11, 0.013, 0.003, { bend: 0.55, sides: 5, steps: 6 }), K.PINK, {
+      root: ankle, dir: [spread * 0.8, 0.35, 1],
+    }),
   ));
-  parts.push(piece(cone(0.014, 0.12, 5), K.PINK, { root: [0, 0.55, 0.08], dir: [0, 0.2, -1] }));
+  parts.push(piece(horn(0.06, 0.011, 0.003, { bend: 0.5, sides: 5, steps: 5 }), K.PINK, { root: ankle, dir: [0, 0.4, -1] }));
   legCache = join(parts, true);
   return legCache;
 }
@@ -1005,14 +1012,16 @@ export default function KoiDragon({ run, onDone }) {
       placeBasis(SPINES + f, tmp.p[tailI], tmp.v, tmp.n[tailI], tmp.tip.set(1.7, (2.6 + (f % 3) * 0.35) * flutter, 1.7), parts.blades);
     }
     parts.blades.instanceMatrix.needsUpdate = true;
-    // Patas: saem dos lados, para baixo e para trás, remando devagar
+    // Patas: saem de baixo dos lados e ficam recolhidas, para baixo e para trás, junto ao corpo
+    // (como as do Haku em voo), remando de leve
     LEGS.forEach(([k, side], l) => {
       const i = Math.round(k * (SEG - 1));
-      tmp.tip.copy(tmp.p[i]).addScaledVector(tmp.n[i], side * tmp.r[i] * 0.7).addScaledVector(tmp.b[i], -tmp.r[i] * 0.25);
-      const paddle = Math.sin(age * 5 + l * 1.7) * 0.4;
-      tmp.v.copy(tmp.b[i]).multiplyScalar(-0.6).addScaledVector(tmp.n[i], side * 0.8).addScaledVector(tmp.t[i], -0.35 + paddle).normalize();
-      tmp.w.copy(tmp.t[i]).multiplyScalar(side);
-      placeBasis(l, tmp.tip, tmp.v, tmp.w.cross(tmp.v), 1.05 + tmp.r[i] * 1.2, parts.legs);
+      tmp.tip.copy(tmp.p[i]).addScaledVector(tmp.n[i], side * tmp.r[i] * 0.6).addScaledVector(tmp.b[i], -tmp.r[i] * 0.45);
+      const paddle = Math.sin(age * 4 + l * 1.7) * 0.22;
+      tmp.v.copy(tmp.b[i]).multiplyScalar(-0.85).addScaledVector(tmp.n[i], side * 0.3).addScaledVector(tmp.t[i], -0.55 + paddle).normalize();
+      // A frente da pata (+z local) acompanha o corpo
+      tmp.w.copy(tmp.t[i]).cross(tmp.v).multiplyScalar(-1);
+      placeBasis(l, tmp.tip, tmp.v, tmp.w, 0.9 + tmp.r[i] * 1.1, parts.legs);
     });
     parts.legs.instanceMatrix.needsUpdate = true;
 
