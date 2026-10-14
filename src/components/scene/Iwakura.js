@@ -32,9 +32,10 @@ const PLANE_NORMAL = new Vector3(...IWAKURA_CUT.normal).normalize();
 const PLANE = new Vector4(PLANE_NORMAL.x, PLANE_NORMAL.y, PLANE_NORMAL.z, PLANE_NORMAL.dot(new Vector3(...IWAKURA_CUT.point)));
 
 // Material que só desenha um lado do plano (no espaço do objeto, então acompanha a metade que
-// se afasta). `side` 1 = de um lado do plano, -1 = do outro. `glow` acende a borda do corte em vermelho
+// se afasta). `side` 1 = de um lado do plano, -1 = do outro. `glow` acende a borda do corte em
+// vermelho, só acima de `sweep` (a altura por onde a lâmina já passou), com a ponta mais quente
 function cutMaterial(side, faces) {
-  const uniforms = { uPlane: { value: PLANE }, uSide: { value: side }, uGlow: { value: 0 } };
+  const uniforms = { uPlane: { value: PLANE }, uSide: { value: side }, uGlow: { value: 0 }, uSweep: { value: 10 } };
   const material = new MeshBasicMaterial({ vertexColors: true, side: faces });
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
@@ -42,7 +43,7 @@ function cutMaterial(side, faces) {
       .replace('#include <common>', '#include <common>\nvarying vec3 vCutPos;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvCutPos = position;');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vCutPos;\nuniform vec4 uPlane;\nuniform float uSide;\nuniform float uGlow;')
+      .replace('#include <common>', '#include <common>\nvarying vec3 vCutPos;\nuniform vec4 uPlane;\nuniform float uSide;\nuniform float uGlow;\nuniform float uSweep;')
       .replace('#include <clipping_planes_fragment>', [
         '#include <clipping_planes_fragment>',
         'float cutDist = dot(uPlane.xyz, vCutPos) - uPlane.w;',
@@ -50,7 +51,10 @@ function cutMaterial(side, faces) {
       ].join('\n'))
       .replace('#include <opaque_fragment>', [
         // O fio só na pedra (as pedrinhas do chão também cruzam o plano)
-        'outgoingLight = mix(outgoingLight, vec3(1.0, 0.12, 0.08) * 1.6, uGlow * smoothstep(0.06, 0.0, abs(cutDist)) * step(0.3, vCutPos.y));',
+        'float cutLine = smoothstep(0.06, 0.0, abs(cutDist)) * step(0.3, vCutPos.y);',
+        'float cutPass = smoothstep(uSweep - 0.04, uSweep + 0.04, vCutPos.y);',
+        'float cutHead = exp(-pow((vCutPos.y - uSweep) / 0.08, 2.0));',
+        'outgoingLight = mix(outgoingLight, vec3(1.0, 0.12, 0.08) * (1.6 + cutHead * 1.4), min(1.0, uGlow * cutLine * (cutPass + cutHead)));',
         '#include <opaque_fragment>',
       ].join('\n'));
   };
@@ -125,7 +129,12 @@ export default function Iwakura() {
   const wholeRef = useRef(null);
   const halvesRef = useRef(null);
   const halfRefs = useRef({});
-  const anim = useRef({ cut: false, t: -1 });
+  const anim = useRef({ cut: false, t: -1, still: 0, last: -1 });
+  // Do topo da pedra até o chão: o caminho da lâmina
+  const top = useMemo(() => {
+    geometry.rock.computeBoundingBox();
+    return geometry.rock.boundingBox.max.y;
+  }, [geometry]);
 
   // Afunda um pouco no chão: pedra assentada, não pousada
   const { position, rotationY } = useMemo(() => {
@@ -135,10 +144,18 @@ export default function Iwakura() {
 
   useFrame((state, delta) => {
     const a = anim.current;
-    // O corte espera a pessoa voltar à hero (a pedra à vista)
+    const dt = Math.min(delta, 1 / 20);
+    // O corte espera a pessoa voltar à hero e a câmera parar (a pedra à vista, sem pressa)
     if (!a.cut) {
       const { route, progress } = journeyStore.getState();
+      const moved = Math.abs(progress - a.last) > 0.0004;
+      a.last = progress;
+      a.still = moved ? 0 : a.still + dt;
       if (!cutPending || route !== 'journey' || progress > IWAKURA_CUT.heroProgress) return;
+      if (a.still < IWAKURA_CUT.settle) {
+        state.invalidate();
+        return;
+      }
       a.cut = true;
       a.t = 0;
       wholeRef.current.visible = false;
@@ -152,18 +169,24 @@ export default function Iwakura() {
       half.rope.material.color.copy(materials.rope.color);
       half.paper.material.color.copy(materials.paper.color);
     });
-    if (a.t > IWAKURA_CUT.glow + IWAKURA_CUT.slide + 0.5) return;
-    a.t += Math.min(delta, 1 / 20);
+    const { pause, sweep, hold, part, fade } = IWAKURA_CUT;
+    if (a.t > pause + sweep + hold + part) return;
+    a.t += dt;
+    // A lâmina desce do topo ao chão (rápida no começo, assentando no fim); o fio fica aceso um
+    // instante e apaga aos poucos enquanto as metades se afastam
+    const s = Math.min(1, Math.max(0, (a.t - pause) / sweep));
+    const sweepY = top * (1 - s) ** 2.2 - 0.1;
+    const glow = a.t < pause ? 0 : 1 - Math.min(1, Math.max(0, (a.t - pause - sweep - hold) / fade));
     [1, -1].forEach((side) => {
-      const half = cut[side];
-      // O fio vermelho acende de uma vez e apaga devagar enquanto a metade escorrega
-      const glow = Math.max(0, 1 - Math.max(0, a.t - IWAKURA_CUT.glow * 0.5) / IWAKURA_CUT.glow);
-      Object.values(half).forEach((m) => { m.uniforms.uGlow.value = glow; });
+      Object.values(cut[side]).forEach((m) => {
+        m.uniforms.uGlow.value = glow;
+        m.uniforms.uSweep.value = sweepY;
+      });
     });
-    // As metades: paradas enquanto o fio brilha, depois se afastam devagar (pedra pesada),
-    // cada uma para o seu lado do plano, tombando um pouco para fora a partir da base
-    const k = Math.min(1, Math.max(0, (a.t - IWAKURA_CUT.glow) / IWAKURA_CUT.slide));
-    const e = 1 - (1 - k) ** 3;
+    // As metades: paradas até a lâmina passar, depois se afastam devagar (pedra pesada: começa e
+    // termina suave), cada uma para o seu lado do plano, tombando um pouco para fora pela base
+    const k = Math.min(1, Math.max(0, (a.t - pause - sweep - hold) / part));
+    const e = k < 0.5 ? 4 * k ** 3 : 1 - (-2 * k + 2) ** 3 / 2;
     [1, -1].forEach((side) => {
       const half = halfRefs.current[side];
       half.position.copy(PLANE_NORMAL).multiplyScalar(side * IWAKURA_CUT.distance * e).setY(0);

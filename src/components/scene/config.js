@@ -83,11 +83,13 @@ export const IWAKURA = { offset: [10.5, 2.5], scale: 2.25, sink: 0.55, turn: -0.
 // O corte do iwakura pelo 黒閃 da katana (ver Iwakura.js): plano do corte no espaço da pedra
 // (ponto e normal: quase vertical, pelo meio), cor do miolo e quanto dela entra no tom da pedra,
 // a altura abaixo da qual a face do corte ignora o que cruza o plano (as pedrinhas do chão),
-// quanto cada metade se afasta e tomba para fora, as durações do fio vermelho e da abertura (s)
-// e até onde do caminho a pedra está à vista
+// quanto cada metade se afasta e tomba para fora, até onde do caminho a pedra está à vista e o
+// tempo (s) que a câmera precisa ficar parada antes do corte. A sequência (s): a pausa, a lâmina
+// descendo, o fio aceso parado, a abertura das metades e o fio apagando (durante a abertura)
 export const IWAKURA_CUT = {
   point: [0, 1.2, 0], normal: [1, 0.12, 0.1], core: '#d8d2c4', coreMix: 0.35, capFloor: 0.12,
-  distance: 0.09, tilt: 0.07, glow: 0.55, slide: 1.4, heroProgress: 0.06,
+  distance: 0.09, tilt: 0.07, heroProgress: 0.06, settle: 0.4,
+  pause: 0.45, sweep: 0.5, hold: 0.35, part: 2.2, fade: 1.6,
 };
 
 // 狛犬: o par de guardiões nos pés do torii, um de cada lado, um pouco à frente do portão e
