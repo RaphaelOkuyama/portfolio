@@ -74,7 +74,8 @@ function useFitWordmark(rootRef) {
 // Modelos 3D de terceiros usados na cena (Sketchfab, CC BY 4.0: o crédito é obrigatório)
 const MODEL_CREDITS = [
   { title: 'Crow', author: 'Alexei Ostapenko', href: 'https://sketchfab.com/3d-models/crow-d5a9b0df4da3493688b63ce42c8a83e2' },
-  { title: 'Shinto Guard Dog (Komainu)', author: 'mechaghost', href: 'https://sketchfab.com/3d-models/shinto-guard-dog-komainu-99c77426329d4e2c89027d14767cf76e' },
+  { title: 'Komainu (1)', author: 'Mikhail Volkov', href: 'https://sketchfab.com/3d-models/komainu-1-c67f9da4fc4541bfaba86ec9675f50db' },
+  { title: 'Komainu (2)', author: 'Mikhail Volkov', href: 'https://sketchfab.com/3d-models/komainu-2-47b7fcac9b584d6abb33c199c83e60eb' },
 ];
 
 export default function Footer() {

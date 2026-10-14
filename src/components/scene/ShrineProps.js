@@ -15,26 +15,31 @@ import {
   GROUND, KATANA, KOMAINU, PAGODA, RIVER, RIVERSIDE, SHISHI_ODOSHI, STONE_LANTERNS, TAIKOBASHI,
 } from './config';
 
-// 狛犬: o par de guardiões nos pés do torii, virados para quem chega. A figura é o escaneamento
-// "Shinto Guard Dog (Komainu)" de mechaghost (Sketchfab, CC BY 4.0, crédito no rodapé), otimizado
-// para a web (public/models/komainu.glb); a da direita é o espelho da esquerda. Enquanto o modelo
-// não chega (e no modo leve, sem GPU), ficam as figuras procedurais
-const KOMAINU_MODEL = '/models/komainu.glb';
-// Profundidade da figura (do focinho à cauda) sobre o pedestal, e o clareamento da textura (a
-// pedra escaneada é escura; a cor da paleta tinge por cima, como nas outras pedras)
-const KOMAINU_DEPTH = 1.55;
+// 狛犬: o par de guardiões nos pés do torii, virados para quem chega. As figuras são o par
+// escaneado "Komainu (Южно-Сахалинск)" de Mikhail Volkov (Sketchfab, CC BY 4.0, crédito no
+// rodapé), otimizado para a web: à esquerda o "a" (boca aberta), à direita o "un" (boca fechada).
+// Enquanto os modelos não chegam (e no modo leve, sem GPU), ficam as figuras procedurais
+// `turn`: o giro que deixa cada escaneamento de frente para +z; `tone`: iguala o tom das duas pedras
+const KOMAINU_MODELS = {
+  a: { url: '/models/komainu-a.glb', turn: -Math.PI / 2, tone: 1 },
+  un: { url: '/models/komainu-un.glb', turn: Math.PI, tone: 1.2 },
+};
+// Altura da figura sobre o pedestal, e o clareamento da textura (a pedra escaneada é escura; a
+// cor da paleta tinge por cima, como nas outras pedras)
+const KOMAINU_HEIGHT = 1.75;
 const KOMAINU_BOOST = 2.3;
 
-// Lê o modelo uma vez: a malha vira uma geometria com a pose embutida, de frente para +z, centrada
-// em x/z, com a base em y = 0
-let komainuFigure = null;
-function loadKomainuFigure() {
-  komainuFigure ??= (async () => {
+// Lê cada modelo uma vez: a malha vira uma geometria com a pose embutida, de frente para +z,
+// centrada em x/z, com a base em y = 0
+const komainuFigures = {};
+function loadKomainuFigure(variant) {
+  komainuFigures[variant] ??= (async () => {
+    const { url, turn, tone } = KOMAINU_MODELS[variant];
     const [{ GLTFLoader }, { MeshoptDecoder }] = await Promise.all([
       import('three/examples/jsm/loaders/GLTFLoader.js'),
       import('three/examples/jsm/libs/meshopt_decoder.module.js'),
     ]);
-    const gltf = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(KOMAINU_MODEL);
+    const gltf = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(url);
     gltf.scene.updateMatrixWorld(true);
     let mesh = null;
     gltf.scene.traverse((o) => { if (!mesh && o.isMesh) mesh = o; });
@@ -53,57 +58,57 @@ function loadKomainuFigure() {
       geometry.setAttribute(name, new BufferAttribute(out, 3));
     });
     geometry.applyMatrix4(mesh.matrixWorld);
-    // O escaneamento olha para -x
-    geometry.rotateY(Math.PI / 2);
+    geometry.rotateY(turn);
     geometry.computeBoundingBox();
     const box = geometry.boundingBox;
     const size = box.getSize(new Vector3());
     geometry.translate(-(box.min.x + box.max.x) / 2, -box.min.y, -(box.min.z + box.max.z) / 2);
-    geometry.scale(KOMAINU_DEPTH / size.z, KOMAINU_DEPTH / size.z, KOMAINU_DEPTH / size.z);
-    return { geometry, map: mesh.material.map };
+    geometry.scale(KOMAINU_HEIGHT / size.y, KOMAINU_HEIGHT / size.y, KOMAINU_HEIGHT / size.y);
+    return { geometry, tone, material: new MeshBasicMaterial({ map: mesh.material.map }) };
   })();
-  return komainuFigure;
+  return komainuFigures[variant];
 }
 
 export function Komainu() {
   const { params } = useCameraMap();
   const lite = useJourney((s) => s.lite);
   const materials = useAccentMaterials({ stone: { accent: 'granite' } });
-  const [figure, setFigure] = useState(null);
-  const figureMaterial = useMemo(() => (figure ? new MeshBasicMaterial({ map: figure.map }) : null), [figure]);
+  const [figures, setFigures] = useState(null);
   const pair = useMemo(() => [-1, 1].map((side) => {
     const { x, y, z, facing } = besideTorii(params.toriiT, side * KOMAINU.right, KOMAINU.ahead);
     // Virados um pouco para dentro do caminho, encarando quem chega
-    return { side, position: [x, y, z], rotationY: facing + side * KOMAINU.turnIn };
+    return { side, variant: side < 0 ? 'a' : 'un', position: [x, y, z], rotationY: facing + side * KOMAINU.turnIn };
   }), [params.toriiT]);
 
-  // O modelo carrega quando o navegador sossega (~220 KB)
+  // Os modelos carregam quando o navegador sossega (~340 KB os dois); trocam juntos
   useEffect(() => {
     if (lite) return undefined;
     let cancelled = false;
     const idle = window.requestIdleCallback ?? ((fn) => setTimeout(fn, 1200));
     const cancel = window.cancelIdleCallback ?? clearTimeout;
     const id = idle(() => {
-      loadKomainuFigure().then((f) => { if (!cancelled) setFigure(f); }).catch(() => {});
+      Promise.all(['a', 'un'].map(loadKomainuFigure))
+        .then(([a, un]) => { if (!cancelled) setFigures({ a, un }); })
+        .catch(() => {});
     }, { timeout: 4000 });
     return () => { cancelled = true; cancel(id); };
   }, [lite]);
-  useEffect(() => () => figureMaterial?.dispose(), [figureMaterial]);
 
-  // A pedra da figura acompanha o tom das outras pedras (dia/noite)
+  // A pedra das figuras acompanha o tom das outras pedras (dia/noite)
   useFrame(() => {
-    if (figureMaterial) figureMaterial.color.copy(materials.stone.color).multiplyScalar(KOMAINU_BOOST);
+    if (!figures) return;
+    Object.values(figures).forEach((f) => f.material.color.copy(materials.stone.color).multiplyScalar(KOMAINU_BOOST * f.tone));
   });
 
-  return pair.map(({ side, position, rotationY }) => (figure && !lite ? (
+  return pair.map(({ side, variant, position, rotationY }) => (figures && !lite ? (
     <group key={side} position={position} rotation={[0, rotationY, 0]} scale={KOMAINU.scale}>
       <mesh geometry={komainuPedestalGeometry()} material={materials.stone} dispose={null} />
-      <mesh geometry={figure.geometry} material={figureMaterial} position={[0, KOMAINU_SEAT, 0]} scale={[side, 1, 1]} dispose={null} />
+      <mesh geometry={figures[variant].geometry} material={figures[variant].material} position={[0, KOMAINU_SEAT, 0]} dispose={null} />
     </group>
   ) : (
     <mesh
       key={side}
-      geometry={komainuGeometry(side < 0 ? 'a' : 'un')}
+      geometry={komainuGeometry(variant)}
       material={materials.stone}
       position={position}
       rotation={[0, rotationY, 0]}
