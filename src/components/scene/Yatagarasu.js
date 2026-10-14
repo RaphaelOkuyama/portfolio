@@ -2,13 +2,14 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import {
-  AdditiveBlending, BufferAttribute, BufferGeometry, ConeGeometry, CylinderGeometry, DoubleSide, Matrix4, PlaneGeometry,
+  AdditiveBlending, BufferAttribute, ConeGeometry, CylinderGeometry, DoubleSide, Matrix4, PlaneGeometry,
   Quaternion, Raycaster, ShaderMaterial, SphereGeometry, Vector2, Vector3,
 } from 'three';
 import { mergeGeometries, mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { journeyStore } from '../../store/journey';
 import { CROW, CROW_CAW, setCrowHitTester } from '../../lib/crow';
 import { sceneHeight, toNdc } from '../../lib/pointer';
+import { keys, lock, loft } from './sculpt';
 
 // 八咫烏 (Yatagarasu): o corvo de três pernas, mensageiro do sol que guia os perdidos. Quando a
 // pessoa fica um tempo parada na hero, ele chega voando, pousa no alto do torii e fica ali, vivo
@@ -40,22 +41,28 @@ const fragmentShader = /* glsl */ `
     vec3 N = normalize(vNormalW) * (gl_FrontFacing ? 1.0 : -1.0);
     vec3 V = normalize(cameraPosition - vWorld);
     vec3 L = normalize(vec3(-0.35, 0.85, 0.4));
-    float wrap = max((dot(N, L) + 0.4) / 1.4, 0.0);
-    float fres = pow(1.0 - max(dot(N, V), 0.0), 2.2);
-    float spec = pow(max(dot(N, normalize(L + V)), 0.0), 40.0);
+    float lit = smoothstep(-0.05, 0.12, dot(N, L));
+    float rim = smoothstep(0.6, 0.76, 1.0 - max(dot(N, V), 0.0));
+    float spec = smoothstep(0.9, 0.94, dot(N, normalize(L + V)));
     vec3 col;
     if (vKind < 0.5) {
-      // Pena de corvo: quase preta, com o brilho azul-violeta-verde que muda com o ângulo
-      vec3 base = vec3(0.016, 0.016, 0.024) * (0.6 + 0.8 * wrap);
-      vec3 sheen = 0.5 + 0.5 * cos(6.2832 * (fres * 0.9 + vec3(0.62, 0.72, 0.85)));
-      col = base + sheen * fres * 0.32 + vec3(0.55, 0.6, 0.85) * spec * 0.35;
-      col += vec3(0.04, 0.05, 0.08) * uDay * wrap;
+      // Pena de corvo em traço de anime: preto-azulado em duas faixas, o contraluz violeta-azul
+      // (o brilho das penas de corvo) e uma mancha de brilho fria
+      col = mix(vec3(0.016, 0.018, 0.032), vec3(0.07, 0.078, 0.13), lit);
+      col += vec3(0.32, 0.3, 0.78) * rim * 0.55;
+      col += vec3(0.5, 0.58, 0.85) * spec * 0.4;
+      col += vec3(0.05, 0.06, 0.09) * uDay * lit;
     } else if (vKind < 1.5) {
       // Bico e pernas: cinza-chumbo
-      col = vec3(0.05, 0.05, 0.055) * (0.5 + 0.9 * wrap) + vec3(0.6) * spec * 0.5 + vec3(0.25, 0.28, 0.35) * fres * 0.25;
+      col = mix(vec3(0.03, 0.03, 0.035), vec3(0.13, 0.13, 0.14), lit) + vec3(0.7) * spec * 0.4 + vec3(0.3, 0.32, 0.45) * rim * 0.25;
+    } else if (vKind < 2.5) {
+      // Íris âmbar acesa (o mensageiro do sol)
+      col = vec3(1.5, 0.72, 0.12);
+    } else if (vKind < 3.5) {
+      col = vec3(0.01);
     } else {
-      // Olho: escuro e brilhante, com a íris âmbar acesa (o mensageiro do sol)
-      col = vec3(1.6, 0.75, 0.15) * 0.9 + vec3(1.0) * spec * 1.5;
+      // O ponto de brilho do olho
+      col = vec3(1.8);
     }
     gl_FragColor = vec4(col, uOpacity);
     #include <colorspace_fragment>
@@ -81,7 +88,7 @@ const haloVertex = /* glsl */ `
   }
 `;
 
-const K = { FEATHER: 0, BEAK: 1, EYE: 2 };
+const K = { FEATHER: 0, BEAK: 1, EYE: 2, PUPIL: 3, SHINE: 4 };
 const UP = new Vector3(0, 1, 0);
 
 // Peça com o tipo; base na origem apontando para `dir`, depois movida para `root`
@@ -105,68 +112,83 @@ function join(pieces) {
   g.computeVertexNormals();
   return g;
 }
-// Pena: lâmina ao longo de +y, larga no meio e pontuda, com uma quina (a raque)
-function feather(len, width, bend = 0.12) {
-  const pos = [];
-  const index = [];
-  const steps = 8;
-  for (let i = 0; i <= steps; i += 1) {
-    const t = i / steps;
-    const w = width * Math.sin(Math.PI * Math.min(1, 0.12 + t * 0.95)) * (1 - t * 0.35);
-    const y = t * len;
-    const z = -t * t * len * bend;
-    pos.push(-w / 2, y, z, 0, y, z + w * 0.12, w / 2, y, z);
-    if (i < steps) {
-      const a = i * 3;
-      index.push(a, a + 3, a + 1, a + 1, a + 3, a + 4, a + 1, a + 4, a + 2, a + 2, a + 4, a + 5);
-    }
-  }
-  const g = new BufferGeometry();
-  g.setAttribute('position', new BufferAttribute(new Float32Array(pos), 3));
-  g.setIndex(index);
-  return g;
-}
 const sphere = (r, w = 16, h = 12) => new SphereGeometry(r, w, h);
 
-// Corpo, cabeça, bico de cima, olhos, cauda em leque e as três pernas com os dedos agarrando
+// Silhueta de corvo esculpida (loft): da raiz da cauda até o pescoço; barriga funda, peito cheio e
+// a linha das costas reta. O corpo vai inclinado, com o peito para cima, como corvo pousado
+const BODY_SHAPE = keys([
+  //  s     z      w      ht     hb     cy
+  [0.0, -0.42, 0.045, 0.04, 0.04, 0.0],
+  [0.2, -0.28, 0.14, 0.12, 0.13, 0.0],
+  [0.45, -0.08, 0.19, 0.16, 0.2, -0.01],
+  [0.7, 0.08, 0.17, 0.16, 0.18, 0.02],
+  [0.88, 0.18, 0.125, 0.13, 0.12, 0.05],
+  [1.0, 0.24, 0.1, 0.1, 0.09, 0.07],
+]);
+const BODY_PITCH = -0.38;
+const BODY_Y = 0.48;
+const at = (shape) => (s) => {
+  const [z, w, ht, hb, cy] = shape(s);
+  return { z, w, ht, hb, cy };
+};
+// Cabeça (pivô no alto do pescoço): testa achatada, olhos de lado, a base do bico larga
+const HEAD_SHAPE = keys([
+  [0.0, -0.11, 0.05, 0.05, 0.05, 0.0],
+  [0.3, -0.05, 0.11, 0.11, 0.095, 0.01],
+  [0.62, 0.03, 0.115, 0.105, 0.09, 0.015],
+  [0.86, 0.1, 0.08, 0.075, 0.06, 0.005],
+  [1.0, 0.135, 0.045, 0.04, 0.035, 0.0],
+]);
+
 let bodyCache = null;
 function crowBody() {
   if (bodyCache) return bodyCache;
   const parts = [
-    piece(sphere(0.3), K.FEATHER, { scale: [0.76, 0.8, 1.48], rotX: -0.28, root: [0, 0.46, -0.06] }),
-    piece(sphere(0.2), K.FEATHER, { scale: [0.92, 1.0, 0.95], root: [0, 0.52, 0.2] }),
-    // O pescoço, que a cabeça (à parte, ver crowHead) encobre
-    piece(sphere(0.14), K.FEATHER, { scale: [0.9, 1.05, 1.05], root: [0, 0.7, 0.28] }),
+    piece(loft({ rings: 30, sides: 22, at: at(BODY_SHAPE), power: 2.1 }), K.FEATHER, { rotX: BODY_PITCH, root: [0, BODY_Y, 0] }),
   ];
-  // Cauda em leque, para trás e para baixo
+  // Cauda em cunha: penas longas saindo da raiz, para trás e para baixo
+  const tail = [0, BODY_Y - 0.15, -0.39];
   for (let i = 0; i < 7; i += 1) {
-    const x = (i - 3) * 0.035;
-    parts.push(piece(feather(0.55 - Math.abs(i - 3) * 0.04, 0.17, 0.06), K.FEATHER, { root: [x, 0.38, -0.42], dir: [x * 2.6, -0.3, -1] }));
+    const x = (i - 3) * 0.03;
+    parts.push(piece(lock(0.5 - Math.abs(i - 3) * 0.03, 0.1, { bend: -0.05, wave: 0 }), K.FEATHER, { root: [x, tail[1], tail[2]], dir: [x * 2, -0.5, -1] }));
   }
-  // O corpo fica mais alto que os pés: as três pernas aparecem inteiras
-  parts.forEach((g) => g.translate(0, LIFT, 0));
-  // 三本足: as três pernas, cada uma com três dedos para a frente e um para trás
-  // Espalhadas ao longo do corpo: de perfil as três aparecem
-  [[-0.07, -0.1], [0, 0.02], [0.07, 0.13]].forEach(([x, z]) => {
-    parts.push(piece(new CylinderGeometry(0.015, 0.022, 0.38, 8), K.BEAK, { root: [x, 0.0, z], dir: [0, 1, -0.15] }));
-    parts.push(piece(sphere(0.026, 8, 6), K.BEAK, { root: [x, 0.36, z - 0.05] }));
-    [-0.45, 0, 0.45].forEach((a) => parts.push(piece(new ConeGeometry(0.013, 0.1, 6), K.BEAK, { root: [x, 0.012, z], dir: [Math.sin(a), -0.15, Math.cos(a)] })));
-    parts.push(piece(new ConeGeometry(0.012, 0.08, 6), K.BEAK, { root: [x, 0.012, z], dir: [0, -0.15, -1] }));
+  // O "calção" de penas no alto das pernas
+  [[-0.06, -0.06], [0.06, -0.06], [0, 0.06]].forEach(([x, z]) => parts.push(piece(sphere(0.06, 10, 8), K.FEATHER, { scale: [0.9, 1.3, 0.9], root: [x, BODY_Y - 0.12, z] })));
+  // 三本足: as três pernas, espalhadas ao longo do corpo (de perfil aparecem as três), cada uma com
+  // três dedos para a frente e um para trás agarrando a viga
+  [[-0.06, -0.1], [0, 0.02], [0.06, 0.13]].forEach(([x, z]) => {
+    parts.push(piece(new CylinderGeometry(0.013, 0.019, BODY_Y - 0.1, 8), K.BEAK, { root: [x, 0.0, z], dir: [0, 1, -0.12] }));
+    [-0.45, 0, 0.45].forEach((a2) => parts.push(piece(new ConeGeometry(0.011, 0.09, 6), K.BEAK, { root: [x, 0.01, z], dir: [Math.sin(a2), -0.15, Math.cos(a2)] })));
+    parts.push(piece(new ConeGeometry(0.01, 0.07, 6), K.BEAK, { root: [x, 0.01, z], dir: [0, -0.15, -1] }));
   });
   bodyCache = join(parts);
   return bodyCache;
 }
-// Cabeça (pivô na origem, vira e sobe no grasnado): crânio, bico de cima grosso com a ponta curvada,
-// olhos e as penas eriçadas da garganta
+// Onde fica o alto do pescoço (o pivô da cabeça), já com a inclinação do corpo
+const NECK = (() => {
+  const { z, cy } = at(BODY_SHAPE)(1);
+  const c = Math.cos(BODY_PITCH);
+  const sn = Math.sin(BODY_PITCH);
+  return [0, BODY_Y + cy * c - z * sn + 0.02, cy * sn + z * c - 0.02];
+})();
+
 let headCache = null;
 function crowHead() {
   if (headCache) return headCache;
   const parts = [
-    piece(sphere(0.16), K.FEATHER, { scale: [0.88, 0.9, 1.15] }),
-    piece(new ConeGeometry(0.068, 0.36, 10), K.BEAK, { scale: [0.7, 1, 1.2], root: [0, -0.015, 0.12], dir: [0, -0.2, 1] }),
-    ...[-0.05, 0, 0.05].map((x) => piece(feather(0.18, 0.08, 0.2), K.FEATHER, { root: [x, -0.1, 0.05], dir: [x * 2, -1, 0.35] })),
+    piece(loft({ rings: 20, sides: 20, at: at(HEAD_SHAPE), power: 2.1 }), K.FEATHER, { rotX: -0.12 }),
+    // Bico de cima: longo, grosso na base, com a ponta curvada (o bico de corvo)
+    piece(new ConeGeometry(0.05, 0.27, 12), K.BEAK, { scale: [0.72, 1, 1.08], root: [0, 0.012, 0.11], dir: [0, -0.16, 1] }),
+    // As cerdas sobre as narinas, na base do bico
+    piece(lock(0.09, 0.05, { bend: -0.2, wave: 0 }), K.FEATHER, { root: [0, 0.04, 0.09], dir: [0, 0.15, 1] }),
   ];
-  for (const sx of [-1, 1]) parts.push(piece(sphere(0.026, 10, 8), K.EYE, { root: [sx * 0.11, 0.035, 0.07] }));
+  for (const sx of [-1, 1]) {
+    parts.push(
+      piece(sphere(0.024, 12, 10), K.EYE, { scale: [0.6, 1, 1], root: [sx * 0.088, 0.035, 0.04] }),
+      piece(sphere(0.014, 10, 8), K.PUPIL, { scale: [0.6, 1, 1], root: [sx * 0.098, 0.035, 0.045] }),
+      piece(sphere(0.006, 6, 6), K.SHINE, { root: [sx * 0.102, 0.045, 0.05] }),
+    );
+  }
   headCache = join(parts);
   return headCache;
 }
@@ -174,27 +196,26 @@ function crowHead() {
 let jawCache = null;
 function crowJaw() {
   if (jawCache) return jawCache;
-  jawCache = join([piece(new ConeGeometry(0.055, 0.26, 10), K.BEAK, { scale: [0.75, 1, 0.6], dir: [0, -0.32, 1] })]);
+  jawCache = join([piece(new ConeGeometry(0.038, 0.22, 10), K.BEAK, { scale: [0.72, 1, 0.6], dir: [0, -0.3, 1] })]);
   return jawCache;
 }
-// Asa (a direita; a esquerda é a mesma espelhada): o braço coberto e as rêmiges abrindo em leque,
-// ao longo de +x a partir do ombro (aberta); fechada ela gira para trás, colada ao corpo
+// Asa (a direita; a esquerda é a mesma espelhada), ao longo de +x a partir do ombro (aberta): o
+// braço coberto e as rêmiges longas em leque. Fechada ela gira para trás e as pontas cruzam a cauda
 let wingCache = null;
 function crowWing() {
   if (wingCache) return wingCache;
-  const parts = [piece(sphere(0.12, 12, 8), K.FEATHER, { scale: [2.2, 0.32, 1.15], root: [0.2, 0, -0.02] })];
-  for (let i = 0; i < 7; i += 1) {
-    const a = -0.12 + i * 0.09;
-    parts.push(piece(feather(0.3 + i * 0.025, 0.14, 0.04), K.FEATHER, { root: [0.28 + i * 0.025, -0.005 * i, -0.03], dir: [Math.cos(a), -0.05, -Math.sin(a) - 0.18] }));
+  const parts = [piece(sphere(0.1, 12, 8), K.FEATHER, { scale: [2.3, 0.3, 1.2], root: [0.16, 0, -0.02] })];
+  for (let i = 0; i < 8; i += 1) {
+    const a2 = -0.1 + i * 0.075;
+    parts.push(piece(lock(0.36 + i * 0.03, 0.11, { bend: 0.06, wave: 0 }), K.FEATHER, { root: [0.22 + i * 0.022, -0.004 * i, -0.03], dir: [Math.cos(a2), -0.04, -Math.sin(a2) - 0.16] }));
   }
   wingCache = join(parts);
   return wingCache;
 }
 
 const PERCH_TOP = 9.64;
-// Quanto o corpo fica acima dos pés
-const LIFT = 0.14;
-const SCALE = 2.6;
+// Proporcional ao torii (~1/10 da altura do portão)
+const SCALE = 1.05;
 // Chegada: de cima e da direita até o pouso; saída: para cima e para a esquerda (coordenadas do torii)
 const ARRIVE = { from: new Vector3(9, 7, 6), via: new Vector3(4, 4.5, -3), duration: 2.1 };
 const LEAVE = { to: new Vector3(-10, 9, 4), via: new Vector3(-3, 3.5, -2), duration: 1.7 };
@@ -215,7 +236,7 @@ export default function Yatagarasu({ position, rotationY }) {
     vertexShader, fragmentShader, side: DoubleSide, transparent: true, uniforms: { uOpacity: { value: 1 }, uDay: { value: 0 } },
   }), []);
   const halo = useMemo(() => ({
-    geometry: new PlaneGeometry(6.4, 6.4),
+    geometry: new PlaneGeometry(2.6, 2.6),
     material: new ShaderMaterial({ vertexShader: haloVertex, fragmentShader: haloFragment, transparent: true, depthWrite: false, blending: AdditiveBlending, uniforms: { uOpacity: { value: 0 } } }),
   }), []);
   useEffect(() => () => { material.dispose(); halo.geometry.dispose(); halo.material.dispose(); }, [material, halo]);
@@ -243,8 +264,8 @@ export default function Yatagarasu({ position, rotationY }) {
       const { x, y } = toNdc(clientX, clientY, window.innerWidth, sceneHeight());
       raycaster.setFromCamera(ndc.set(x, y), camera);
       // Folga: uma esfera em volta do corpo (o corvo é pequeno na tela)
-      const center = birdRef.current.getWorldPosition(new Vector3()).add(new Vector3(0, (0.6 + LIFT) * SCALE, 0));
-      return raycaster.ray.distanceSqToPoint(center) < (0.9 * SCALE) ** 2;
+      const center = birdRef.current.getWorldPosition(new Vector3()).add(new Vector3(0, 0.5 * SCALE, 0));
+      return raycaster.ray.distanceSqToPoint(center) < 1.5 ** 2;
     });
   }, [camera]);
 
@@ -331,14 +352,14 @@ export default function Yatagarasu({ position, rotationY }) {
     const fold = 1 - open;
     const ruffle = s.mode === 'perched' ? Math.max(0, Math.sin(time * 0.9)) ** 30 * 0.25 : 0;
     if (wingR.current && wingL.current) {
-      wingR.current.rotation.set(0, fold * (Math.PI / 2 + 0.15), flap * 0.9 + ruffle);
-      wingL.current.rotation.set(0, -fold * (Math.PI / 2 + 0.15), -(flap * 0.9 + ruffle));
+      wingR.current.rotation.set(-0.32 * fold, fold * (Math.PI / 2 + 0.12), flap * 0.9 + ruffle);
+      wingL.current.rotation.set(-0.32 * fold, -fold * (Math.PI / 2 + 0.12), -(flap * 0.9 + ruffle));
     }
 
     // O halo do sol: acende no pouso e fica fraco atrás dele
     const haloTarget = s.mode === 'perched' || s.mode === 'landing' ? 0.42 + caw * 0.5 : s.mode === 'arriving' ? 0.15 : 0;
     halo.material.uniforms.uOpacity.value += (haloTarget - halo.material.uniforms.uOpacity.value) * Math.min(1, dt * 3);
-    haloRef.current.position.copy(bird.position).add(tmp.q.set(0, 0.6 * SCALE, 0));
+    haloRef.current.position.copy(bird.position).add(tmp.q.set(0, 0.55 * SCALE, -0.05));
     haloRef.current.quaternion.copy(camera.quaternion);
   });
 
@@ -347,14 +368,14 @@ export default function Yatagarasu({ position, rotationY }) {
       <mesh ref={haloRef} geometry={halo.geometry} material={halo.material} visible={false} renderOrder={1} />
       <group ref={birdRef} visible={false} scale={SCALE}>
         <mesh geometry={crowBody()} material={material} />
-        <group ref={headRef} position={[0, 0.82 + LIFT, 0.34]}>
+        <group ref={headRef} position={NECK}>
           <mesh geometry={crowHead()} material={material} />
-          <mesh ref={jawRef} geometry={crowJaw()} material={material} position={[0, -0.05, 0.12]} />
+          <mesh ref={jawRef} geometry={crowJaw()} material={material} position={[0, -0.018, 0.1]} />
         </group>
-        <group ref={wingR} position={[0.19, 0.6 + LIFT, 0.1]}>
+        <group ref={wingR} position={[0.15, BODY_Y + 0.1, 0.08]}>
           <mesh geometry={crowWing()} material={material} />
         </group>
-        <group ref={wingL} position={[-0.19, 0.6 + LIFT, 0.1]} scale={[-1, 1, 1]}>
+        <group ref={wingL} position={[-0.15, BODY_Y + 0.1, 0.08]} scale={[-1, 1, 1]}>
           <mesh geometry={crowWing()} material={material} />
         </group>
       </group>
