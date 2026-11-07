@@ -26,12 +26,14 @@ import Bonsai from './Bonsai';
 import Comet from './Comet';
 import KatanaSlash from './KatanaSlash';
 import ShaderWarmup, { LateWarmup } from './ShaderWarmup';
+import SceneLight from './SceneLight';
+import GroundMist from './GroundMist';
 
 // Grupos montados em sequência (ordem: o que aparece primeiro no hero vem antes)
 const STAGES = [
-  [Atmosphere, JourneyCamera, Sky, Celestial, Comet, Birds],
+  [Atmosphere, SceneLight, JourneyCamera, Sky, Celestial, Comet, Birds],
   [MountainLayers],
-  [Ground, Kasumi],
+  [Ground, Kasumi, GroundMist],
   [Torii, Iwakura, Komainu, Festival],
   [StonePaths, StoneLanterns],
   [BambooGrove, KodamaHunt, ShishiOdoshi, Bonsai],
@@ -43,7 +45,7 @@ const STAGES = [
 // Cena leve (sem GPU): fica o cenário. Saem as partículas e o que vive sozinho (pássaros, cometa,
 // kodama, golpe da katana, pétalas, folhas, neve) e a névoa em camadas (transparente sobre a tela
 // toda: pintar a mesma área várias vezes é o que mais pesa sem GPU)
-const ANIMATED = new Set([Comet, Birds, KodamaHunt, KatanaSlash, Momiji, Snow, Petals, Kasumi]);
+const ANIMATED = new Set([Comet, Birds, KodamaHunt, KatanaSlash, Momiji, Snow, Petals, Kasumi, GroundMist]);
 
 // memo: montar o grupo seguinte não re-renderiza os anteriores
 const Stage = memo(function Stage({ index, lite }) {

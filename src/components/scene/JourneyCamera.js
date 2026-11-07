@@ -6,6 +6,7 @@ import { journeyStore, effectiveProgress } from '../../store/journey';
 import { clamp01 } from '../../lib/journey/season';
 import { currentCameraMap, getCameraCurve } from './useCameraMap';
 import { cameraT } from '../../lib/journey/cameraMap';
+import { cameraShot } from '../../lib/journey/shots';
 import { CAMERA_FLIGHT } from './config';
 import { power2InOut, responsiveFov } from '../../lib/journey/math';
 import { pointer } from '../../lib/pointer';
@@ -62,11 +63,18 @@ export default function JourneyCamera() {
     }
 
     // Progresso → posição na curva (acelera até o torii, ver cameraMap.js)
-    const t = cameraT(clamp01(current.current), currentCameraMap(journey));
+    const map = currentCameraMap(journey);
+    const t = cameraT(clamp01(current.current), map);
     curve.getPointAt(t, position);
     curve.getTangentAt(t, tangent);
     state.camera.position.copy(position);
     state.camera.lookAt(position.x + tangent.x, position.y + tangent.y, position.z + tangent.z);
+
+    // Plano do trecho (ver lib/journey/shots): no hero o torii vai para o terço direito
+    const shot = cameraShot(clamp01(current.current), { crossAt: map.crossAt, aspect: state.size.width / Math.max(1, state.size.height), ranges: journey.sectionRanges });
+    if (shot.yaw) state.camera.rotateY(shot.yaw);
+    if (shot.pitch) state.camera.rotateX(shot.pitch);
+    if (shot.roll) state.camera.rotateZ(shot.roll);
 
     // Cursor fora da janela (ou movimento reduzido): volta ao centro devagar
     const follow = sway.fine && pointer.active && !journey.reducedMotion && !journey.lite;

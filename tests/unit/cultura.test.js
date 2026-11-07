@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { buildVCard, escapeVCard } from '../../src/lib/meishi';
 import { MICROSEASONS, microseasonFor, tokyoMonthDay } from '../../src/lib/microseasons';
 import { drawOmikuji, RANKS, CATEGORIES } from '../../src/lib/omikuji';
-import { kanjiNumeral, kanjiNumber, KANJI_NUMBERS } from '../../src/lib/kanji';
+import { daijiNumeral, kanjiNumeral, kanjiNumber, KANJI_NUMBERS } from '../../src/lib/kanji';
 import { SHODO_STROKES, SHODO_STROKE_COUNT } from '../../src/lib/shodo';
 
 describe('名刺 vCard', () => {
@@ -87,8 +87,11 @@ describe('numerais em kanji', () => {
     expect(kanjiNumeral(101)).toBe('101');
   });
 
-  it('kanjiNumber conta a partir do índice 0 e a lista dos painéis vai até 二十', () => {
-    expect(kanjiNumber(0)).toBe('一');
+  it('kanjiNumber (projetos) conta a partir do índice 0 em daiji; a lista comum vai até 二十', () => {
+    expect(kanjiNumber(0)).toBe('壱');
+    expect(kanjiNumber(5)).toBe('陸');
+    expect(kanjiNumber(10)).toBe('拾壱');
+    expect(daijiNumeral(20)).toBe('弐拾');
     expect(KANJI_NUMBERS).toHaveLength(20);
     expect(KANJI_NUMBERS.at(-1)).toBe('二十');
   });

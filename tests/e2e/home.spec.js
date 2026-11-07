@@ -10,7 +10,7 @@ test.describe('Hero', () => {
   test('frase de valor, disponibilidade e os dois atalhos', async ({ page }) => {
     await openHome(page);
     const hero = page.locator('#hero');
-    await expect(hero.locator('.hero-summary')).toHaveText('Desenvolvo sistemas que rodam de verdade: meu código atende 42+ clínicas e assina 2.000+ laudos por mês.', { useInnerText: true });
+    await expect(hero.locator('.hero-summary')).toHaveText('Construí, em dupla, uma plataforma de telecardiologia que atende 42+ clínicas e por onde passam 2.000+ laudos assinados por mês.', { useInnerText: true });
     await expect(hero.locator('.hero-available')).toHaveText('Disponível para CLT · PJ · Freelance', { useInnerText: true });
     await expect(hero.getByRole('link', { name: 'Ver projetos' })).toHaveAttribute('href', '/#projects');
     await hero.getByRole('link', { name: 'Fale comigo' }).click();
@@ -47,7 +47,7 @@ test.describe('Idioma', () => {
   test('a escolha fica salva depois de recarregar', async ({ page }) => {
     await openHome(page);
     await page.getByRole('button', { name: 'Mudar idioma para inglês' }).first().click();
-    await expect(page.locator('#hero .hero-summary')).toHaveText(/^I build software that runs for real/, { useInnerText: true });
+    await expect(page.locator('#hero .hero-summary')).toHaveText(/^I co-built a telecardiology platform/, { useInnerText: true });
     await page.reload();
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     await expect(page.getByRole('link', { name: 'See projects' })).toBeVisible();

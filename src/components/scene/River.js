@@ -88,6 +88,14 @@ const fragmentShader = /* glsl */ `
     }
     col = mix(col, mix(uSky, vec3(0.8, 0.9, 1.0), 0.45), clamp(rings, 0.0, 1.0) * 0.85);
 
+    // Céu refletido perto da câmera: um véu do céu sobre a água escura e as estrelas tremendo nas
+    // marolas (à noite o rio deixava de ser um buraco preto na metade de baixo da tela)
+    col = mix(col, uSky, (1.0 - grazing) * 0.22 * uSkyReflection);
+    vec2 starCell = floor(vec2(vLocal.x * 1.6 + (fine - 0.5) * 0.9, vLocal.y * 0.7 - t * 0.05));
+    float starSeed = hash21(starCell);
+    float star = step(0.965, starSeed) * smoothstep(0.55, 0.0, length(fract(vec2(vLocal.x * 1.6 + (fine - 0.5) * 0.9, vLocal.y * 0.7 - t * 0.05)) - 0.5));
+    col += vec3(0.85, 0.9, 1.0) * star * (0.35 + 0.35 * sin(t * 3.0 + starSeed * 40.0)) * uSkyReflection * (1.0 - grazing * 0.7);
+
     // Margens irregulares que se fundem com o chão
     float halfW = ${(RIVER.size[0] / 2).toFixed(1)};
     float bank = smoothstep(0.0, 2.5 + fbm(vec2(vLocal.y * 0.15, 3.0)) * 3.0, halfW - abs(vLocal.x));

@@ -4,6 +4,12 @@ import { useFrame } from '@react-three/fiber';
 import { Color, DoubleSide, FrontSide, MeshBasicMaterial } from 'three';
 import { journeyStore } from '../../store/journey';
 import { SCENE_ACCENTS } from '../../lib/palette';
+import { withSceneLight } from './lightRig';
+import { detailTexture } from './detailTextures';
+
+// Relevo do Poly Haven por tom da paleta: granito (lanternas, komainu, lajes do caminho)
+const DETAIL = { granite: { name: 'stone', scale: 0.35, amount: 0.3 } };
+const detailFor = (accent) => (DETAIL[accent] ? { texture: detailTexture(DETAIL[accent].name), scale: DETAIL[accent].scale, amount: DETAIL[accent].amount } : null);
 
 // Materiais de uma peça da cena tingidos pela paleta, com o mesmo crossfade 昼/夜 do torii.
 // `parts`: { nome: { accent, double?, glow? } } — `accent` é a chave em SCENE_ACCENTS;
@@ -11,11 +17,14 @@ import { SCENE_ACCENTS } from '../../lib/palette';
 export function useAccentMaterials(parts) {
   const keys = Object.keys(parts);
   const materials = useMemo(
-    () => Object.fromEntries(keys.map((k) => [k, new MeshBasicMaterial({
+    () => Object.fromEntries(keys.map((k) => [k, parts[k].glow ? new MeshBasicMaterial({
       vertexColors: true,
       side: parts[k].double ? DoubleSide : FrontSide,
-      toneMapped: !parts[k].glow,
-    })])),
+      toneMapped: false,
+    }) : withSceneLight(new MeshBasicMaterial({
+      vertexColors: true,
+      side: parts[k].double ? DoubleSide : FrontSide,
+    }), detailFor(parts[k].accent))])),
     // As peças são fixas por componente
     [], // eslint-disable-line react-hooks/exhaustive-deps
   );

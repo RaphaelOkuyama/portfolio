@@ -1,13 +1,53 @@
 // ============================================================
-// NOTAS SOBRE AS IMAGENS DO TOTEM:
-// /public/projects/totem/tela-01.png
+// FOTOS DOS PROJETOS: só imagens que existem nos repositórios do GitHub (prints da pasta docs/ de
+// cada projeto, os do repositório portifolio-freelance e as fotos dos amigurumis do catálogo da
+// Saeko), copiadas para /public/projects/<projeto>/. Projeto sem imagem no GitHub fica sem foto.
 // ============================================================
-
-const TOTEM_IMGS = [
-  { src: '/projects/totem/tela-01.png', alt: 'Tela de boas-vindas' },
-  { src: '/projects/totem/tela-02.png', alt: 'Cardápio de combos' },
-  { src: '/projects/totem/tela-03.png', alt: 'Detalhes do produto' },
+const shot = (dir, file, pt, en) => ({ src: `/projects/${dir}/${file}.png`, alt: { pt, en } });
+const FIT_AI_SHOTS = [
+  shot('fit-ai', 'home', 'Tela inicial', 'Home screen'),
+  shot('fit-ai', 'montando-plano-de-treino-com-ia', 'Coach de IA montando o plano de treino', 'AI coach building the workout plan'),
+  shot('fit-ai', 'plano-de-treino', 'Plano de treino', 'Workout plan'),
+  shot('fit-ai', 'treino-do-dia', 'Treino do dia', "Today's workout"),
+  shot('fit-ai', 'chatbot', 'Conversa com o coach de IA', 'Chat with the AI coach'),
+  shot('fit-ai', 'estatisticas', 'Estatísticas', 'Statistics'),
+  shot('fit-ai', 'profile', 'Perfil', 'Profile'),
+  shot('fit-ai', 'tela-de-login', 'Tela de login', 'Sign-in screen'),
 ];
+const FIT_AI_API_SHOTS = [shot('fit-ai-api', 'swagger', 'Documentação da API no Swagger', 'API documentation in Swagger')];
+const TOTEM_SHOTS = [
+  shot('totem', 'tela-01', 'Tela de boas-vindas', 'Welcome screen'),
+  shot('totem', 'tela-02', 'Cardápio de combos', 'Combo menu'),
+  shot('totem', 'cardapio-bebidas', 'Cardápio de bebidas', 'Drinks menu'),
+  shot('totem', 'tela-03', 'Detalhes do produto', 'Product details'),
+  shot('totem', 'sacola', 'Sacola', 'Bag'),
+  shot('totem', 'finalizar-pedido', 'Finalizar pedido', 'Place the order'),
+  shot('totem', 'checkout-stripe', 'Pagamento no Stripe Checkout', 'Stripe Checkout payment'),
+  shot('totem', 'sucess-payment', 'Pagamento confirmado', 'Payment confirmed'),
+  shot('totem', 'visualizar-pedidos-cpf', 'Consulta de pedidos por CPF', 'Order lookup by CPF'),
+  shot('totem', 'meus-pedidos', 'Meus pedidos', 'My orders'),
+];
+// Saeko Artes: as fotos dos amigurumis do próprio catálogo (repositório catalago-amigurumis), em JPG
+// fit 'contain': a peça inteira sobre o branco da foto (fundo e escala padronizados por scripts/amigurumis.py)
+const piece = (file, pt, en) => ({ src: `/projects/saeko-artes/${file}.jpg`, alt: { pt, en }, fit: 'contain' });
+const SAEKO_SHOTS = [
+  piece('capivara', 'Amigurumi de capivara', 'Capybara amigurumi'),
+  piece('leao', 'Amigurumi de leão', 'Lion amigurumi'),
+  piece('panda', 'Chaveiro de panda em crochê', 'Crochet panda keychain'),
+  piece('girassol', 'Chaveiro de girassol em crochê', 'Crochet sunflower keychain'),
+  piece('elefante', 'Amigurumi de elefante', 'Elephant amigurumi'),
+  piece('frajola', 'Amigurumi do Frajola', 'Sylvester amigurumi'),
+  piece('pintinho', 'Amigurumi de pintinho', 'Chick amigurumi'),
+  piece('uvinha', 'Boneca de crochê', 'Crochet doll'),
+];
+// Prints do repositório privado portifolio-freelance (public/projects): o site da Saeko, a landing
+// da ARCA e a da Glow Laser, em JPG de 1600 px
+const screen = (dir, file, n, pt, en) => ({ src: `/projects/${dir}/${file}-${n}.jpg`, alt: { pt: `${pt}, tela ${n}`, en: `${en}, screen ${n}` } });
+const range = (n) => Array.from({ length: n }, (_, i) => i + 1);
+const SAEKO_SITE = range(5).map((n) => screen('saeko-artes', 'site', n, 'Catálogo da Saeko Artes', 'Saeko Artes catalog'));
+const ARCA_SHOTS = range(5).map((n) => screen('arca', 'arca', n, 'Landing page da ARCA', 'ARCA landing page'));
+const GLOW_SHOTS = range(10).map((n) => screen('glow-laser', 'glow', n, 'Landing page da Glow Laser', 'Glow Laser landing page'));
+const imagesIn = (list, lang) => list.map(({ src, alt, fit }) => ({ src, alt: alt[lang], ...(fit ? { fit } : {}) }));
 
 // Nome em latim e em japonês (kanji, katakana e hiragana); o hero cicla katakana ↔ hiragana
 export const profile = {
@@ -19,10 +59,10 @@ export const profile = {
 
 export const resumeData = {
   pt: {
-    nav: { home: "Home", projects: "Projetos", certificates: "Certificados", contact: "Contato" },
+    nav: { home: "Início", projects: "Projetos", certificates: "Certificados", contact: "Contato", making: "Bastidores" },
     footer: {
       rights: "Todos os direitos reservados.",
-      credit: { label: "Modelos 3D", by: "de", license: "CC BY 4.0" },
+      credit: { label: "Modelos 3D", by: "de", license: "CC BY 4.0", textures: "Texturas:" },
       lead: "Obrigado por adentrar a montanha comigo.",
       top: "Voltar ao topo",
       navTitle: "Navegação",
@@ -32,8 +72,10 @@ export const resumeData = {
       seasonLabel: "Microestação no Japão",
     },
     hero: {
-      roles: ['Desenvolvedor Full-Stack', 'APIs & Arquitetura Limpa', 'Integrações & IA'],
-      summary: 'Desenvolvo sistemas que rodam de verdade: meu código atende 42+ clínicas e assina 2.000+ laudos por mês.',
+      roles: ['Desenvolvedor full-stack', 'APIs, integrações e IA'],
+      summary: 'Construí, em dupla, uma plataforma de telecardiologia que atende 42+ clínicas e por onde passam 2.000+ laudos assinados por mês.',
+      // A seta da hero explica o caminho: 奥山 é a montanha, rolar é entrar nela
+      scrollCue: '奥山 quer dizer montanha profunda. Role para entrar.',
       available: 'Disponível para',
       ctaProjects: 'Ver projetos',
       ctaContact: 'Fale comigo',
@@ -50,10 +92,10 @@ export const resumeData = {
     },
     about: {
       title: 'Sobre mim',
-      lead: 'Minha história começa muito antes do código.',
+      lead: 'Comecei cuidando dos caixas de um supermercado. Hoje construo o back-end de uma plataforma médica e, nas horas vagas, pinto montanhas em shader.',
       paragraphs: [
         'Sou descendente de japoneses por parte de pai e de mãe, e a cultura japonesa sempre esteve presente na minha família: nos meus avós, nos costumes e nas pequenas tradições. 奥山 (Okuyama) significa "montanha profunda", algo que vem de longe, guarda histórias e segue existindo nas novas gerações.',
-        'Na tecnologia encontrei um jeito de transformar curiosidade em coisas concretas: produtos que unem engenharia, interação e design. Fora do código, gosto de animes, de jogar online e de futebol.',
+        'Na tecnologia encontrei um jeito de transformar curiosidade em coisas concretas: produtos que unem engenharia, interação e design. Fora do código: animes (alguns estão escondidos por aqui), jogos online e futebol.',
         'Hoje sou desenvolvedor full-stack, estudo Engenharia de Computação na FACENS e procuro um time onde eu possa construir produto de ponta a ponta.',
       ],
       // Os dois sobrenomes: o do pai (Okuyama) e o da mãe (Haga)
@@ -189,6 +231,13 @@ export const resumeData = {
       filterAll: "Todos",
       types: { fullstack: "Full-stack", front: "Front-end", back: "Back-end & APIs", desktop: "Desktop" },
       featuredLabel: "Em produção",
+      bootcampLabel: "Bootcamp",
+      cursorOpen: "Abrir",
+      btnMaking: "Ver os bastidores",
+      caseTitle: "O caso",
+      caseChallenge: "Desafio",
+      caseDecisions: "O que decidi",
+      caseResult: "Resultado",
       featuredStats: [
         { value: "42+", label: "clínicas no Brasil e na América Latina" },
         { value: "2.000+", label: "laudos assinados por mês" },
@@ -209,6 +258,9 @@ export const resumeData = {
       btnBack: "Voltar",
       projectLabel: "Projeto",
       gallery: "Galeria",
+      galleryPrev: "Foto anterior",
+      galleryNext: "Próxima foto",
+      galleryGoTo: "Ir para a foto {n}",
       prevProject: "Projeto anterior",
       nextProject: "Próximo projeto",
       overview: "Visão geral",
@@ -228,6 +280,24 @@ export const resumeData = {
         longDesc: 'Freelance remunerado, desenvolvido em dupla. A IMACARDIOS é uma plataforma B2B de telecardiologia em produção, atendendo redes de saúde no Brasil e na América Latina, hoje com mais de 42 clínicas e mais de 2.000 laudos assinados por mês.\n\nProjetei o isolamento de dados sensíveis (CPF e diagnóstico fora do banco principal) e o isolamento entre clínicas em duas camadas: na aplicação e nas regras do Postgres. O back-end em NestJS + Prisma/PostgreSQL é documentado com Swagger e coberto por testes.',
         features: ['Plataforma multi-tenant com isolamento entre clínicas em duas camadas', 'Dados sensíveis (CPF e diagnóstico) fora do banco principal', '2FA obrigatório para médicos e administradores (LGPD)', 'Back-end em NestJS + Prisma/PostgreSQL', 'API documentada com Swagger/OpenAPI', 'Testes com Jest, Playwright e Supertest', 'Em produção no Brasil e na América Latina'],
         repoLink: null, deployLink: 'https://app.imacardios.com',
+        caseStudy: {
+          challenge: 'Laudos de cardiologia de dezenas de clínicas na mesma plataforma, com dados de saúde protegidos pela LGPD: uma clínica nunca pode enxergar os pacientes de outra.',
+          decisions: [
+            'Isolamento entre clínicas em duas camadas: a API prende cada consulta à clínica de quem pediu, e as regras do Postgres repetem a trava dentro do banco.',
+            'CPF e diagnóstico guardados fora do banco principal: um vazamento dele não expõe os dados mais sensíveis.',
+            '2FA obrigatório para médicos e administradores.',
+            'API em NestJS + Prisma documentada no Swagger e coberta por testes (Jest, Supertest e Playwright).',
+          ],
+          result: 'Em produção no Brasil e na América Latina: mais de 42 clínicas e mais de 2.000 laudos assinados por mês.',
+          diagram: {
+            alt: 'Diagrama: as clínicas passam pela API, que isola os dados por clínica, e pelo PostgreSQL, que repete o isolamento nas suas regras; CPF e diagnóstico ficam num banco separado.',
+            clinic: 'Clínica',
+            app: 'API NestJS · camada 1: cada consulta presa à clínica',
+            db: 'PostgreSQL · camada 2: regras por clínica',
+            vault: 'CPF e diagnóstico à parte',
+            caption: 'Duas travas independentes entre as clínicas, e os dados mais sensíveis fora do banco principal.',
+          },
+        },
         images: [], imageMobile: false, image: null
       },
       {
@@ -237,34 +307,34 @@ export const resumeData = {
         longDesc: 'Landing page e catálogo digital da Saeko Artes, ateliê artesanal de amigurumis de Mairinque (SP). As peças aparecem numa vitrine editorial minimalista, o frete dos Correios é cotado de verdade pela API do Melhor Envio e o pedido é finalizado no WhatsApp, sem checkout, cadastro ou banco de dados.\n\nServer Components por padrão, com "use client" só onde há interação: o carrinho, as animações e o modelo 3D do hero. Cada uma das 28 peças tem uma página estática própria, com metadata e Open Graph.',
         features: ['Modelo 3D de amigurumi no hero com React Three Fiber, carregado sem pesar no LCP', 'Frete real pela API do Melhor Envio numa Server Action: o token nunca chega ao navegador', 'Carrinho em drawer com Zustand e subtotal recalculado em tempo real', 'Pedido montado automaticamente na mensagem do WhatsApp', '28 páginas de produto estáticas com metadata e Open Graph', 'Sitemap e robots gerados dinamicamente'],
         repoLink: 'https://github.com/RaphaelOkuyama/catalago-amigurumis', deployLink: 'https://catalago-amigurumis.vercel.app',
-        images: [], imageMobile: false, image: null
+        images: imagesIn([...SAEKO_SITE, ...SAEKO_SHOTS], 'pt'), imageMobile: false, imageProducts: true, image: null
       },
       {
-        id: 1, slug: 'fit-ai-frontend', type: 'front', group: 'fit-ai', part: 'App', title: 'FIT.AI: App de Treinos',
+        id: 1, slug: 'fit-ai-frontend', origin: 'bootcamp', type: 'front', group: 'fit-ai', part: 'App', title: 'FIT.AI: App de Treinos',
         stack: ['Next.js 16', 'React 19', 'TypeScript', 'Tailwind CSS v4', 'shadcn/ui', 'Google Gemini', 'Better Auth', 'Orval'],
         shortDesc: 'App mobile-first de treinos com coach de IA em tempo real.',
-        longDesc: 'O FIT.AI é um aplicativo mobile-first de gestão de treinos com personal trainer virtual integrado. Desenvolvido com Next.js 16 e React 19, o app oferece um onboarding conversacional com IA (Google Gemini 2.5 Flash), onde o coach coleta seus dados físicos e monta um plano de treino personalizado.\n\nAs respostas do coach chegam em streaming via @ai-sdk/react, palavra a palavra, enquanto os dados vêm de Server Components e as mutações passam por Server Actions.',
+        longDesc: 'Projeto do bootcamp da Full Stack Club. O FIT.AI é um aplicativo mobile-first de gestão de treinos com personal trainer virtual integrado. Desenvolvido com Next.js 16 e React 19, o app oferece um onboarding conversacional com IA (Google Gemini 2.5 Flash), onde o coach coleta seus dados físicos e monta um plano de treino personalizado.\n\nAs respostas do coach chegam em streaming via @ai-sdk/react, palavra a palavra, enquanto os dados vêm de Server Components e as mutações passam por Server Actions.',
         features: ['Chat com coach de IA em tempo real', 'Onboarding inteligente e conversacional', 'Dashboard com streak e estatísticas', 'Plano de treino semanal personalizado pela IA', 'Server Components + Server Actions', 'Autenticação com Google OAuth'],
         repoLink: 'https://github.com/RaphaelOkuyama/gestao-de-treino-frontend', deployLink: 'https://gestao-de-treino-frontend.onrender.com',
-        images: [], imageMobile: true, image: null
+        images: imagesIn(FIT_AI_SHOTS, 'pt'), imageMobile: true, image: null
       },
       {
-        id: 2, slug: 'fit-ai-api', type: 'back', group: 'fit-ai', part: 'API', title: 'FIT.AI: API',
+        id: 2, slug: 'fit-ai-api', origin: 'bootcamp', type: 'back', group: 'fit-ai', part: 'API', title: 'FIT.AI: API',
         stack: ['Node.js', 'TypeScript', 'Fastify', 'Prisma', 'PostgreSQL', 'Google Gemini', 'Better Auth', 'Docker', 'Swagger/OpenAPI'],
         shortDesc: 'API da FIT.AI: treinos, progresso e o coach de IA com respostas em streaming.',
-        longDesc: 'Back-end da plataforma FIT.AI. A API gerencia usuários, planos de treino, exercícios, sessões e estatísticas de progresso. O ponto central é a integração com o Google Gemini para geração de planos de treino personalizados e respostas em streaming do coach virtual.',
+        longDesc: 'Projeto do bootcamp da Full Stack Club. Back-end da plataforma FIT.AI. A API gerencia usuários, planos de treino, exercícios, sessões e estatísticas de progresso. O ponto central é a integração com o Google Gemini para geração de planos de treino personalizados e respostas em streaming do coach virtual.',
         features: ['Integração com Google Gemini', 'Streaming de respostas do coach via SSE', 'Documentação automática com Swagger/OpenAPI', 'Autenticação com Google OAuth', 'Containerizado com Docker', 'Arquitetura em camadas com Fastify', 'Prisma ORM com PostgreSQL'],
         repoLink: 'https://github.com/RaphaelOkuyama/gestao-de-treino-api', deployLink: 'https://gestao-de-treino-api.onrender.com',
-        images: [], imageMobile: false, image: null
+        images: imagesIn(FIT_AI_API_SHOTS, 'pt'), imageMobile: false, image: null
       },
       {
-        id: 3, slug: 'totem-autoatendimento', type: 'fullstack', title: 'Totem de Autoatendimento',
+        id: 3, slug: 'totem-autoatendimento', origin: 'bootcamp', type: 'fullstack', title: 'Totem de Autoatendimento',
         stack: ['Next.js', 'TypeScript', 'Tailwind CSS', 'shadcn/ui', 'Prisma', 'PostgreSQL', 'Stripe'],
         shortDesc: 'Autoatendimento para totem touchscreen, do cardápio ao pagamento com Stripe.',
-        longDesc: 'Sistema de autoatendimento feito para rodar num totem touchscreen físico. O fluxo cobre da seleção do tipo de pedido até o pagamento integrado com Stripe, passando por cardápio com categorias, detalhes do produto e sacola.',
+        longDesc: 'Projeto do bootcamp da Full Stack Club. Sistema de autoatendimento feito para rodar num totem touchscreen físico. O fluxo cobre da seleção do tipo de pedido até o pagamento integrado com Stripe, passando por cardápio com categorias, detalhes do produto e sacola.',
         features: ['Interface otimizada para touchscreen', 'Cardápio com categorias dinâmicas', 'Sacola com controle de quantidade e total', 'Pagamento integrado com Stripe Checkout', 'Tela de confirmação de pagamento em tempo real', 'Consulta de pedidos por CPF', 'Banco de dados com Prisma + PostgreSQL'],
         repoLink: 'https://github.com/RaphaelOkuyama/totem-autoatendimento', deployLink: 'https://totem-autoatendimento.vercel.app',
-        images: TOTEM_IMGS, imageMobile: true, image: null
+        images: imagesIn(TOTEM_SHOTS, 'pt'), imageMobile: true, image: null
       },
       {
         id: 13, slug: 'arca-construtora', type: 'front', title: 'ARCA: Landing Page para Construtora',
@@ -273,7 +343,7 @@ export const resumeData = {
         longDesc: 'Landing page institucional (projeto conceito) para uma construtora de alto padrão. O foco está na camada visual: animações em canvas, storytelling controlado pelo scroll e microinterações que transmitem a sofisticação de um portfólio arquitetônico.\n\nUma única página, 100% estática, composta por treze blocos independentes, do preloader ao rodapé.',
         features: ['Preloader com um prédio que se ergue andar por andar e partículas em canvas', 'Vídeo de drone no hero desenhado em canvas no desktop e vídeo nativo leve no celular', 'Sequência de 63 quadros da obra sincronizada com o scroll, com carregamento sob demanda', 'Cards de obras com parallax 3D e reflexo de luz seguindo o mouse', 'Contadores animados, depoimentos em carrossel e FAQ em accordion'],
         repoLink: 'https://github.com/RaphaelOkuyama/landing-page-exemple-construtoras', deployLink: 'https://landing-page-exemple-construtoras.vercel.app',
-        images: [], imageMobile: false, image: null
+        images: imagesIn(ARCA_SHOTS, 'pt'), imageMobile: false, image: null
       },
       {
         id: 14, slug: 'glow-laser', type: 'front', title: 'GLOW LASER: Landing Page para Clínica',
@@ -282,7 +352,7 @@ export const resumeData = {
         longDesc: 'Landing page (projeto conceito) para clínicas de estética e depilação a laser, com identidade editorial e duas ferramentas de captação de clientes: um quiz de diagnóstico e uma calculadora de investimento. Todos os caminhos levam ao WhatsApp.\n\nServer Components por padrão e "use client" só nas partes interativas.',
         features: ['Comparador antes e depois com divisor arrastável (mouse e toque), sem re-render do React', 'Quiz de 4 perguntas que sugere protocolo e número de sessões', 'Calculadora de investimento em tempo real, em reais', 'Hero com vídeo e plano B para o autoplay bloqueado no celular', 'Header com barra de progresso de leitura e seção ativa destacada'],
         repoLink: 'https://github.com/RaphaelOkuyama/landing-page-exemple-clinicas', deployLink: 'https://landing-page-exemple-clinicas.vercel.app',
-        images: [], imageMobile: false, image: null
+        images: imagesIn(GLOW_SHOTS, 'pt'), imageMobile: false, image: null
       },
       {
         id: 15, slug: 'portfolio-okuyama', type: 'front', title: 'Este Portfólio: a Montanha Okuyama',
@@ -390,7 +460,7 @@ export const resumeData = {
       toast: {
         loading: "Enviando mensagem...",
         success: "Mensagem enviada com sucesso! Ela desce o rio numa lanterna.",
-        error: "Erro ao enviar mensagem. Tente novamente.",
+        error: "Não deu para enviar agora. Tente de novo ou escreva para raphaelokuyama123@gmail.com.",
         network: "Erro de conexão. Verifique sua rede.",
         rate: "Muitas mensagens em pouco tempo. Tente de novo em alguns minutos.",
         unavailable: "O envio está fora do ar agora. Escreva direto para raphaelokuyama123@gmail.com."
@@ -399,10 +469,10 @@ export const resumeData = {
   },
 
   en: {
-    nav: { home: "Home", projects: "Projects", certificates: "Certificates", contact: "Contact" },
+    nav: { home: "Home", projects: "Projects", certificates: "Certificates", contact: "Contact", making: "Behind the scenes" },
     footer: {
       rights: "All rights reserved.",
-      credit: { label: "3D models", by: "by", license: "CC BY 4.0" },
+      credit: { label: "3D models", by: "by", license: "CC BY 4.0", textures: "Textures:" },
       lead: "Thanks for walking deep into the mountain with me.",
       top: "Back to top",
       navTitle: "Navigation",
@@ -412,8 +482,9 @@ export const resumeData = {
       seasonLabel: "Microseason in Japan",
     },
     hero: {
-      roles: ['Full-Stack Developer', 'APIs & Clean Architecture', 'Integrations & AI'],
-      summary: 'I build software that runs for real: my code serves 42+ clinics and signs 2,000+ medical reports a month.',
+      roles: ['Full-stack developer', 'APIs, integrations & AI'],
+      summary: 'I co-built a telecardiology platform that serves 42+ clinics and carries 2,000+ signed medical reports a month.',
+      scrollCue: '奥山 means “deep mountain”. Scroll to enter.',
       available: 'Available for',
       ctaProjects: 'See projects',
       ctaContact: 'Get in touch',
@@ -430,10 +501,10 @@ export const resumeData = {
     },
     about: {
       title: 'About Me',
-      lead: 'My story starts long before code.',
+      lead: 'I started out keeping a supermarket’s checkouts running. Today I build the back end of a medical platform and, in my spare time, paint mountains in shaders.',
       paragraphs: [
         'I am of Japanese descent on both my father’s and my mother’s side, and Japanese culture has always been part of my family: in my grandparents, our customs and the small traditions. 奥山 (Okuyama) means "deep mountain", something that comes from far away, keeps stories and lives on in new generations.',
-        'Technology is where I found a way to turn curiosity into concrete things: products that bring together engineering, interaction and design. Beyond code, I enjoy anime, online games and football.',
+        'Technology is where I found a way to turn curiosity into concrete things: products that bring together engineering, interaction and design. Beyond code: anime (a few are hidden around here), online games and football.',
         'Today I am a full-stack developer, studying Computer Engineering at FACENS, looking for a team where I can build products end to end.',
       ],
       names: [
@@ -536,7 +607,7 @@ export const resumeData = {
     certificates: [
       { id: 1, area: "full", icon: "award", name: "Bootcamp: AI Workout Management", institution: "Full Stack Club", link: "https://drive.google.com/file/d/1J4_pW5k-evrK_8dXGEmkQQbfwGxRMTEU/view?usp=sharing", kind: "bootcamp" },
       { id: 2, area: "full", icon: "award", name: "Self Checkout Bootcamp", institution: "Full Stack Club", link: "https://drive.google.com/file/d/1P_JxOakam_Lco3Tv2MNo66Vv5jGSCI-C/view?usp=sharing", kind: "bootcamp" },
-      { id: 3, area: "full", icon: "award", name: "Fullstack JavaScript Formation", institution: "OneBitCode", link: "https://drive.google.com/file/d/1gluZITKLl67R8j4oVN8QurlOF9EzMZXY/view?usp=sharing", kind: "formation" },
+      { id: 3, area: "full", icon: "award", name: "Fullstack JavaScript Program", institution: "OneBitCode", link: "https://drive.google.com/file/d/1gluZITKLl67R8j4oVN8QurlOF9EzMZXY/view?usp=sharing", kind: "formation" },
       { id: 4, area: "front", icon: "react", name: "Netflix-Inspired E-Learning Project", institution: "OneBitCode", link: "https://drive.google.com/file/d/1qGPGox8LHMQvd20dD4pstXmW2VPXht_y/view?usp=sharing" },
       { id: 5, area: "front", icon: "next.js", name: "NextJS Course", institution: "OneBitCode", link: "https://drive.google.com/file/d/1I7Jr9McP_IQKRmEDMO2j2A3WGVGGT77e/view?usp=sharing" },
       { id: 10, area: "front", icon: "react", name: "React Course", institution: "OneBitCode", link: "https://drive.google.com/file/d/143jdZvzdgUTiT0R6_V_ZCymxu0Is5Vpt/view?usp=sharing" },
@@ -565,6 +636,13 @@ export const resumeData = {
       filterAll: "All",
       types: { fullstack: "Full-stack", front: "Front-end", back: "Back-end & APIs", desktop: "Desktop" },
       featuredLabel: "In production",
+      bootcampLabel: "Bootcamp",
+      cursorOpen: "Open",
+      btnMaking: "Behind the scenes",
+      caseTitle: "The case",
+      caseChallenge: "Challenge",
+      caseDecisions: "What I decided",
+      caseResult: "Result",
       featuredStats: [
         { value: "42+", label: "clinics across Brazil and Latin America" },
         { value: "2,000+", label: "reports signed per month" },
@@ -585,6 +663,9 @@ export const resumeData = {
       btnBack: "Back",
       projectLabel: "Project",
       gallery: "Gallery",
+      galleryPrev: "Previous photo",
+      galleryNext: "Next photo",
+      galleryGoTo: "Go to photo {n}",
       prevProject: "Previous project",
       nextProject: "Next project",
       overview: "Overview",
@@ -604,6 +685,24 @@ export const resumeData = {
         longDesc: 'Paid freelance project, built in a team of two. IMACARDIOS is a B2B telecardiology platform in production, serving healthcare networks in Brazil and Latin America, now with 42+ clinics and 2,000+ signed reports per month.\n\nI designed the isolation of sensitive data (CPF and diagnosis kept outside the main database) and tenant isolation between clinics in two layers: in the application and in Postgres rules. The NestJS + Prisma/PostgreSQL back end is documented with Swagger and covered by tests.',
         features: ['Multi-tenant platform with two-layer clinic isolation', 'Sensitive data (CPF and diagnosis) kept outside the main database', 'Mandatory 2FA for doctors and admins (LGPD)', 'NestJS + Prisma/PostgreSQL back end', 'API documented with Swagger/OpenAPI', 'Tests with Jest, Playwright and Supertest', 'In production across Brazil and Latin America'],
         repoLink: null, deployLink: 'https://app.imacardios.com',
+        caseStudy: {
+          challenge: 'Cardiology reports from dozens of clinics on the same platform, with health data protected by Brazil’s LGPD: a clinic must never see another clinic’s patients.',
+          decisions: [
+            'Two-layer clinic isolation: the API ties every query to the requesting clinic, and Postgres rules enforce the same lock inside the database.',
+            'CPF and diagnosis stored outside the main database: a leak there doesn’t expose the most sensitive data.',
+            'Mandatory 2FA for doctors and admins.',
+            'NestJS + Prisma API documented in Swagger and covered by tests (Jest, Supertest and Playwright).',
+          ],
+          result: 'In production across Brazil and Latin America: 42+ clinics and 2,000+ signed reports a month.',
+          diagram: {
+            alt: 'Diagram: clinics go through the API, which isolates data per clinic, and through PostgreSQL, which repeats the isolation in its rules; CPF and diagnosis live in a separate database.',
+            clinic: 'Clinic',
+            app: 'NestJS API · layer 1: every query tied to its clinic',
+            db: 'PostgreSQL · layer 2: per-clinic rules',
+            vault: 'CPF and diagnosis apart',
+            caption: 'Two independent locks between clinics, and the most sensitive data outside the main database.',
+          },
+        },
         images: [], imageMobile: false, image: null
       },
       {
@@ -613,34 +712,34 @@ export const resumeData = {
         longDesc: 'Landing page and digital catalog for Saeko Artes, a handmade amigurumi studio from Mairinque (Brazil). Pieces are shown in a minimalist editorial gallery, real Brazilian postal shipping is quoted through the Melhor Envio API, and orders are completed on WhatsApp, with no checkout, sign-up or database.\n\nServer Components by default, with "use client" only where there is interaction: the cart, the animations and the 3D model in the hero. Each of the 28 pieces has its own static page, with metadata and Open Graph.',
         features: ['3D amigurumi model in the hero with React Three Fiber, loaded without hurting LCP', 'Real shipping quotes from the Melhor Envio API in a Server Action: the token never reaches the browser', 'Drawer cart with Zustand and a live subtotal', 'Order automatically written into the WhatsApp message', '28 static product pages with metadata and Open Graph', 'Dynamically generated sitemap and robots'],
         repoLink: 'https://github.com/RaphaelOkuyama/catalago-amigurumis', deployLink: 'https://catalago-amigurumis.vercel.app',
-        images: [], imageMobile: false, image: null
+        images: imagesIn([...SAEKO_SITE, ...SAEKO_SHOTS], 'en'), imageMobile: false, imageProducts: true, image: null
       },
       {
-        id: 1, slug: 'fit-ai-frontend', type: 'front', group: 'fit-ai', part: 'App', title: 'FIT.AI: Workout App',
+        id: 1, slug: 'fit-ai-frontend', origin: 'bootcamp', type: 'front', group: 'fit-ai', part: 'App', title: 'FIT.AI: Workout App',
         stack: ['Next.js 16', 'React 19', 'TypeScript', 'Tailwind CSS v4', 'shadcn/ui', 'Google Gemini', 'Better Auth', 'Orval'],
         shortDesc: 'Mobile-first workout app with real-time AI coach.',
-        longDesc: 'FIT.AI is a mobile-first workout management app with an integrated virtual personal trainer. Built with Next.js 16 and React 19, the app features a conversational AI onboarding (Google Gemini 2.5 Flash), where the coach collects your physical data and builds a personalized workout plan.',
+        longDesc: 'Full Stack Club bootcamp project. FIT.AI is a mobile-first workout management app with an integrated virtual personal trainer. Built with Next.js 16 and React 19, the app features a conversational AI onboarding (Google Gemini 2.5 Flash), where the coach collects your physical data and builds a personalized workout plan.',
         features: ['Real-time AI coach chat', 'Intelligent conversational onboarding', 'Dashboard with streak and statistics', 'AI-generated personalized weekly workout plan', 'Server Components + Server Actions', 'Google OAuth authentication'],
         repoLink: 'https://github.com/RaphaelOkuyama/gestao-de-treino-frontend', deployLink: 'https://gestao-de-treino-frontend.onrender.com',
-        images: [], imageMobile: true, image: null
+        images: imagesIn(FIT_AI_SHOTS, 'en'), imageMobile: true, image: null
       },
       {
-        id: 2, slug: 'fit-ai-api', type: 'back', group: 'fit-ai', part: 'API', title: 'FIT.AI: API',
+        id: 2, slug: 'fit-ai-api', origin: 'bootcamp', type: 'back', group: 'fit-ai', part: 'API', title: 'FIT.AI: API',
         stack: ['Node.js', 'TypeScript', 'Fastify', 'Prisma', 'PostgreSQL', 'Google Gemini', 'Better Auth', 'Docker', 'Swagger/OpenAPI'],
         shortDesc: 'The FIT.AI API: workouts, progress and the AI coach with streamed replies.',
-        longDesc: 'Back end of the FIT.AI platform. The API manages users, workout plans, exercises, sessions and progress statistics. The core feature is the integration with Google Gemini for generating personalized workout plans and streaming virtual coach responses.',
+        longDesc: 'Full Stack Club bootcamp project. Back end of the FIT.AI platform. The API manages users, workout plans, exercises, sessions and progress statistics. The core feature is the integration with Google Gemini for generating personalized workout plans and streaming virtual coach responses.',
         features: ['Google Gemini integration for workout generation', 'Streaming coach responses via SSE', 'Automatic documentation with Swagger/OpenAPI', 'Google OAuth authentication', 'Containerized with Docker', 'Layered architecture with Fastify', 'Prisma ORM with PostgreSQL'],
         repoLink: 'https://github.com/RaphaelOkuyama/gestao-de-treino-api', deployLink: 'https://gestao-de-treino-api.onrender.com',
-        images: [], imageMobile: false, image: null
+        images: imagesIn(FIT_AI_API_SHOTS, 'en'), imageMobile: false, image: null
       },
       {
-        id: 3, slug: 'totem-autoatendimento', type: 'fullstack', title: 'Self-Service Kiosk',
+        id: 3, slug: 'totem-autoatendimento', origin: 'bootcamp', type: 'fullstack', title: 'Self-Service Kiosk',
         stack: ['Next.js', 'TypeScript', 'Tailwind CSS', 'shadcn/ui', 'Prisma', 'PostgreSQL', 'Stripe'],
         shortDesc: 'Self-service ordering for a touchscreen kiosk, from menu to Stripe payment.',
-        longDesc: 'A self-service system built to run on a physical touchscreen kiosk. The flow covers everything from order type selection to Stripe payment processing, through a dynamic menu with categories, product details and bag management.',
+        longDesc: 'Full Stack Club bootcamp project. A self-service system built to run on a physical touchscreen kiosk. The flow covers everything from order type selection to Stripe payment processing, through a dynamic menu with categories, product details and bag management.',
         features: ['Interface optimized for touchscreen', 'Dynamic menu with categories', 'Bag with quantity control and total', 'Stripe Checkout payment integration', 'Real-time payment confirmation screen', 'Order history lookup by CPF', 'Database with Prisma + PostgreSQL'],
         repoLink: 'https://github.com/RaphaelOkuyama/totem-autoatendimento', deployLink: 'https://totem-autoatendimento.vercel.app',
-        images: TOTEM_IMGS, imageMobile: true, image: null
+        images: imagesIn(TOTEM_SHOTS, 'en'), imageMobile: true, image: null
       },
       {
         id: 13, slug: 'arca-construtora', type: 'front', title: 'ARCA: Construction Company Landing Page',
@@ -649,7 +748,7 @@ export const resumeData = {
         longDesc: 'Institutional landing page (concept project) for a high-end construction company. The focus is the visual layer: canvas animations, scroll-driven storytelling and micro-interactions that convey the sophistication of an architecture portfolio.\n\nA single, fully static page made of thirteen independent blocks, from the preloader to the footer.',
         features: ['Preloader with a building rising floor by floor and canvas particles', 'Drone video in the hero drawn on canvas on desktop, with a light native video on mobile', '63-frame construction sequence synced to scroll, loaded on demand', 'Project cards with 3D parallax and a light glare following the mouse', 'Animated counters, testimonial carousel and FAQ accordion'],
         repoLink: 'https://github.com/RaphaelOkuyama/landing-page-exemple-construtoras', deployLink: 'https://landing-page-exemple-construtoras.vercel.app',
-        images: [], imageMobile: false, image: null
+        images: imagesIn(ARCA_SHOTS, 'en'), imageMobile: false, image: null
       },
       {
         id: 14, slug: 'glow-laser', type: 'front', title: 'GLOW LASER: Clinic Landing Page',
@@ -658,7 +757,7 @@ export const resumeData = {
         longDesc: 'Landing page (concept project) for aesthetics and laser hair removal clinics, with an editorial identity and two lead capture tools: a diagnosis quiz and an investment calculator. Every path leads to WhatsApp.\n\nServer Components by default and "use client" only in the interactive parts.',
         features: ['Before and after slider with a draggable divider (mouse and touch), without React re-renders', '4-question quiz that suggests a protocol and number of sessions', 'Live investment calculator in Brazilian reais', 'Video hero with a fallback for blocked autoplay on mobile', 'Header with a reading progress bar and active section highlight'],
         repoLink: 'https://github.com/RaphaelOkuyama/landing-page-exemple-clinicas', deployLink: 'https://landing-page-exemple-clinicas.vercel.app',
-        images: [], imageMobile: false, image: null
+        images: imagesIn(GLOW_SHOTS, 'en'), imageMobile: false, image: null
       },
       {
         id: 15, slug: 'portfolio-okuyama', type: 'front', title: 'This Portfolio: the Okuyama Mountain',
@@ -766,7 +865,7 @@ export const resumeData = {
       toast: {
         loading: "Sending message...",
         success: "Message sent! It floats down the river in a lantern.",
-        error: "Failed to send the message. Please try again.",
+        error: "Couldn’t send it right now. Try again or email raphaelokuyama123@gmail.com.",
         network: "Connection error. Check your network.",
         rate: "Too many messages in a short time. Please try again in a few minutes.",
         unavailable: "Sending is down right now. Please email raphaelokuyama123@gmail.com directly."
@@ -774,3 +873,16 @@ export const resumeData = {
     }
   }
 };
+
+// Ordem dos projetos em todo o site: primeiro o que está em produção e os projetos originais,
+// depois os de bootcamp e os estudos. Os seis primeiros formam o rolo da home (lib/projects.js),
+// então os numerais do rolo são sequenciais e iguais aos das páginas de projeto
+export const PROJECT_ORDER = [
+  'imacardios', 'saeko-artes', 'arca-construtora', 'fit-ai-frontend', 'totem-autoatendimento', 'portfolio-okuyama',
+  'glow-laser', 'fit-ai-api',
+];
+const rank = (slug) => {
+  const i = PROJECT_ORDER.indexOf(slug);
+  return i < 0 ? PROJECT_ORDER.length : i;
+};
+for (const lang of ['pt', 'en']) resumeData[lang].projects.sort((a, b) => rank(a.slug) - rank(b.slug));

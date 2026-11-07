@@ -29,7 +29,7 @@ test.describe('Rodapé (終)', () => {
     await openAt(page);
     const footer = page.locator('footer');
     await expect(footer).not.toContainText('Feito com');
-    await expect(footer.getByRole('navigation', { name: 'Navegação' }).getByRole('link')).toHaveCount(4);
+    await expect(footer.getByRole('navigation', { name: 'Navegação' }).getByRole('link')).toHaveCount(5);
     await expect(footer.getByRole('link', { name: /GitHub/ })).toHaveAttribute('target', '_blank');
     await expect(footer.getByRole('link', { name: /E-mail/ })).toHaveAttribute('href', 'mailto:raphaelokuyama123@gmail.com');
     // Relógios de São Paulo e Tóquio no formato HH:MM, com 12h de diferença

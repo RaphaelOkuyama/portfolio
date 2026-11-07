@@ -8,6 +8,10 @@ import Omikuji from '../components/hero/Omikuji';
 import SectionRail from '../components/journey/SectionRail';
 
 const { pt, en } = resumeData;
+// Nome em dois tamanhos: os nomes dados em cima e o sobrenome 奥山 (Okuyama) grande
+const NAME_PARTS = profile.name.split(' ');
+const FAMILY_NAME = NAME_PARTS.at(-1);
+const GIVEN_NAMES = NAME_PARTS.slice(0, -1).join(' ');
 
 // Server Component: o hero (LCP) e os ícones saem prontos do servidor, sem hidratação;
 // só o movimento (HeroMotion) e as seções animadas (HomeSections) rodam no cliente
@@ -36,14 +40,22 @@ export default function Home() {
     <div className="container">
       <SectionRail sections={sections} />
       <HeroMotion>
-        <div>
-          {/* Assinatura japonesa pequena (decorativa, cicla katakana ↔ hiragana) acima do nome latino fixo */}
+        {/* Bloco do texto à esquerda (o torii fica no terço direito da cena). As pétalas evitam este
+            retângulo (ver HeroMotion e FallingLeaves) */}
+        <div className="hero-copy">
+          {/* Assinatura japonesa pequena (decorativa, cicla katakana ↔ hiragana) acima do nome */}
           <p className="hero-name-jp font-jp" lang="ja" aria-hidden="true">{profile.nameKatakana}</p>
-          <h1 className="hero-title">
-            <span className="hero-name">{profile.name}</span>
-          </h1>
+          {/* 奥山 em pé ao lado do nome, como um selo: a montanha que dá nome ao site */}
+          <div className="hero-lockup">
+            <p className="hero-okuyama font-jp" lang="ja" aria-hidden="true">奥山</p>
+            <h1 className="hero-title">
+              <span className="hero-name">
+                <span className="hero-name-given">{GIVEN_NAMES}</span>{' '}
+                <span className="hero-name-family">{FAMILY_NAME}</span>
+              </span>
+            </h1>
+          </div>
 
-          {/* As funções numa linha só, em tom neutro: o destaque fica para o nome e o CTA */}
           <p className="hero-roles">
             {pt.hero.roles.map((role, index) => (
               <span key={role} className="hero-role">
@@ -73,10 +85,13 @@ export default function Home() {
 
         <Omikuji labels={{ pt: pt.hero.omikuji, en: en.hero.omikuji }} />
 
-        <div className="hero-scroll" aria-hidden="true">
-          <div className="hero-scroll-arrow">
+        <div className="hero-scroll">
+          <div className="hero-scroll-arrow" aria-hidden="true">
             <ChevronDown size={22} />
           </div>
+          <p className="hero-scroll-cue">
+            <Lang pt={pt.hero.scrollCue} en={en.hero.scrollCue} />
+          </p>
         </div>
       </HeroMotion>
 

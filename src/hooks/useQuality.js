@@ -1,11 +1,13 @@
 'use client';
 import { useEffect } from 'react';
-import { readQuality } from '../lib/journey/quality';
+import { readSavedQuality } from '../lib/journey/quality';
 import { journeyStore } from '../store/journey';
 
-// Qualidade inicial: a que a pessoa escolheu antes, ou o mínimo
+// Qualidade inicial: a que a pessoa escolheu antes. Sem escolha salva, fica em aberto até a cena
+// começar e ler a placa de vídeo (SceneCanvas → autoQuality)
 export function useQuality() {
   useEffect(() => {
-    journeyStore.getState().setInitialQuality(readQuality(window.localStorage));
+    const saved = readSavedQuality(window.localStorage);
+    if (saved) journeyStore.getState().setInitialQuality(saved);
   }, []);
 }

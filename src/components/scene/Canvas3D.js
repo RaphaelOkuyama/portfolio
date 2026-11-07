@@ -10,7 +10,7 @@ import { HalfRateFrames, useSceneIdle } from './idleFrames';
 import { setOffscreenWarmup } from './warmup';
 import { setLiteNoise } from './glsl';
 import LiteTuner, { LiteLoop, LITE_DPR } from './LiteTuner';
-// Pós-processamento só é baixado quando a qualidade alta pede
+// Pós-processamento só é baixado quando a qualidade pede (médio: gradação; alto: + bloom e raios)
 const Effects = lazy(() => import('./Effects'));
 import { trackPointer } from '../../lib/pointer';
 
@@ -50,7 +50,7 @@ export default function Canvas3D() {
 
   const settings = lite ? { dpr: liteDpr, antialias: false, postprocessing: false } : QUALITY_SETTINGS[quality];
   // O aquecimento dos shaders compila também a variação usada pelo pós-processamento (ver warmup)
-  setOffscreenWarmup(Boolean(settings.postprocessing));
+  setOffscreenWarmup(Boolean(settings.grade || settings.postprocessing));
   // Antialias só existe na criação do contexto: trocar de nível com ele recria o canvas
   const contextKey = settings.antialias ? 'aa' : 'plain';
 
@@ -96,7 +96,7 @@ export default function Canvas3D() {
       {halfRate && frameloop === 'demand' && !lite ? <HalfRateFrames /> : null}
       {lite && compiledKey === contextKey ? <LiteTuner onDpr={setLiteDpr} /> : null}
       {lite && compiledKey === contextKey && !hidden && !covered ? <LiteLoop onDpr={setLiteDpr} /> : null}
-      {settings.postprocessing ? (
+      {settings.grade || settings.postprocessing ? (
         <Suspense fallback={null}>
           <Effects />
         </Suspense>

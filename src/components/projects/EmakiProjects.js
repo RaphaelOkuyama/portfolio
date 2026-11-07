@@ -10,6 +10,8 @@ import KeepHyphenated from '../KeepHyphenated';
 import { startMorph } from '../../lib/panelMorph';
 import { homeProjects } from '../../lib/projects';
 import StationSign from '../journey/StationSign';
+import Image from 'next/image';
+import { EcgMark } from './Ecg';
 
 
 // Modos do rolo: pin horizontal no desktop, arrastar no celular, grade estática com movimento reduzido
@@ -18,6 +20,29 @@ const MOBILE = '(max-width: 767px) and (prefers-reduced-motion: no-preference)';
 
 function isPlainClick(e) {
   return e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
+}
+
+// Imagem do painel: o ECG da IMACARDIOS (produto privado) ou os prints do repositório no GitHub.
+// Prints de celular lado a lado (até três); print largo ocupa o quadro. Sem print, sem imagem
+function PanelMedia({ project }) {
+  if (project.slug === 'imacardios') {
+    return <div className="emaki-media is-ecg" aria-hidden="true"><EcgMark /></div>;
+  }
+  if (!project.images?.length) return null;
+  const several = project.imageMobile || project.imageProducts;
+  // Saeko: no painel, as peças de crochê (os prints do site ficam para a galeria)
+  const list = project.imageProducts ? project.images.filter((img) => img.fit === 'contain') : project.images;
+  const shots = several ? list.slice(0, 3) : list.slice(0, 1);
+  const kind = project.imageMobile ? ' is-phones' : project.imageProducts ? ' is-products' : '';
+  return (
+    <div className={`emaki-media${kind}`} aria-hidden="true">
+      {shots.map((img) => (
+        <span key={img.src} className="emaki-shot">
+          <Image src={img.src} alt="" fill sizes={several ? '120px' : '360px'} />
+        </span>
+      ))}
+    </div>
+  );
 }
 
 // 作 Projetos: emakimono (絵巻物) — o scroll vertical desenrola o rolo na horizontal
@@ -247,12 +272,15 @@ export default function EmakiProjects({ projects, labels }) {
                       href={href}
                       className="emaki-panel"
                       data-project={project.slug}
+                      data-cursor-label={labels.cursorOpen}
                       data-no-transition=""
                       onClick={(e) => onPanelClick(e, project.slug)}
                       onFocus={(e) => revealPanel(e.currentTarget)}
                     >
                       <span className="emaki-number font-jp" aria-hidden="true">{kanjiNumber(i)}</span>
+                      <PanelMedia project={project} />
                       <h3 className="emaki-title"><KeepHyphenated>{project.title}</KeepHyphenated></h3>
+                      {project.origin === 'bootcamp' ? <span className="emaki-origin">{labels.bootcampLabel}</span> : null}
                       <p className="emaki-desc">{project.shortDesc}</p>
                       <ul className="emaki-stack">
                         {project.stack.slice(0, 4).map((tech) => (

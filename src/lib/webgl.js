@@ -53,7 +53,10 @@ export function webglMode() {
     const ctx = open(force ? undefined : { failIfMajorPerformanceCaveat: true });
     let software = false;
     let available = Boolean(ctx);
-    if (ctx) software = !force && isSoftwareRenderer(rendererOf(ctx));
+    if (ctx) {
+      renderer = rendererOf(ctx);
+      software = !force && isSoftwareRenderer(renderer);
+    }
     else if (!force) {
       // Recusado com a ressalva mas aceito sem ela: tem WebGL, só que na CPU
       const plain = open();
@@ -74,6 +77,13 @@ export function webglMode() {
   } catch {
     return (cached = 'none');
   }
+}
+
+// Nome da placa de vídeo lido no teste de webglMode() ('' antes do teste ou sem WebGL): a
+// qualidade automática da cena sai dele (ver autoQuality)
+let renderer = '';
+export function gpuRenderer() {
+  return renderer;
 }
 
 // true se o navegador consegue criar um contexto WebGL (com ou sem GPU)

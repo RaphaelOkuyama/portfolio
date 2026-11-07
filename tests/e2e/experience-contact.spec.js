@@ -132,7 +132,7 @@ test.describe('Contato (縁)', () => {
     await scrollToId(page, 'contato');
     await fillForm(page);
     await page.getByRole('button', { name: 'Enviar mensagem' }).click();
-    await expect(page.getByText('Erro ao enviar mensagem. Tente novamente.')).toBeVisible();
+    await expect(page.getByText('Não deu para enviar agora. Tente de novo ou escreva para raphaelokuyama123@gmail.com.')).toBeVisible();
     await expect(page.locator('[data-lantern-release]')).toHaveCount(0);
     await expect(page.getByLabel('Mensagem')).toHaveValue('Olá, Raphael!');
   });

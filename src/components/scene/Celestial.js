@@ -10,6 +10,9 @@ import { SCENE_ACCENTS } from '../../lib/palette';
 import { CELESTIAL } from './config';
 import { smoothstep } from '../../lib/journey/math';
 import { NOISE } from './glsl';
+
+// Posição do sol/lua no mundo, a cada quadro: a fonte dos raios de luz (Effects) acompanha
+export const celestialWorld = new Vector3(...CELESTIAL.position);
 import { SUNSET, celestialAt, transitionPhase } from '../../lib/journey/skyTransition';
 
 // Intensidade do disco, do halo e das manchas (mares da lua) por tema
@@ -215,6 +218,7 @@ export default function Celestial() {
     const u = material.uniforms;
     const mesh = meshRef.current;
     const nowS = performance.now() / 1000;
+    if (mesh) mesh.getWorldPosition(celestialWorld);
 
     // Lua na tela (para o clique): só à noite e enquanto ela aparece
     if (mesh && store.theme === 'night' && visible > 0.5) {
@@ -241,7 +245,7 @@ export default function Celestial() {
       u.uDisc.value = look.disc * visible;
       u.uHalo.value = look.halo * visible * (1 + transit.sink * 0.8);
       u.uMaria.value = look.maria;
-      if (mesh) mesh.position.y = CELESTIAL.position[1] - transit.sink * SUNSET.drop;
+      if (mesh) mesh.position.y = CELESTIAL.position[1] - transit.sink * SUNSET.drop * CELESTIAL.drop;
       state.invalidate();
       return;
     }

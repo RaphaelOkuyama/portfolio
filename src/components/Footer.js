@@ -119,6 +119,9 @@ export default function Footer() {
   }, { scope: rootRef });
 
   return (
+    <>
+    {/* Névoa entre a cena e o rodapé: a montanha some aos poucos, sem borda reta */}
+    <div className="footer-mist" aria-hidden="true" />
     <footer ref={rootRef} className="site-footer">
       <div className="sf-inner container">
         <div className="sf-top">
@@ -137,6 +140,7 @@ export default function Footer() {
               <li><Link href="/projects" className="sf-link">{nav.projects}</Link></li>
               <li><Link href="/certificates" className="sf-link">{nav.certificates}</Link></li>
               <li><Link href="/#contato" className="sf-link">{nav.contact}</Link></li>
+              <li><Link href="/bastidores" className="sf-link">{nav.making}</Link></li>
             </ul>
           </nav>
 
@@ -214,9 +218,14 @@ export default function Footer() {
               </span>
             ))}{' '}
             (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">{t.credit.license}</a>)
+            <span className="sf-credit-textures">
+              {' · '}{t.credit.textures}{' '}
+              <a href="https://polyhaven.com" target="_blank" rel="noopener noreferrer">Poly Haven</a> (CC0)
+            </span>
           </p>
         </div>
       </div>
     </footer>
+    </>
   );
 }

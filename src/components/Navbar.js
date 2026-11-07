@@ -8,6 +8,7 @@ import { useSettings } from '../context/SettingsContext';
 import Kamon from './Kamon';
 import Sensu, { sensuStep } from './Sensu';
 import QualityPicker from './QualityPicker';
+import SoundToggle from './SoundToggle';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -97,6 +98,7 @@ export default function Navbar() {
             </div>
             <div style={{ display: 'flex', gap: '15px', paddingLeft: '20px', borderLeft: '1px solid var(--border)' }}>
               <button onClick={toggleLanguage} style={btnStyle} aria-label={languageLabel}><Globe size={20} /><span style={{fontSize: '0.8rem', fontWeight: 'bold'}}>{language.toUpperCase()}</span></button>
+              <SoundToggle />
               <QualityPicker />
               <button onClick={toggleTheme} style={btnStyle} aria-label={themeLabel}><span className="theme-icon" style={{ display: 'inline-flex' }}>{theme === 'night' ? <Sun size={20} /> : <Moon size={20} />}</span></button>
             </div>
@@ -147,6 +149,7 @@ export default function Navbar() {
             <div style={{ display: 'flex', gap: '20px', marginTop: '10px' }}>
               <button onClick={toggleLanguage} style={{...btnStyle, transform: 'scale(1.2)'}} aria-label={languageLabel}><Globe size={24} /> {language.toUpperCase()}</button>
               <button onClick={toggleTheme} style={{...btnStyle, transform: 'scale(1.2)'}} aria-label={themeLabel}><span className="theme-icon" style={{ display: 'inline-flex' }}>{theme === 'night' ? <Sun size={24} /> : <Moon size={24} />}</span></button>
+              <SoundToggle inline />
             </div>
             <QualityPicker inline />
             </div>

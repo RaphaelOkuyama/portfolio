@@ -11,7 +11,18 @@ export function kanjiNumeral(n) {
 
 export const KANJI_NUMBERS = Array.from({ length: 20 }, (_, i) => kanjiNumeral(i + 1));
 
-// Índice começando em 0 (posição na lista)
+// 大字 daiji: os numerais formais dos documentos e das cédulas (壱 弐 参…). Nos projetos eles
+// substituem os comuns: o 一 vazado parecia um retângulo vazio, e os daiji têm desenho de selo
+const DAIJI = ['', '壱', '弐', '参', '肆', '伍', '陸', '漆', '捌', '玖'];
+
+// 1 a 99 em daiji (拾 = 10, 拾壱 = 11, 弐拾 = 20); fora disso, o número comum
+export function daijiNumeral(n) {
+  if (!Number.isInteger(n) || n < 1 || n > 99) return String(n);
+  const tens = Math.floor(n / 10);
+  return `${tens > 1 ? DAIJI[tens] : ''}${tens > 0 ? '拾' : ''}${DAIJI[n % 10]}`;
+}
+
+// Índice começando em 0 (posição na lista de projetos)
 export function kanjiNumber(index) {
-  return kanjiNumeral(index + 1);
+  return daijiNumeral(index + 1);
 }

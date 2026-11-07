@@ -97,8 +97,10 @@ export default function AboutSection({ about }) {
   return (
     <Section id="about" ref={rootRef} className="about-section">
       <div className="about-grid">
-        <div className="about-copy">
+        <div className="about-head">
           <StationSign id="about" kanji="人" title={about.title} tate="自己紹介" />
+        </div>
+        <div className="about-copy">
           <p className="about-lead">{about.lead}</p>
           <div ref={textRef} key={about.lead} className="about-text">
             {about.paragraphs.map((text) => (

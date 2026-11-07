@@ -29,8 +29,9 @@ export function ridgeProfile(points) {
 // Sugi (杉) nas cristas: aglomerados, fora do vale por onde a câmera passa.
 // Retorna [x, y, escala] com a base logo abaixo do cume (a árvore "nasce" da encosta)
 // `floor(x)`: altura do chão do vale naquele x (opcional). Perto do vale o chão sobe em concha e
-// passa por cima da crista: sem isso a árvore ficava enterrada, só com a ponta de fora
-export function forestPlacements(points, { seed, count, halfWidth, valleyHalf, valleyCenter = 0, heightRange = [1.4, 3], floor = null }) {
+// passa por cima da crista: sem isso a árvore ficava enterrada, só com a ponta de fora.
+// `avoid`: faixas [xMin, xMax] sem árvores (o bambuzal); quem cairia nelas vai para fora da faixa
+export function forestPlacements(points, { seed, count, halfWidth, valleyHalf, valleyCenter = 0, heightRange = [1.4, 3], floor = null, avoid = [] }) {
   const rand = mulberry32(seed);
   // Densidade em faixas: bosques e clareiras ao longo do cume
   const phase = rand() * Math.PI * 2;
@@ -38,7 +39,10 @@ export function forestPlacements(points, { seed, count, halfWidth, valleyHalf, v
   const trees = [];
   let guard = count * 40;
   while (trees.length < count && guard-- > 0) {
-    const x = (rand() * 2 - 1) * halfWidth;
+    let x = (rand() * 2 - 1) * halfWidth;
+    for (const [a, b] of avoid) {
+      if (x > a && x < b) x = x > (a + b) / 2 ? b + rand() * 7 : a - rand() * 7;
+    }
     if (Math.abs(x - valleyCenter) < valleyHalf) continue;
     if (rand() > density(x)) continue;
     const scale = heightRange[0] + rand() * (heightRange[1] - heightRange[0]);

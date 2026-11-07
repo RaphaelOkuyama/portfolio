@@ -52,7 +52,8 @@ test.describe('名刺 Meishi', () => {
 });
 
 // Acha um ponto do torii sem clicar às cegas: dentro da página, passa um ponteiro de mouse por uma
-// grade no centro da hero e para onde a dica do omikuji acende (o mesmo raycast do clique).
+// grade da hero (o torii fica no terço direito nas telas deitadas) e para onde a dica do omikuji
+// acende (o mesmo raycast do clique).
 // Depois clica de verdade nesse ponto
 async function clickTorii(page) {
   const point = await page.evaluate(async () => {
@@ -61,7 +62,7 @@ async function clickTorii(page) {
     // A trave (kasagi) fica perto de 36% da altura: começa por ela e se afasta para cima e para baixo
     const rows = [0.36, 0.34, 0.38, 0.32, 0.4, 0.3, 0.44, 0.5, 0.56, 0.62, 0.68, 0.74];
     for (const row of rows) {
-      for (let col = 0.36; col <= 0.64; col += 0.02) {
+      for (let col = 0.5; col <= 0.86; col += 0.02) {
         const x = Math.round(innerWidth * col);
         const y = Math.round(innerHeight * row);
         const el = document.elementFromPoint(x, y);

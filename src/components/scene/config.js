@@ -170,7 +170,11 @@ export const SANDO = {
 };
 
 // Sol (昼) / lua (夜) no céu, visível do começo do caminho
-export const CELESTIAL = { position: [-14, 22, -90], radius: 4 };
+// Fica atrás de tudo (além da cordilheira do fundo, z -142, e do pagode, z -118): na troca de tema o
+// astro desce atrás das montanhas em vez de passar na frente delas. Posição e raio são os de antes
+// ([-14, 22, -90], raio 4) empurrados ×1,62 na mesma direção a partir da câmera do hero, então o
+// enquadramento do hero (e o pôster) não muda; `drop` escala a descida do pôr do sol junto
+export const CELESTIAL = { position: [-22.7, 30.4, -169.5], radius: 6.5, drop: 1.62 };
 
 
 // Chão do vale (地): terreno sob o caminho, do começo até a margem do rio (z = -52).

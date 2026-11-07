@@ -54,7 +54,7 @@ export const SCENE_ACCENTS = {
   night: {
     petal: '#d99bb0', torii: '#8f2a23', toriiTop: '#0b0d14', celestial: '#f3ead2',
     sand: '#9a9caa', stone: '#252a3c', firefly: '#f6e27a', momiji: '#b5452c',
-    snow: '#dfe6f2', water: '#070b16', lantern: '#ffc46b',
+    snow: '#dfe6f2', water: '#0b1225', lantern: '#ffc46b',
     // 磐座: rocha sagrada ao lado do torii; corda e papel tingidos pelo luar
     iwakura: '#3b4260', shimenawa: '#8d8aa0', shide: '#c9d1e6',
     // Santuário: pedra dos komainu e lanternas, luz do 火袋, bambu, bronze dos giboshi, kodama

@@ -88,7 +88,7 @@ test('a história vem com os dois sobrenomes e o atalho para o contato', async (
   await openHome(page);
   await scrollToAbout(page, 0);
   const about = page.locator('#about');
-  await expect(about.locator('.about-lead')).toHaveText('Minha história começa muito antes do código.');
+  await expect(about.locator('.about-lead')).toHaveText(/^Comecei cuidando dos caixas de um supermercado./);
   await expect(about.locator('.about-name')).toHaveCount(2);
   // Cada sobrenome com a leitura em furigana por cima
   await expect(about.locator('.about-name-kanji')).toHaveText([/^奥山/, /^芳賀/]);
@@ -103,11 +103,13 @@ test('a história vem com os dois sobrenomes e o atalho para o contato', async (
 test.describe('em celular', () => {
   test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 
-  test('a foto vem antes do texto', async ({ page }) => {
+  test('o título vem antes da foto, e a foto antes do texto', async ({ page }) => {
     await openHome(page);
     const photo = await page.locator('#about .kakejiku').boundingBox();
     const title = await page.locator('#about .section-title').boundingBox();
-    expect(photo.y).toBeLessThan(title.y);
+    const text = await page.locator('#about .about-lead').boundingBox();
+    expect(title.y).toBeLessThan(photo.y);
+    expect(photo.y).toBeLessThan(text.y);
   });
 });
 

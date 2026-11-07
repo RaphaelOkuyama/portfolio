@@ -1,17 +1,62 @@
 'use client';
-import { EffectComposer, Bloom } from '@react-three/postprocessing';
-import { useJourney } from '../../store/journey';
+import { useMemo, useState } from 'react';
+import { useFrame } from '@react-three/fiber';
+import { EffectComposer, Bloom, GodRays, SMAA } from '@react-three/postprocessing';
+import { Color } from 'three';
+import { journeyStore, useJourney, effectiveProgress } from '../../store/journey';
 import { QUALITY_SETTINGS } from '../../lib/journey/quality';
+import { SCENE_ACCENTS } from '../../lib/palette';
+import { smoothstep } from '../../lib/journey/math';
+import { celestialWorld } from './Celestial';
+import { CELESTIAL } from './config';
+import Grade from './Grade';
 
-// Pós-processamento só em qualidade alta: bloom nas lanternas (cores > 1)
+// Fonte dos raios de luz: um disco atrás da lua (o disco pintado da lua fica por cima dele). Os
+// raios passam pelo torii e pelos bambus no hero; depois a lua some e o disco apaga
+function RaysSource({ onReady }) {
+  const color = useMemo(() => new Color(), []);
+  useFrame((state) => {
+    const mesh = state.scene.getObjectByName('rays-source');
+    if (!mesh) return;
+    const store = journeyStore.getState();
+    const { theme } = store;
+    // Some fora do hero e quando a lua vira o olho do Tsukuyomi (o disco apareceria por trás dele)
+    const hero = store.tsukuyomi ? 0 : 1 - smoothstep(0.06, 0.16, effectiveProgress(store));
+    // Um pouco atrás da lua, sempre de frente para a câmera
+    mesh.position.copy(celestialWorld).sub(state.camera.position).setLength(0.6).add(celestialWorld);
+    mesh.lookAt(state.camera.position);
+    color.set(SCENE_ACCENTS[theme].celestial).multiplyScalar(theme === 'night' ? 0.95 * hero : 0.7 * hero);
+    mesh.material.color.copy(color);
+    mesh.visible = hero > 0.01;
+  });
+  return (
+    <mesh name="rays-source" ref={onReady}>
+      <circleGeometry args={[CELESTIAL.radius * 0.82, 48]} />
+      <meshBasicMaterial transparent depthWrite={false} fog={false} toneMapped={false} />
+    </mesh>
+  );
+}
+
+// Pós-processamento: gradação de cor (vinheta, grão, luzes altas) no médio e no alto; no alto,
+// também o brilho das lanternas (bloom) e os raios do luar. SMAA no lugar do antialias do canvas
 export default function Effects() {
   const quality = useJourney((s) => s.quality);
   const settings = QUALITY_SETTINGS[quality];
-  if (!settings?.postprocessing) return null;
+  const [sun, setSun] = useState(null);
+  if (!settings?.grade) return null;
+  const rays = settings.postprocessing;
 
   return (
-    <EffectComposer multisampling={settings.multisampling ?? 0}>
-      <Bloom mipmapBlur luminanceThreshold={1} luminanceSmoothing={0.2} intensity={1.1} />
-    </EffectComposer>
+    <>
+      {rays ? <RaysSource onReady={setSun} /> : null}
+      <EffectComposer multisampling={0}>
+        {rays ? <Bloom mipmapBlur luminanceThreshold={1} luminanceSmoothing={0.2} intensity={1.1} /> : null}
+        {rays && sun ? (
+          <GodRays sun={sun} samples={48} density={0.94} decay={0.93} weight={0.42} exposure={0.32} clampMax={1} blur />
+        ) : null}
+        <Grade />
+        <SMAA />
+      </EffectComposer>
+    </>
   );
 }

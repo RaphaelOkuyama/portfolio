@@ -19,7 +19,11 @@ export function createJourneyStore() {
     seasonMix: 0,
     theme: 'night',
     quality: null,
+    // true quando a qualidade veio da placa de vídeo (autoQuality), não de uma escolha salva
+    qualityAuto: false,
     reducedMotion: false,
+    // Abertura terminada (o pôster parou de aproximar): só então a cena 3D entra por cima dele
+    introDone: false,
     route: 'journey',
     assetsProgress: 0,
     sceneReady: false,
@@ -53,8 +57,13 @@ export function createJourneyStore() {
     setInitialQuality: (quality) => {
       if (get().quality === null) set({ quality });
     },
+    // Sem escolha salva: o nível que a placa de vídeo aguenta (só se nada foi definido antes)
+    setAutoQuality: (quality) => {
+      if (get().quality === null) set({ quality, qualityAuto: true });
+    },
     // Escolha da pessoa no seletor de gráficos
-    setQuality: (quality) => set({ quality }),
+    setQuality: (quality) => set({ quality, qualityAuto: false }),
+    setIntroDone: () => set({ introDone: true }),
     // FPS caiu: desce um degrau só nesta visita (a escolha salva não muda)
     downgradeQuality: () => set({ quality: stepDown(get().quality) }),
     setReducedMotion: (reducedMotion) => set({ reducedMotion }),

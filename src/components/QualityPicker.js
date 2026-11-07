@@ -8,7 +8,8 @@ import { QUALITY_LEVELS, saveQuality } from '../lib/journey/quality';
 const TEXT = {
   pt: {
     title: 'Gráficos',
-    open: (level) => `Gráficos: ${level}`,
+    open: (level, auto) => `Gráficos: ${level}${auto ? ' (automático)' : ''}`,
+    auto: 'Escolhido automaticamente para o seu aparelho. Mude se quiser: a escolha fica salva.',
     levels: {
       low: ['Mínimo', 'Leve, roda em qualquer aparelho'],
       medium: ['Médio', 'Mais árvores, partículas e nitidez'],
@@ -18,7 +19,8 @@ const TEXT = {
   },
   en: {
     title: 'Graphics',
-    open: (level) => `Graphics: ${level}`,
+    open: (level, auto) => `Graphics: ${level}${auto ? ' (automatic)' : ''}`,
+    auto: 'Picked automatically for your device. Change it if you like: your choice is saved.',
     levels: {
       low: ['Minimum', 'Light, runs on any device'],
       medium: ['Medium', 'More trees, particles and sharpness'],
@@ -29,7 +31,7 @@ const TEXT = {
 };
 
 // `locked`: sem GPU (cena leve) só o mínimo; médio e alto aparecem desabilitados, com o porquê
-function Options({ t, quality, onPick, labelledBy, locked }) {
+function Options({ t, quality, onPick, labelledBy, locked, auto }) {
   return (
     <>
       <div role="radiogroup" aria-labelledby={labelledBy} className="quality-options">
@@ -52,12 +54,12 @@ function Options({ t, quality, onPick, labelledBy, locked }) {
           );
         })}
       </div>
-      {locked ? <p className="quality-locked">{t.locked}</p> : null}
+      {locked ? <p className="quality-locked">{t.locked}</p> : auto ? <p className="quality-auto">{t.auto}</p> : null}
     </>
   );
 }
 
-// 画質: a qualidade gráfica da cena. Começa no mínimo; a escolha fica salva no navegador.
+// 画質: a qualidade gráfica da cena. Começa no nível da placa de vídeo; a escolha fica salva no navegador.
 // `inline` mostra as opções direto (menu do celular); senão, um botão abre o painel
 export default function QualityPicker({ inline = false }) {
   const { language } = useSettings();
@@ -66,6 +68,7 @@ export default function QualityPicker({ inline = false }) {
   const lite = useJourney((s) => s.lite);
   const stored = useJourney((s) => s.quality) ?? 'low';
   const quality = lite ? 'low' : stored;
+  const auto = useJourney((s) => s.qualityAuto) && !lite;
   const [open, setOpen] = useState(false);
   const rootRef = useRef(null);
   const id = useId();
@@ -93,7 +96,7 @@ export default function QualityPicker({ inline = false }) {
     return (
       <div className="quality is-inline">
         <p id={id} className="quality-title"><span className="font-jp" aria-hidden="true">画質</span> {t.title}</p>
-        <Options t={t} quality={quality} onPick={pick} labelledBy={id} locked={lite} />
+        <Options t={t} quality={quality} onPick={pick} labelledBy={id} locked={lite} auto={auto} />
       </div>
     );
   }
@@ -105,8 +108,8 @@ export default function QualityPicker({ inline = false }) {
         className="quality-button"
         aria-haspopup="true"
         aria-expanded={open}
-        aria-label={t.open(t.levels[quality][0])}
-        title={t.open(t.levels[quality][0])}
+        aria-label={t.open(t.levels[quality][0], auto)}
+        title={t.open(t.levels[quality][0], auto)}
         onClick={() => setOpen((o) => !o)}
       >
         <MonitorCog size={20} aria-hidden="true" />
@@ -114,7 +117,7 @@ export default function QualityPicker({ inline = false }) {
       {open && (
         <div className="quality-pop">
           <p id={id} className="quality-title"><span className="font-jp" aria-hidden="true">画質</span> {t.title}</p>
-          <Options t={t} quality={quality} onPick={pick} labelledBy={id} locked={lite} />
+          <Options t={t} quality={quality} onPick={pick} labelledBy={id} locked={lite} auto={auto} />
         </div>
       )}
     </div>

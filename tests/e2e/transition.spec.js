@@ -67,7 +67,7 @@ test('o noren tem o kamon 奥山 dividido entre as duas faixas', async ({ page }
 test('voltar para a home também usa o noren, e o conteúdo fica clicável depois', async ({ page }) => {
   await page.goto('/certificates');
   await expect(page.locator('[data-loader="enso"]')).toHaveCount(0, { timeout: 10_000 });
-  await page.getByRole('link', { name: 'Home' }).first().click();
+  await page.getByRole('link', { name: 'Início' }).first().click();
   await expect(overlay(page)).toHaveAttribute('data-state', 'cover');
   await expect(page).toHaveURL(/\/$/);
   await expect(overlay(page)).toHaveAttribute('data-state', 'idle', { timeout: 5_000 });

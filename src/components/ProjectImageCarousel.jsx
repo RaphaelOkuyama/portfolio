@@ -1,216 +1,193 @@
 'use client';
-import { useState, useRef } from 'react';
-import { gsap, useGSAP } from '../lib/gsap';
+import { useRef, useState } from 'react';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { gsap, useGSAP } from '../lib/gsap';
 
 /**
- * ProjectImageCarousel
- * 
- * Exibe screenshots de projetos mobile em formato de mockup de celular.
- * Aceita um array de objetos { src, alt }.
- * 
- * Uso no resume.js:
- *   images: [
- *     { src: 'https://...', alt: 'Tela inicial' },
- *     { src: 'https://...', alt: 'Cardápio' },
- *   ]
- * 
- * No ProjectDetails.jsx, substitua o bloco de imagem por:
- *   {project.images?.length > 0
- *     ? <ProjectImageCarousel images={project.images} isMobile={project.imageMobile} />
- *     : <div>sem imagem</div>
- *   }
+ * Galeria do projeto. Recebe [{ src, alt, fit? }]: fit 'contain' mostra a foto inteira sobre
+ * branco (as peças da Saeko); o resto preenche o quadro. `isMobile`: telas de celular numa moldura.
+ *
+ * Todas as fotos ficam empilhadas no quadro e a atual e as vizinhas já estão montadas (carregadas
+ * antes do clique). A troca move juntas a que sai e a que entra, como uma tira, com a imagem
+ * andando um pouco menos que o quadro (paralaxe). Antes o src mudava no meio da animação: a foto
+ * antiga voltava deslizando e só depois virava a nova. Clicar de novo no meio da troca continua o
+ * movimento de onde ele está, sem travar nem pular.
  */
-export default function ProjectImageCarousel({ images = [], isMobile = false }) {
-  const [current, setCurrent] = useState(0);
-  const imgRef = useRef(null);
-  const busy = useRef(false);
+const DURATION = 0.75;
+const EASE = 'power4.out';
+const PARALLAX = 38; // % que a imagem anda ao contrário do quadro
+const SWIPE = 40; // px de arrasto para trocar de foto
+// A que entra cobre ~2 px da que sai: lado a lado exato, o subpixel deixava um fio do fundo escuro
+// na emenda durante a troca
+const OVERLAP = 0.3;
 
-  // Sai para um lado, troca a imagem, entra pelo outro
+const DEFAULT_LABELS = { prev: 'Foto anterior', next: 'Próxima foto', goTo: 'Ir para a foto {n}' };
+
+const around = (i, n) => [i, (i + 1) % n, (i - 1 + n) % n];
+
+export default function ProjectImageCarousel({ images = [], isMobile = false, labels }) {
+  const text = { ...DEFAULT_LABELS };
+  for (const [key, value] of Object.entries(labels ?? {})) if (value) text[key] = value;
+  const count = images.length;
+  const [current, setCurrent] = useState(0);
+  const [mounted, setMounted] = useState(() => new Set(around(0, count)));
+  const currentRef = useRef(0);
+  const slides = useRef([]);
+  const media = useRef([]);
+  const pointer = useRef(null);
   const { contextSafe } = useGSAP();
+
   const goTo = contextSafe((next, dir) => {
-    if (busy.current || next === current || !imgRef.current) return;
-    busy.current = true;
-    const duration = isMobile ? 0.25 : 0.3;
-    gsap.to(imgRef.current, {
-      x: dir > 0 ? -80 : 80, opacity: 0, duration: duration / 2, ease: 'power1.in',
-      onComplete: () => {
-        setCurrent(next);
-        gsap.fromTo(imgRef.current, { x: dir > 0 ? 80 : -80, opacity: 0 }, {
-          x: 0, opacity: 1, duration: duration / 2, ease: 'power1.out',
-          onComplete: () => { busy.current = false; },
-        });
-      },
+    const from = currentRef.current;
+    if (next === from || count < 2) return;
+    currentRef.current = next;
+    setCurrent(next);
+    setMounted((prev) => {
+      const add = around(next, count).filter((i) => !prev.has(i));
+      return add.length ? new Set([...prev, ...add]) : prev;
     });
+
+    const out = slides.current[from];
+    const inn = slides.current[next];
+    const outMedia = media.current[from];
+    const inMedia = media.current[next];
+    if (!out || !inn) return;
+    // A que entra estava em cena (troca interrompida)? Continua de onde está
+    const inFlight = inn.style.visibility === 'visible';
+    gsap.killTweensOf([out, inn, outMedia, inMedia]);
+    const settle = (el) => () => gsap.set(el, { clearProps: 'visibility,zIndex,transform,opacity' });
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      gsap.set([out, outMedia, inMedia], { clearProps: 'transform' });
+      gsap.set(out, { visibility: 'visible', zIndex: 1 });
+      gsap.set(inn, { visibility: 'visible', zIndex: 2, xPercent: 0 });
+      gsap.fromTo(inn, { opacity: inFlight ? Number(gsap.getProperty(inn, 'opacity')) : 0 }, { opacity: 1, duration: 0.25, ease: 'none', onComplete: settle(inn) });
+      gsap.to(out, { duration: 0.25, onComplete: settle(out) });
+      return;
+    }
+
+    const start = Number(gsap.getProperty(out, 'xPercent')) || 0;
+    gsap.set(out, { visibility: 'visible', zIndex: 1 });
+    gsap.set(inn, { visibility: 'visible', zIndex: 2, opacity: 1 });
+    if (!inFlight) {
+      gsap.set(inn, { xPercent: start + (100 - OVERLAP) * dir });
+      gsap.set(inMedia, { xPercent: -PARALLAX * dir });
+    }
+    // As duas andam a mesma distância: a sobreposição fica constante até o fim (no fim, o resto da
+    // que saiu está embaixo da que entrou)
+    gsap.to(out, { xPercent: -(100 - OVERLAP) * dir, duration: DURATION, ease: EASE, onComplete: settle(out) });
+    gsap.to(outMedia, { xPercent: PARALLAX * dir, duration: DURATION, ease: EASE, onComplete: settle(outMedia) });
+    gsap.to(inn, { xPercent: 0, duration: DURATION, ease: EASE, onComplete: settle(inn) });
+    gsap.to(inMedia, { xPercent: 0, duration: DURATION, ease: EASE, onComplete: settle(inMedia) });
   });
 
-  if (!images || images.length === 0) return null;
+  if (!count) return null;
 
-  const go = (dir) => goTo((current + dir + images.length) % images.length, dir);
+  const go = (dir) => goTo((currentRef.current + dir + count) % count, dir);
+  const onKeyDown = (e) => {
+    if (e.key === 'ArrowRight') { e.preventDefault(); go(1); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); go(-1); }
+  };
+  // Arrastar para o lado (toque ou mouse) troca a foto; na vertical a página rola normalmente
+  const onPointerDown = (e) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    pointer.current = { x: e.clientX, y: e.clientY };
+  };
+  const onPointerUp = (e) => {
+    const start = pointer.current;
+    pointer.current = null;
+    if (!start) return;
+    const dx = e.clientX - start.x;
+    if (Math.abs(dx) > SWIPE && Math.abs(dx) > Math.abs(e.clientY - start.y) * 1.2) go(dx < 0 ? 1 : -1);
+  };
+  const cancelPointer = () => { pointer.current = null; };
 
-  // Layout mobile (portrait screenshots) — exibe como mockup de celular
+  const several = count > 1;
+  const frame = (
+    <div
+      className={`pic-frame${isMobile ? ' is-screen' : ''}`}
+      onPointerDown={several ? onPointerDown : undefined}
+      onPointerUp={several ? onPointerUp : undefined}
+      onPointerCancel={several ? cancelPointer : undefined}
+    >
+      {images.map((img, i) => (
+        <div
+          key={img.src}
+          ref={(el) => { slides.current[i] = el; }}
+          className={`pic-slide${i === current ? ' is-current' : ''}${img.fit === 'contain' ? ' is-contain' : ''}`}
+          aria-hidden={i !== current}
+        >
+          <div ref={(el) => { media.current[i] = el; }} className="pic-media">
+            {mounted.has(i) ? (
+              <Image
+                src={img.src}
+                alt={img.alt || `${i + 1}`}
+                fill
+                draggable={false}
+                sizes={isMobile ? '240px' : '(max-width: 900px) 100vw, 900px'}
+                style={{ objectFit: isMobile || img.fit !== 'contain' ? 'cover' : 'contain', objectPosition: isMobile ? 'top' : 'center' }}
+              />
+            ) : null}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+  const arrows = several ? (
+    <>
+      <button type="button" className="pic-arrow is-prev" onClick={() => go(-1)} aria-label={text.prev}>
+        <ChevronLeft size={20} aria-hidden="true" />
+      </button>
+      <button type="button" className="pic-arrow is-next" onClick={() => go(1)} aria-label={text.next}>
+        <ChevronRight size={20} aria-hidden="true" />
+      </button>
+    </>
+  ) : null;
+  const dots = several ? (
+    <div className="pic-dots">
+      {images.map((img, i) => (
+        <button
+          key={img.src}
+          type="button"
+          className="pic-dot"
+          onClick={() => goTo(i, i > currentRef.current ? 1 : -1)}
+          aria-label={text.goTo.replace('{n}', i + 1)}
+          aria-current={i === current ? 'true' : undefined}
+        />
+      ))}
+    </div>
+  ) : null;
+  const caption = (
+    <p className="pic-caption" aria-live="polite">
+      <span>{images[current].alt}</span>
+      {several ? <span className="pic-count">{current + 1} / {count}</span> : null}
+    </p>
+  );
+
+  // Telas de celular: moldura do aparelho, setas dos lados e os pontos embaixo
   if (isMobile) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px', margin: '40px 0' }}>
-        
-        {/* Frame do celular */}
-        <div style={{ position: 'relative', width: '240px' }}>
-          {/* Moldura do celular */}
-          <div style={{
-            position: 'relative',
-            width: '240px',
-            height: '480px',
-            background: '#1a1a1a',
-            borderRadius: '32px',
-            padding: '12px 8px',
-            boxShadow: '0 0 0 2px #333, 0 20px 60px rgba(0,0,0,0.4)',
-          }}>
-            {/* Notch */}
-            <div style={{
-              position: 'absolute', top: '12px', left: '50%', transform: 'translateX(-50%)',
-              width: '60px', height: '8px', background: '#111',
-              borderRadius: '4px', zIndex: 10,
-            }} />
-            
-            {/* Tela */}
-            <div style={{
-              width: '100%', height: '100%',
-              borderRadius: '24px',
-              overflow: 'hidden',
-              background: '#000',
-              position: 'relative',
-            }}>
-                {/* next/image: redimensionada e em AVIF/WebP (os PNGs originais têm até 200KB) */}
-                <Image
-                  ref={imgRef}
-                  src={images[current].src}
-                  alt={images[current].alt || `Tela ${current + 1}`}
-                  fill
-                  sizes="240px"
-                  style={{ objectFit: 'cover', objectPosition: 'top' }}
-                />
-            </div>
-          </div>
-
-          {/* Botão esquerdo */}
-          {images.length > 1 && (
-            <button
-              className="carousel-side-arrow is-left"
-              onClick={() => go(-1)}
-              style={{
-                position: 'absolute', left: '-44px', top: '50%', transform: 'translateY(-50%)',
-                background: 'var(--card-bg)', border: '1px solid var(--border)',
-                borderRadius: '50%', width: '36px', height: '36px',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', color: 'var(--text-primary)', transition: '0.2s',
-              }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent)'}
-              onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
-            >
-              <ChevronLeft size={18} />
-            </button>
-          )}
-
-          {/* Botão direito */}
-          {images.length > 1 && (
-            <button
-              className="carousel-side-arrow is-right"
-              onClick={() => go(1)}
-              style={{
-                position: 'absolute', right: '-44px', top: '50%', transform: 'translateY(-50%)',
-                background: 'var(--card-bg)', border: '1px solid var(--border)',
-                borderRadius: '50%', width: '36px', height: '36px',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', color: 'var(--text-primary)', transition: '0.2s',
-              }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent)'}
-              onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
-            >
-              <ChevronRight size={18} />
-            </button>
-          )}
+      <div className="pic is-phone" onKeyDown={onKeyDown}>
+        <div className="pic-phone">
+          <span className="pic-notch" aria-hidden="true" />
+          {frame}
+          {arrows}
         </div>
-
-        {/* Caption da tela atual */}
-        {images[current].alt && (
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textAlign: 'center', margin: 0 }}>
-            {images[current].alt}
-          </p>
-        )}
-
-        {/* Dots de navegação */}
-        {images.length > 1 && (
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {images.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => goTo(i, i > current ? 1 : -1)}
-                style={{
-                  width: i === current ? '20px' : '8px',
-                  height: '8px',
-                  borderRadius: '4px',
-                  background: i === current ? 'var(--accent)' : 'var(--border)',
-                  border: 'none',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s',
-                  padding: 0,
-                }}
-              />
-            ))}
-          </div>
-        )}
+        {caption}
+        {dots}
       </div>
     );
   }
 
-  // Layout desktop (landscape screenshots) — carrossel normal 16/9
   return (
-    <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', borderRadius: '20px', overflow: 'hidden', border: '1px solid var(--border)', marginBottom: '50px', background: 'var(--card-bg)' }}>
-      <Image
-        ref={imgRef}
-        src={images[current].src}
-        alt={images[current].alt || `Screenshot ${current + 1}`}
-        fill
-        sizes="(max-width: 900px) 100vw, 900px"
-        style={{ objectFit: 'cover' }}
-      />
-
-      {images.length > 1 && (
-        <>
-          <button onClick={() => go(-1)} style={arrowStyle('left')}>
-            <ChevronLeft size={20} />
-          </button>
-          <button onClick={() => go(1)} style={arrowStyle('right')}>
-            <ChevronRight size={20} />
-          </button>
-          <div style={{ position: 'absolute', bottom: '12px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '6px' }}>
-            {images.map((_, i) => (
-              <button key={i} onClick={() => goTo(i, i > current ? 1 : -1)}
-                style={{ width: i === current ? '20px' : '8px', height: '8px', borderRadius: '4px', background: i === current ? 'var(--accent)' : 'rgba(255,255,255,0.5)', border: 'none', cursor: 'pointer', transition: 'all 0.3s', padding: 0 }}
-              />
-            ))}
-          </div>
-        </>
-      )}
+    <div className="pic" onKeyDown={onKeyDown}>
+      <div className="pic-stage">
+        {frame}
+        {arrows}
+        {dots}
+      </div>
+      {caption}
     </div>
   );
 }
-
-const arrowStyle = (side) => ({
-  position: 'absolute',
-  top: '50%',
-  [side]: '12px',
-  transform: 'translateY(-50%)',
-  background: 'rgba(0,0,0,0.5)',
-  border: 'none',
-  borderRadius: '50%',
-  width: '40px',
-  height: '40px',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  cursor: 'pointer',
-  color: '#fff',
-  zIndex: 10,
-});

@@ -1,13 +1,39 @@
 'use client';
 import { useEffect, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Color, PlaneGeometry, ShaderMaterial, UniformsLib, UniformsUtils, Vector3 } from 'three';
+import { Color, PlaneGeometry, ShaderMaterial, UniformsLib, UniformsUtils, Vector3, Vector4 } from 'three';
 import { journeyStore, useJourney } from '../../store/journey';
 import { SEASONS } from '../../lib/palette';
 import { sampleSeason } from '../../lib/journey/season';
 import { groundHeight } from '../../lib/journey/ground';
 import { NOISE, noiseDefines } from './glsl';
-import { GROUND, MOUNTAIN_LOOK } from './config';
+import { BONSAI, FESTIVAL, GROUND, IWAKURA, KATANA, KOMAINU, MOUNTAIN_LOOK, SHISHI_ODOSHI, TORII } from './config';
+import { sceneLight, SCENE_LIGHT_PARS } from './lightRig';
+import { lanternSpots } from './ShrineProps';
+import { besideTorii } from './toriiFrame';
+import { useCameraMap } from './useCameraMap';
+import { detailTexture } from './detailTextures';
+import { autumnWeight, winterWeight } from '../../lib/journey/math';
+
+// Sombras de contato pintadas no chão (x, z, raio, força): cada peça pousa no terreno em vez de
+// flutuar. Calculadas no shader do chão, sem malhas a mais
+const MAX_SHADOWS = 24;
+function contactShadows(toriiT) {
+  const at = (right, ahead) => besideTorii(toriiT, right, ahead);
+  const pillars = [-1, 1].map((s) => at(s * TORII.span / 2, 0));
+  const komainu = [-1, 1].map((s) => at(s * KOMAINU.right, KOMAINU.ahead));
+  const iwakura = at(IWAKURA.offset[0], IWAKURA.offset[1]);
+  return [
+    ...pillars.map(({ x, z }) => [x, z, 1.5, 0.55]),
+    ...komainu.map(({ x, z }) => [x, z, 1.9, 0.5]),
+    [iwakura.x, iwakura.z, 4.2, 0.5],
+    [FESTIVAL.stall.x, FESTIVAL.stall.z, 2.8, 0.45],
+    [BONSAI.x, BONSAI.z, 1.8, 0.45],
+    [SHISHI_ODOSHI.x, SHISHI_ODOSHI.z, 1.4, 0.4],
+    [KATANA.x, KATANA.z, 1.8, 0.4],
+    ...lanternSpots().map(({ position: [x, , z] }) => [x, z, 1.3, 0.5]),
+  ].slice(0, MAX_SHADOWS);
+}
 
 // Distância em que o chão atinge o tom "longe" (a mesma das camadas de montanha)
 const FAR_DISTANCE = 60;
@@ -32,8 +58,15 @@ const fragmentShader = /* glsl */ `
   uniform vec3 uCamera;
   uniform vec3 uMist;
   uniform float uMistStrength;
+  uniform vec4 uShadows[${MAX_SHADOWS}];
+  // Chão do Poly Haven por estação (só o tom): folhagem de floresta, folhas secas e neve
+  uniform sampler2D uGroundTex;
+  uniform sampler2D uLeavesTex;
+  uniform sampler2D uSnowTex;
+  uniform vec3 uSeasonWeights; // floresta, outono, inverno
   varying vec3 vWorld;
   ${NOISE}
+  ${SCENE_LIGHT_PARS}
 
   void main() {
     // Terra do vale: mesmo tom das montanhas para a distância, com grão de pincel
@@ -41,8 +74,23 @@ const fragmentShader = /* glsl */ `
     vec3 ground = t < 0.5 ? mix(uNear, uMid, t * 2.0) : mix(uMid, uFar, (t - 0.5) * 2.0);
     float grain = fbm(vWorld.xz * vec2(0.35, 0.9));
     ground *= 0.92 + 0.14 * grain;
+    // Relevo perto da câmera (de longe a repetição apareceria e a névoa cobre mesmo)
+    vec2 tuv = vWorld.xz * 0.16;
+    float tex = texture2D(uGroundTex, tuv).r * uSeasonWeights.x + texture2D(uLeavesTex, tuv * 1.2).r * uSeasonWeights.y + texture2D(uSnowTex, tuv * 0.8).r * uSeasonWeights.z;
+    ground *= 1.0 + (tex - 0.5) * 0.7 * (1.0 - smoothstep(0.15, 0.55, t));
+    // Sombras de contato das peças (antes da névoa: de longe somem junto com o chão)
+    float shade = 1.0;
+    for (int i = 0; i < ${MAX_SHADOWS}; i++) {
+      vec4 s = uShadows[i];
+      float d = distance(vWorld.xz, s.xy) / s.z;
+      shade *= 1.0 - s.w * pow(clamp(1.0 - d, 0.0, 1.0), 1.6);
+    }
+    ground *= shade;
     // Névoa rasteira, como no pé das montanhas
     ground = mix(ground, uMist, uMistStrength * (0.55 + 0.25 * fbm(vWorld.xz * 0.05)));
+    // Poças de luz das lanternas de pedra (depois da névoa: a luz atravessa ela)
+    float pool = scenePools(vWorld, vec3(0.0, 1.0, 0.0)) * uPoolStrength;
+    ground += (ground * 2.0 + 0.16) * uPoolColor * pool;
 
     vec3 col = ground;
     gl_FragColor = vec4(col, 1.0);
@@ -88,11 +136,28 @@ export default function Ground() {
             uCamera: { value: new Vector3() },
             uMist: { value: new Color() },
             uMistStrength: { value: 0 },
+            uShadows: { value: Array.from({ length: MAX_SHADOWS }, () => new Vector4(0, 0, 1, 0)) },
+            uSeasonWeights: { value: new Vector3(1, 0, 0) },
           },
+          sceneLight,
         ]),
       }),
     [quality],
   );
+  // UniformsUtils.merge clona: as poças precisam dos objetos compartilhados (SceneLight atualiza), e
+  // as texturas são holders que trocam o cinza neutro pela imagem quando ela carrega
+  Object.assign(material.uniforms, sceneLight, {
+    uGroundTex: detailTexture('ground'),
+    uLeavesTex: detailTexture('leaves'),
+    uSnowTex: detailTexture('snow'),
+  });
+
+  // Sombras de contato: dependem de onde o torii está (o mapa da câmera)
+  const { params } = useCameraMap();
+  useEffect(() => {
+    const list = material.uniforms.uShadows.value;
+    contactShadows(params.toriiT).forEach(([x, z, r, s], i) => list[i].set(x, z, r, s));
+  }, [material, params.toriiT]);
   useEffect(() => () => geometry.dispose(), [geometry]);
   useEffect(() => () => material.dispose(), [material]);
 
@@ -120,6 +185,9 @@ export default function Ground() {
     st.mist += (MOUNTAIN_LOOK[theme].mist - st.mist) * k;
     u.uMistStrength.value = st.mist;
     u.uCamera.value.copy(frame.camera.position);
+    const autumn = autumnWeight(seasonMix);
+    const winter = winterWeight(seasonMix);
+    u.uSeasonWeights.value.set(Math.max(0, 1 - autumn - winter), autumn, winter);
 
     if (pending) frame.invalidate();
   });

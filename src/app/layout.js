@@ -1,6 +1,5 @@
 import './globals.css';
 import { Suspense } from 'react';
-import { Inter } from 'next/font/google';
 import localFont from 'next/font/local';
 import Navbar from '../components/Navbar';
 import InkCursor from '../components/InkCursor';
@@ -20,8 +19,25 @@ import SmoothScroll from '../components/journey/SmoothScroll';
 import Suminagashi from '../components/Suminagashi';
 import Senbazuru from '../components/Senbazuru';
 
-// Texto em Inter; títulos em Shippori Mincho (serifa japonesa)
-const sans = Inter({ subsets: ['latin'], display: 'swap', variable: '--font-sans' });
+// Texto em Zen Kaku Gothic New (desenho japonês que conversa com o mincho dos títulos); títulos em
+// Shippori Mincho. Todas em subconjunto, geradas por scripts/subset-font.mjs (npm run font)
+const sans = localFont({
+  src: [
+    { path: '../fonts/zen-kaku-gothic-new-400.woff2', weight: '400', style: 'normal' },
+    { path: '../fonts/zen-kaku-gothic-new-500.woff2', weight: '500', style: 'normal' },
+    { path: '../fonts/zen-kaku-gothic-new-700.woff2', weight: '700', style: 'normal' },
+  ],
+  display: 'swap',
+  variable: '--font-sans',
+  fallback: ['system-ui', 'Segoe UI', 'sans-serif'],
+  // Mesmas métricas verticais da Inter (a fonte anterior): a altura de linha "normal" não muda e
+  // nenhum layout medido (rodapé com a altura exata da tela, rolo, cartões) cresce
+  declarations: [
+    { prop: 'ascent-override', value: '96.9%' },
+    { prop: 'descent-override', value: '24.2%' },
+    { prop: 'line-gap-override', value: '0%' },
+  ],
+});
 // Shippori Mincho só com o latim (scripts/subset-font.mjs): os títulos usam ela para as letras e
 // as fontes japonesas do sistema para kana/kanji. Pelo next/font/google vinham 244 fatias
 // japonesas e 64KB de @font-face no CSS que bloqueia a primeira pintura
@@ -33,6 +49,19 @@ const display = localFont({
   display: 'swap',
   variable: '--font-display',
   fallback: ['Hiragino Mincho ProN', 'Yu Mincho', 'serif'],
+});
+// Kana e kanji (.font-jp e o japonês dos títulos): a mesma Shippori Mincho, só com os caracteres do
+// site (~66 KB por peso). Sem pré-carregar: é enfeite, troca quando chega (o LCP é o nome latino)
+const jp = localFont({
+  src: [
+    { path: '../fonts/shippori-mincho-jp-500.woff2', weight: '500', style: 'normal' },
+    { path: '../fonts/shippori-mincho-jp-800.woff2', weight: '800', style: 'normal' },
+  ],
+  display: 'swap',
+  preload: false,
+  adjustFontFallback: false,
+  variable: '--font-jp',
+  fallback: ['Hiragino Mincho ProN', 'Yu Mincho', 'YuMincho', 'Noto Serif JP', 'serif'],
 });
 
 const DESCRIPTION =
@@ -67,7 +96,7 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="pt-BR" className={`${sans.variable} ${display.variable}`} suppressHydrationWarning>
+    <html lang="pt-BR" className={`${sans.variable} ${display.variable} ${jp.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
         {/* Dados estruturados de Pessoa para o Google */}

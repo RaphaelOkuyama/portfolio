@@ -100,10 +100,10 @@ test.describe('Página de projeto (作)', () => {
     await expect(page.locator('.project-gallery')).toHaveCount(1);
 
     const nav = page.getByRole('navigation', { name: 'Projeto' });
-    await expect(nav.getByRole('link', { name: /Projeto anterior/ })).toHaveAttribute('href', '/projects/fit-ai-api');
+    await expect(nav.getByRole('link', { name: /Projeto anterior/ })).toHaveAttribute('href', '/projects/fit-ai-frontend');
     await nav.getByRole('link', { name: /Próximo projeto/ }).click();
-    await expect(page).toHaveURL(/\/projects\/arca-construtora$/);
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('ARCA');
+    await expect(page).toHaveURL(/\/projects\/portfolio-okuyama$/);
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Portfólio');
     expect(errors).toEqual([]);
   });
 

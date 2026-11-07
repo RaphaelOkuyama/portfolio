@@ -5,12 +5,13 @@ import { Color, MeshBasicMaterial } from 'three';
 import { journeyStore } from '../../store/journey';
 import { SCENE_ACCENTS } from '../../lib/palette';
 import { toriiGeometry } from './toriiGeometry';
+import { withSceneLight } from './lightRig';
 
 // Materiais do torii (corpo vermelho + topo escuro) com crossfade 昼/夜.
 // Compartilhados por todos os portões de um mesmo componente.
 export function useToriiMaterials() {
-  const body = useMemo(() => new MeshBasicMaterial({ vertexColors: true }), []);
-  const top = useMemo(() => new MeshBasicMaterial({ vertexColors: true }), []);
+  const body = useMemo(() => withSceneLight(new MeshBasicMaterial({ vertexColors: true })), []);
+  const top = useMemo(() => withSceneLight(new MeshBasicMaterial({ vertexColors: true })), []);
   const target = useMemo(() => ({ body: new Color(), top: new Color() }), []);
   const initialized = useRef(false);
 

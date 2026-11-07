@@ -1,3 +1,5 @@
+import Image from 'next/image';
+import { EcgMark } from '../../components/projects/Ecg';
 import Link from 'next/link';
 import { ArrowRight, ArrowUpRight, Github } from 'lucide-react';
 import { resumeData } from '../../data/resume';
@@ -39,6 +41,20 @@ function Status({ project, labels }) {
   return <span className={live ? 'pj-status is-live' : 'pj-status'}>{live ? labels.statusLive : labels.statusCode}</span>;
 }
 
+// Miniatura do cartão: o primeiro print do GitHub (na Saeko, uma peça de crochê); sem print, nada
+function Thumb({ project }) {
+  // IMACARDIOS é privado: o traço de ECG no lugar do print
+  if (project?.slug === 'imacardios') return <span className="pj-thumb is-ecg" aria-hidden="true"><EcgMark /></span>;
+  if (!project?.images?.length) return null;
+  const products = project.imageProducts ? project.images.filter((img) => img.fit === 'contain') : [];
+  const img = products[0] ?? project.images[0];
+  return (
+    <span className={`pj-thumb${project.imageProducts ? ' is-product' : ''}`} aria-hidden="true">
+      <Image src={img.src} alt="" fill sizes="(max-width: 768px) 92vw, 380px" />
+    </span>
+  );
+}
+
 function Tags({ stack }) {
   return (
     <ul className="pj-tags">
@@ -55,6 +71,7 @@ function SingleCard({ project, index, labels, featured = false }) {
         <span className="pj-num">{pad(index)}</span>
         {featured ? <span className="pj-status is-live">{labels.featuredLabel}</span> : <Status project={project} labels={labels} />}
       </p>
+      <Thumb project={project} />
       <h2 className="pj-title">
         {/* O ::after deste link cobre o cartão: clicar em qualquer parte abre o projeto */}
         <Link href={`/projects/${project.slug}`} className="pj-stretch">
@@ -93,6 +110,7 @@ function GroupCard({ card, labels }) {
         <span className="pj-num">{card.parts.map((p) => pad(p.index)).join(' · ')}</span>
         <span className="pj-status is-pair">{card.parts.map((p) => p.project.part).join(' + ')}</span>
       </p>
+      <Thumb project={card.parts.find((p) => p.project.images?.length)?.project} />
       <h2 className="pj-title"><KeepHyphenated>{group.title}</KeepHyphenated></h2>
       <p className="pj-desc">{group.desc}</p>
       <ul className="pj-parts" aria-label={labels.partsLabel}>

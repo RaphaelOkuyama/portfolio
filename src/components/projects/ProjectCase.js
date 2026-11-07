@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight, ArrowDown, Github, Globe } from 'lucide-react';
 import { gsap, ScrollTrigger, SplitText, useGSAP } from '../../lib/gsap';
 import { useSettings } from '../../context/SettingsContext';
 import { kanjiNumber } from '../../lib/kanji';
+import { EcgDiagram } from './Ecg';
 import ProjectImageCarousel from '../ProjectImageCarousel';
 import KeepHyphenated from '../KeepHyphenated';
 import { takeMorph, landMorph, returnMorph } from '../../lib/panelMorph';
@@ -180,6 +181,7 @@ export default function ProjectCase({ slug }) {
               remontado em vez de o React tentar atualizar nós que ele não reconhece mais */}
           <h1 key={project.title} className="case-title"><KeepHyphenated>{project.title}</KeepHyphenated></h1>
           <p className="case-lead">{project.shortDesc}</p>
+          {project.origin === 'bootcamp' ? <p className="case-origin">{labels.bootcampLabel} · Full Stack Club</p> : null}
 
           {(project.deployLink || project.repoLink) && (
             <div className="case-links">
@@ -192,6 +194,9 @@ export default function ProjectCase({ slug }) {
                 <a href={project.repoLink} target="_blank" rel="noopener noreferrer" className="case-link magnetic">
                   <Github size={18} aria-hidden="true" /> {labels.btnCode}
                 </a>
+              )}
+              {project.slug === 'portfolio-okuyama' && (
+                <Link href="/bastidores" className="case-link magnetic">{labels.btnMaking}</Link>
               )}
             </div>
           )}
@@ -245,10 +250,30 @@ export default function ProjectCase({ slug }) {
           </div>
         </section>
 
+        {project.caseStudy && (
+          <section className="case-section case-wrap case-study">
+            <div className="case-section-head">
+              <span className="case-num">02</span>
+              <h2>{labels.caseTitle}</h2>
+            </div>
+            <div className="case-section-body">
+              <EcgDiagram labels={project.caseStudy.diagram} />
+              <h3 className="case-study-label">{labels.caseChallenge}</h3>
+              <p className="case-reveal">{project.caseStudy.challenge}</p>
+              <h3 className="case-study-label">{labels.caseDecisions}</h3>
+              <ul className="case-study-list">
+                {project.caseStudy.decisions.map((d) => <li key={d.slice(0, 24)} className="case-reveal">{d}</li>)}
+              </ul>
+              <h3 className="case-study-label">{labels.caseResult}</h3>
+              <p className="case-reveal case-study-result">{project.caseStudy.result}</p>
+            </div>
+          </section>
+        )}
+
         {project.features?.length > 0 && (
           <section className="case-section case-wrap">
             <div className="case-section-head">
-              <span className="case-num">02</span>
+              <span className="case-num">{project.caseStudy ? '03' : '02'}</span>
               <h2>{labels.features}</h2>
             </div>
             <ol className="case-features case-section-body">
@@ -265,11 +290,15 @@ export default function ProjectCase({ slug }) {
         {hasGallery && (
           <section className="case-section case-wrap project-gallery" aria-label={labels.gallery}>
             <div className="case-section-head">
-              <span className="case-num">03</span>
+              <span className="case-num">{String(2 + (project.caseStudy ? 1 : 0) + (project.features?.length ? 1 : 0)).padStart(2, '0')}</span>
               <h2>{labels.gallery}</h2>
             </div>
             <div className="case-section-body case-reveal">
-              <ProjectImageCarousel images={project.images} isMobile={project.imageMobile} />
+              <ProjectImageCarousel
+                images={project.images}
+                isMobile={project.imageMobile}
+                labels={{ prev: labels.galleryPrev, next: labels.galleryNext, goTo: labels.galleryGoTo }}
+              />
             </div>
           </section>
         )}

@@ -8,6 +8,8 @@ import { journeyStore } from '../../store/journey';
 import { useCameraMap } from './useCameraMap';
 import { iwakuraGeometry } from './iwakuraGeometry';
 import { useAccentMaterials } from './useAccentMaterials';
+import { withSceneLight } from './lightRig';
+import { detailTexture } from './detailTextures';
 import { besideTorii } from './toriiFrame';
 import { IWAKURA, IWAKURA_CUT } from './config';
 
@@ -58,6 +60,8 @@ function cutMaterial(side, faces) {
         '#include <opaque_fragment>',
       ].join('\n'));
   };
+  // Só a rocha leva o relevo do musgo do Poly Haven (corda e papéis ficam lisos)
+  withSceneLight(material, faces === FrontSide ? { texture: detailTexture('rock'), scale: 0.45, amount: 0.38 } : null);
   return { material, uniforms };
 }
 

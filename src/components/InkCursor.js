@@ -62,10 +62,21 @@ export default function InkCursor() {
         setY(latest.y);
       }
     };
+    // Sobre algo com data-cursor-label o ponto vira um disco com a palavra (Abrir, Arraste…)
+    const label = dot.querySelector('.cursor-label');
     const onOver = (e) => {
+      const text = e.target.closest?.('[data-cursor-label]')?.dataset.cursorLabel ?? '';
+      if (text) {
+        label.textContent = text;
+        dot.dataset.hover = 'label';
+        gsap.to(dot, { width: 66, height: 66, scale: 1, duration: 0.35, ease: 'power3.out', overwrite: true });
+        gsap.to(label, { opacity: 1, duration: 0.2, delay: 0.12, overwrite: true });
+        return;
+      }
+      gsap.to(label, { opacity: 0, duration: 0.12, overwrite: true });
       const hover = isInteractive(e.target);
       dot.dataset.hover = String(hover);
-      gsap.to(dot, { scale: hover ? 2.4 : 1, duration: 0.3, ease: 'power2.out', overwrite: true });
+      gsap.to(dot, { width: DOT_SIZE, height: DOT_SIZE, scale: hover ? 2.4 : 1, duration: 0.3, ease: 'power2.out', overwrite: true });
     };
     window.addEventListener('pointermove', onMove, { passive: true });
     window.addEventListener('pointerover', onOver);
@@ -163,8 +174,11 @@ export default function InkCursor() {
         style={{
           position: 'fixed', top: 0, left: 0, width: DOT_SIZE, height: DOT_SIZE,
           borderRadius: '50%', background: 'var(--ink)', pointerEvents: 'none', zIndex: 10002,
+          display: 'grid', placeItems: 'center',
         }}
-      />
+      >
+        <span className="cursor-label" />
+      </div>
     </>
   );
 }

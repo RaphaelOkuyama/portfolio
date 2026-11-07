@@ -6,6 +6,7 @@ import { journeyStore, useJourney } from '../../store/journey';
 import { groundHeight } from '../../lib/journey/ground';
 import { useCameraMap, getCameraCurve } from './useCameraMap';
 import { useAccentMaterials } from './useAccentMaterials';
+import { withSceneLight } from './lightRig';
 import { besideTorii } from './toriiFrame';
 import {
   katanaGeometry, KOMAINU_SEAT, komainuGeometry, komainuPedestalGeometry, pagodaGeometry, shishiOdoshiGeometry, SHISHI_PIVOT_Y, stoneLanternGeometry, taikobashiGeometry,
@@ -28,6 +29,25 @@ const KOMAINU_MODELS = {
 // cor da paleta tinge por cima, como nas outras pedras)
 const KOMAINU_HEIGHT = 1.75;
 const KOMAINU_BOOST = 2.3;
+
+// Pedra escaneada dos komainu passada para a linguagem da cena: o tom da textura vira poucas faixas
+// (como as outras peças pintadas, sem o ruído fotográfico), tingido pela paleta, com a luz da cena
+function komainuMaterial(map) {
+  const material = new MeshBasicMaterial({ map });
+  material.onBeforeCompile = (shader) => {
+    shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', [
+      '#ifdef USE_MAP',
+      '  vec4 sampledDiffuseColor = texture2D( map, vMapUv );',
+      '  float tone = dot( sampledDiffuseColor.rgb, vec3( 0.299, 0.587, 0.114 ) );',
+      // Quatro faixas com bordas suaves (sem serrilhado) e um pouco do detalhe original
+      '  float bands = floor( tone * 4.0 + 0.5 ) / 4.0;',
+      '  tone = mix( bands, tone, 0.28 );',
+      '  diffuseColor.rgb *= vec3( tone );',
+      '#endif',
+    ].join('\n'));
+  };
+  return withSceneLight(material);
+}
 
 // Lê cada modelo uma vez: a malha vira uma geometria com a pose embutida, de frente para +z,
 // centrada em x/z, com a base em y = 0
@@ -64,7 +84,7 @@ function loadKomainuFigure(variant) {
     const size = box.getSize(new Vector3());
     geometry.translate(-(box.min.x + box.max.x) / 2, -box.min.y, -(box.min.z + box.max.z) / 2);
     geometry.scale(KOMAINU_HEIGHT / size.y, KOMAINU_HEIGHT / size.y, KOMAINU_HEIGHT / size.y);
-    return { geometry, tone, material: new MeshBasicMaterial({ map: mesh.material.map }) };
+    return { geometry, tone, material: komainuMaterial(mesh.material.map) };
   })();
   return komainuFigures[variant];
 }
@@ -119,7 +139,7 @@ export function Komainu() {
 }
 
 // Lanternas da trilha (pares ladeando o caminho) e das cabeceiras da ponte, viradas para o caminho
-function lanternSpots() {
+export function lanternSpots() {
   const points = getCameraCurve().getSpacedPoints(400);
   const trail = STONE_LANTERNS.z.flatMap((z) => {
     // x do caminho naquela profundidade: as lanternas acompanham a trilha
@@ -165,6 +185,8 @@ export function StonePaths() {
 // pedra e volta. Parado com movimento reduzido
 const REST = 0.28;
 const TIPPED = -0.42;
+// Momento em que o bambu, voltando do tombo, cruza o repouso e bate na pedra (cos(9b) = 0)
+const STRIKE = 0.84 + (Math.PI / 18) * 0.16;
 export function ShishiOdoshi() {
   const materials = useAccentMaterials({ bamboo: { accent: 'bamboo' }, stone: { accent: 'granite' } });
   const { fixed, stone, pipe } = shishiOdoshiGeometry();
@@ -176,8 +198,11 @@ export function ShishiOdoshi() {
   useFrame((_, delta) => {
     const { reducedMotion } = journeyStore.getState();
     if (!pipeRef.current || reducedMotion) return;
+    const before = clock.current / SHISHI_ODOSHI.cycle;
     clock.current = (clock.current + delta) % SHISHI_ODOSHI.cycle;
     const t = clock.current / SHISHI_ODOSHI.cycle;
+    // O bambu volta e bate na pedra: o som ambiente (lib/sound/ambience) toca o "toc"
+    if (before < STRIKE && t >= STRIKE) window.dispatchEvent(new Event('oku:shishi'));
     // 0–80%: enche (a boca desce aos poucos); 80–84%: tomba; 84–100%: volta e balança até parar
     let angle;
     if (t < 0.8) angle = REST - (t / 0.8) * 0.18;

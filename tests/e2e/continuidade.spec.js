@@ -94,8 +94,10 @@ test.describe('Fundo pintado sem WebGL', () => {
   });
 
   test('antes da cena começar, o fundo em SVG tem névoa, cedros e o rio', async ({ page }) => {
-    await openHome(page);
-    // O cenário pintado aparece desde o início (a cena só tenta começar na primeira interação)
+    // Na home o primeiro quadro é o pôster da cena; nas outras páginas, o cenário pintado em SVG
+    // (a cena só tenta começar na primeira interação, e lá a câmera fica em outro ponto da montanha)
+    await page.goto('/certificates');
+    await expect(loader(page)).toHaveCount(0, { timeout: 10_000 });
     const backdrop = page.locator('[data-scene] .static-backdrop');
     await expect(backdrop.locator('.backdrop-mist')).toHaveCount(2);
     await expect(backdrop.locator('[data-trees="near"]')).toHaveAttribute('d', /M/);

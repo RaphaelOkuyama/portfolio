@@ -88,9 +88,13 @@ const fragmentShader = /* glsl */ `
 
 // Partículas instanciadas caindo com vento (pétalas de sakura, folhas de momiji).
 // `weight(journey)` diz quanto aparecem (0–1); `volume` é a caixa onde caem.
-export default function FallingLeaves({ volume, seed = 7, size = [0.22, 0.16], accent, shape = 0, weight, countScale = 1 }) {
+// `wide`: nas telas deitadas a câmera do hero gira para a esquerda (o torii vai para o terço
+// direito): a caixa anda `shift` em x e alarga `scale` vezes, com `scale` vezes mais peças (a mesma
+// densidade). Em pé fica a caixa original, desenhando só a parte proporcional das peças
+export default function FallingLeaves({ volume, seed = 7, size = [0.22, 0.16], accent, shape = 0, weight, countScale = 1, wide = null }) {
   const quality = useJourney((s) => s.quality);
-  const count = Math.round(QUALITY_SETTINGS[quality].particles * countScale);
+  const wideScale = wide?.scale ?? 1;
+  const count = Math.round(QUALITY_SETTINGS[quality].particles * countScale * wideScale);
   const meshRef = useRef(null);
   const [w, h] = size;
   const { x: vx, y: vy, z: vz } = volume;
@@ -144,8 +148,11 @@ export default function FallingLeaves({ volume, seed = 7, size = [0.22, 0.16], a
     // deitada, deixava a maior parte das peças fora dos lados e as outras numa faixa horizontal.
     // Aqui ela estreita e cresce para cima na proporção da tela (mesma quantidade, mais densas)
     const portrait = Math.min(1, aspect);
-    const half = ((vx[1] - vx[0]) / 2) * Math.max(0.4, portrait);
-    const cx = (vx[0] + vx[1]) / 2;
+    const isWide = aspect >= 1 && wide;
+    const half = ((vx[1] - vx[0]) / 2) * Math.max(0.4, portrait) * (isWide ? wideScale : 1);
+    const cx = (vx[0] + vx[1]) / 2 + (isWide ? wide.shift : 0);
+    // Em pé, só a parte das peças que cabe na caixa original (a mesma densidade de antes)
+    mesh.count = isWide || !wide ? count : Math.round(count / wideScale);
     const top = vy[1] + (1 / portrait - 1) * (vy[1] - vy[0]) * 0.6;
     // ...e chega mais perto da câmera: em pé, a parte de baixo da tela é o chão logo à frente dela
     const near = vz[1] + (1 / portrait - 1) * 10;

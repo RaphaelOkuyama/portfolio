@@ -13,7 +13,15 @@ import { ridgeProfile, forestPlacements } from '../../lib/journey/landscape';
 import { groundHeight } from '../../lib/journey/ground';
 import { NOISE, noiseDefines } from './glsl';
 import { forestGeometry, TREE_SWAY } from './forestGeometry';
-import { MOUNTAIN_LAYERS, MOUNTAIN_LOOK, FOREST, GROUND } from './config';
+import { MOUNTAIN_LAYERS, MOUNTAIN_LOOK, FOREST, GROUND, BAMBOO } from './config';
+
+// No bambuzal só bambu: as camadas que passam pela profundidade dele não põem sugi nem matsu na
+// faixa dos colmos (com folga); essas árvores vão para fora, depois do bambuzal
+function bambooAvoid(layer) {
+  return BAMBOO.groves
+    .filter(({ z }) => layer.z >= Math.min(...z) - 6 && layer.z <= Math.max(...z) + 6)
+    .map(({ x }) => [Math.min(...x) - 3 - layer.x, Math.max(...x) + 3 - layer.x]);
+}
 
 // Distância em que a camada atinge o tom "longe"
 const FAR_DISTANCE = 60;
@@ -170,6 +178,7 @@ export default function MountainLayers() {
         valleyHalf: layer.forestValleyHalf ?? FOREST.valleyHalf,
         valleyCenter: layer.valleyCenter,
         floor: (x) => groundHeight(x + layer.x, layer.z, GROUND),
+        avoid: bambooAvoid(layer),
       }).map(([x, y, s]) => [x, y, s * (1 + i * FOREST.growWithDistance)]);
       return {
         sugi: all.filter((_, k) => k % 10 >= FOREST.matsuShare * 10),

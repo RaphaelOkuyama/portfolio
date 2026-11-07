@@ -5,6 +5,7 @@ import { journeyStore, useJourney } from '../store/journey';
 import { loaderProgress, isReturningVisit, markVisited } from '../lib/loader';
 import { ensoShapes } from '../lib/enso';
 import { SHODO_STROKES } from '../lib/shodo';
+import Lang from './Lang';
 
 // Ensō de pincel: corpo de tinta + cerdas, revelados por uma máscara que segue o traço
 const SHAPES = ensoShapes();
@@ -21,23 +22,95 @@ const SHODO_LAYOUT = [
 // Cada traço leva um instante; o kanji inteiro cabe no tempo mínimo do loader
 const STROKE_SECONDS = 0.07;
 
+// Abertura completa (primeira visita num desktop): o fundo de tinta cobre a página, o ensō escreve
+// 奥山 e a íris de nanquim abre sobre a montanha. O CSS usa a mesma consulta (globals.css)
+const CINEMATIC = '(pointer: fine) and (min-width: 1024px) and (prefers-reduced-motion: no-preference)';
+// O que sai do desfoque na abertura. Sem opacidade nem recorte: o nome é o LCP e já está pintado
+// (sob o fundo de tinta) desde o primeiro quadro
+const HERO_LINES = '.hero-name-jp, .hero-title, .hero-roles, .hero-summary, .hero-actions, .hero-available, .hero-okuyama';
+const SKIP_EVENTS = ['pointerdown', 'keydown', 'wheel', 'touchstart'];
+const TAU = Math.PI * 2;
+
+// Íris de nanquim: o fundo cobre a tela e um buraco de borda irregular (como tinta recuando no
+// papel) cresce do centro. Três camadas com transparência fazem a borda esfumada
+function irisPainter(canvas) {
+  const ctx = canvas.getContext('2d');
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  canvas.width = w;
+  canvas.height = h;
+  const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg-color').trim() || '#0f1626';
+  const cx = w / 2;
+  const cy = h / 2;
+  return {
+    reach: Math.hypot(w, h) * 0.62,
+    draw(r) {
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = 1;
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, w, h);
+      if (r <= 0) return;
+      const phase = r * 0.006;
+      ctx.globalCompositeOperation = 'destination-out';
+      [[1.14, 0.22], [1.06, 0.5], [1, 1]].forEach(([k, alpha]) => {
+        ctx.globalAlpha = alpha;
+        ctx.beginPath();
+        for (let i = 0; i <= 120; i += 1) {
+          const th = (i / 120) * TAU;
+          const rr = r * k * (1 + 0.05 * Math.sin(3 * th + phase) + 0.028 * Math.sin(7 * th - phase * 1.7) + 0.014 * Math.sin(17 * th + phase * 2.3));
+          const x = cx + Math.cos(th) * rr;
+          const y = cy + Math.sin(th) * rr;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+    },
+  };
+}
+
 export default function EnsoLoader() {
   const loaderDone = useJourney((s) => s.loaderDone);
+  const introDone = useJourney((s) => s.introDone);
   const rootRef = useRef(null);
   const pathRef = useRef(null);
+  const markRef = useRef(null);
+  const irisRef = useRef(null);
 
   useGSAP(() => {
     if (loaderDone) return undefined;
+    const store = journeyStore.getState();
     // Visita de volta: o CSS já escondeu o overlay no primeiro paint; libera a página na hora
     if (isReturningVisit()) {
-      journeyStore.getState().setLoaderDone();
+      store.setLoaderDone();
+      store.setIntroDone();
       return undefined;
     }
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const cinematic = window.matchMedia(CINEMATIC).matches;
     const path = pathRef.current;
     const start = performance.now();
     let shown = 0;
     let finished = false;
+    let skipped = false;
+    let timeline = null;
+
+    // Clique, tecla ou rolagem pulam: o traço fecha e a abertura corre quatro vezes mais rápido
+    const skip = () => {
+      skipped = true;
+      timeline?.timeScale(4);
+    };
+    SKIP_EVENTS.forEach((type) => window.addEventListener(type, skip, { passive: true }));
+    const stopListening = () => SKIP_EVENTS.forEach((type) => window.removeEventListener(type, skip));
+
+    // Fora da home não há hero nem pôster: as listas ficam vazias e as animações não fazem nada
+    const heroLines = gsap.utils.toArray(document.querySelectorAll(HERO_LINES));
+    const poster = gsap.utils.toArray(document.querySelectorAll('.scene-poster-frame'));
+    // A hero espera desfocada sob o fundo de tinta (só na abertura completa)
+    if (cinematic && heroLines.length) gsap.set(heroLines, { filter: 'blur(14px)', y: 22 });
 
     // O traço é "desenhado" deslocando o tracejado (núcleo do GSAP, sem o plugin DrawSVG)
     prepareStroke(path);
@@ -55,14 +128,39 @@ export default function EnsoLoader() {
       });
     }
 
+    const finish = () => {
+      markVisited();
+      stopListening();
+      store.setLoaderDone();
+      store.setIntroDone();
+    };
+
+    // Abertura completa: a íris abre, o ensō cresce e some (a câmera passa por ele), o pôster da
+    // cena aproxima como a câmera descendo até o torii e a hero sai do desfoque, linha por linha
+    const openIris = (tl) => {
+      const painter = irisPainter(irisRef.current);
+      const iris = { r: 0 };
+      tl.add(() => {
+        painter.draw(0);
+        rootRef.current.setAttribute('data-iris', '');
+      }, '+=0.12')
+        .to(iris, { r: painter.reach, duration: 1.35, ease: 'power3.inOut', onUpdate: () => painter.draw(iris.r) }, '<')
+        .to(markRef.current, { scale: 2.6, opacity: 0, duration: 0.9, ease: 'power2.in' }, '<')
+        .to(rootRef.current.querySelector('.enso-skip'), { opacity: 0, duration: 0.3 }, '<')
+        // A página volta a rolar e a hero começa a se mexer com a íris pela metade
+        .add(() => store.setLoaderDone(), '<0.55')
+        .fromTo(poster, { scale: 1.16, yPercent: -3 }, { scale: 1, yPercent: 0, duration: 2.6, ease: 'power2.out' }, '<-0.4')
+        .to(heroLines, { filter: 'blur(0px)', y: 0, duration: 1.25, ease: 'power3.out', stagger: 0.08, clearProps: 'filter,transform' }, '<0.25');
+    };
+
     const tick = () => {
       if (finished) return;
-      const progress = loaderProgress({
+      const progress = skipped ? 1 : loaderProgress({
         elapsed: performance.now() - start,
         // performance.now() começa na navegação
         waited: performance.now(),
-        // O cenário pintado (StaticBackdrop) já está atrás do loader: não espera a cena 3D, que
-        // começa depois (ver SceneCanvas). Fecha no tempo do traço
+        // O cenário (pôster ou desenho) já está atrás do loader: não espera a cena 3D, que começa
+        // depois (ver SceneCanvas). Fecha no tempo do traço
         sceneReady: true,
         ...(reduced ? { minMs: 0 } : {}),
       });
@@ -75,47 +173,43 @@ export default function EnsoLoader() {
         return;
       }
 
-      // Fecha o círculo e dissolve o overlay
+      // Fecha o círculo; depois a íris (desktop) ou só o fade do overlay
       finished = true;
       gsap.ticker.remove(tick);
-      gsap
-        .timeline({
-          onComplete: () => {
-            markVisited();
-            journeyStore.getState().setLoaderDone();
-          },
-        })
+      timeline = gsap
+        .timeline({ onComplete: finish })
         .to(path, { strokeDashoffset: 0, duration: reduced ? 0 : 0.35, ease: 'power2.out', overwrite: true })
         // Num aparelho lento o ensō pode fechar antes do pincel: 奥山 termina de ser escrito antes de sumir
-        .to(strokes, { strokeDashoffset: 0, duration: reduced ? 0 : 0.25, ease: 'power1.out', overwrite: true }, '<')
-        .to(rootRef.current, { opacity: 0, duration: reduced ? 0 : 0.6, ease: 'power2.inOut' });
+        .to(strokes, { strokeDashoffset: 0, duration: reduced ? 0 : 0.25, ease: 'power1.out', overwrite: true }, '<');
+      if (cinematic) {
+        openIris(timeline);
+      } else {
+        timeline
+          .to(rootRef.current, { opacity: 0, duration: reduced ? 0 : 0.6, ease: 'power2.inOut' })
+          .add(() => store.setLoaderDone());
+        // No celular o pôster só assenta (a íris fica para telas grandes com mouse)
+        if (!reduced && poster.length) timeline.fromTo(poster, { scale: 1.07 }, { scale: 1, duration: 1.8, ease: 'power2.out' }, '<-0.4');
+      }
+      if (skipped) timeline.timeScale(4);
     };
 
     gsap.ticker.add(tick);
-    return () => gsap.ticker.remove(tick);
+    return () => {
+      gsap.ticker.remove(tick);
+      stopListening();
+    };
   }, { dependencies: [loaderDone] });
 
-  if (loaderDone) return null;
+  if (loaderDone && introDone) return null;
 
   return (
-    <div
-      ref={rootRef}
-      data-loader="enso"
-      aria-hidden="true"
-      style={{
-        // Transparente: a hero (nome, texto, cenário) aparece por trás desde o primeiro instante
-        // e o pincel escreve o ensō por cima. Com fundo opaco a página só "existia" quando o
-        // loader sumia (LCP e Speed Index de ~5–8s num celular)
-        position: 'fixed', inset: 0, zIndex: 10000,
-        background: 'radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--bg-color) 70%, transparent) 0, transparent 150px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}
-    >
+    <div ref={rootRef} data-loader="enso" aria-hidden="true">
       {/* Sem JavaScript o loader nunca terminaria: esconde */}
       <noscript>
         <style>{'[data-loader="enso"]{display:none}'}</style>
       </noscript>
-      <svg viewBox="0 0 220 220" width="200" height="200">
+      <canvas ref={irisRef} className="enso-iris" />
+      <svg ref={markRef} className="enso-mark" viewBox="0 0 220 220" width="200" height="200">
         <defs>
           <mask id="enso-brush" maskUnits="userSpaceOnUse" x="0" y="0" width="220" height="220">
             {/* DrawSVG anima este guia: onde ele passa, a tinta aparece */}
@@ -154,6 +248,7 @@ export default function EnsoLoader() {
           ))}
         </g>
       </svg>
+      <p className="enso-skip"><Lang pt="Clique para pular" en="Click to skip" /></p>
     </div>
   );
 }
