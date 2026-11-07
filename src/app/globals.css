@@ -808,11 +808,12 @@ p, li { text-wrap: pretty; }
   opacity: 0.85;
 }
 /* 丁石 chōishi: o título de cada seção ao lado de um marco de pedra dos caminhos de peregrinação,
-   com quantos chō faltam até o santuário (StationSign). A pedra usa a mesma textura de granito do
-   Poly Haven da cena (public/textures/stone.jpg); os kanji são gravados nela */
+   com quantos chō faltam até o santuário (StationSign). O marco é desenhado a nanquim, na cor do
+   texto (claro à noite, tinta escura de dia), sempre do mesmo tamanho: antes era um bloco de
+   granito escuro esticado até a altura do título, com o número quase ilegível */
 .station {
   display: flex;
-  align-items: stretch;
+  align-items: center;
   gap: clamp(14px, 1.8vw, 22px);
   width: fit-content;
   max-width: 100%;
@@ -821,30 +822,36 @@ p, li { text-wrap: pretty; }
 .choishi {
   flex: none;
   position: relative;
-  display: flex;
-  justify-content: center;
-  width: 46px;
-  min-height: 96px;
+  width: 40px;
+  height: 100px;
   margin: 0;
-  padding: 18px 0 12px;
-  /* Pedra com o topo em ponta suave, como os chōishi de Kōyasan */
-  clip-path: polygon(50% 0, 100% 14%, 100% 100%, 0 100%, 0 14%);
-  background:
-    linear-gradient(90deg, rgb(255 255 255 / 0.12), transparent 30%, transparent 70%, rgb(0 0 0 / 0.28)),
-    url('/textures/stone.jpg') center / 160px,
-    #6d7180;
-  background-blend-mode: normal, multiply, normal;
-  box-shadow: inset 0 -10px 18px rgb(0 0 0 / 0.25);
+  color: var(--text-primary);
 }
-[data-theme='day'] .choishi { background-color: #a9a69c; }
+.choishi-stone { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.choishi-stone :is(path, circle, rect) {
+  fill: currentColor;
+  fill-opacity: 0.12;
+  stroke: currentColor;
+  stroke-opacity: 0.6;
+  stroke-width: 1.15;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+.choishi-stone .choishi-pillar { fill-opacity: 0.16; }
+.choishi-stone .choishi-ground { fill: none; stroke-opacity: 0.35; stroke-linecap: round; }
+/* O número gravado no pilar, na vertical */
 .choishi-mark {
+  position: absolute;
+  top: 45px;
+  left: 50%;
+  translate: -50% 0;
   writing-mode: vertical-rl;
-  font-size: 1.15rem;
+  font-size: 0.95rem;
   font-weight: 800;
-  letter-spacing: 0.12em;
-  /* Gravado: claro embaixo e escuro em cima, como letra cavada na pedra */
-  color: rgb(20 22 30 / 0.82);
-  text-shadow: 0 1px 0 rgb(255 255 255 / 0.28), 0 -1px 0 rgb(0 0 0 / 0.35);
+  line-height: 1;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+  opacity: 0.92;
 }
 .station-text {
   display: flex;
@@ -869,8 +876,8 @@ p, li { text-wrap: pretty; }
 @media (max-width: 560px) {
   .station { width: 100%; }
   .station .section-title { padding: 0 34px 0 0; font-size: 1.9rem; }
-  .choishi { width: 40px; min-height: 84px; }
-  .choishi-mark { font-size: 1rem; }
+  .choishi { width: 34px; height: 86px; }
+  .choishi-mark { top: 39px; font-size: 0.82rem; }
 }
 
 /* 縦書き: o nome da seção em japonês, na vertical, como inscrição logo depois do título.
@@ -4211,11 +4218,14 @@ html:not(:lang(en)) [data-lang="en"] { display: none !important; }
   align-items: center;
   gap: 10px;
   cursor: auto;
-  opacity: 0.75;
-  transition: opacity 0.2s;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.4s ease, visibility 0s 0.4s;
 }
-.dx-sound:hover,
-.dx-sound:focus-within { opacity: 1; }
+/* Aparece quando o vazio cobre a tela (antes ficava em cima do logo do menu) e sai na quebra */
+.dx-sound.is-on { opacity: 0.75; visibility: visible; transition: opacity 0.4s ease, visibility 0s; }
+.dx-sound.is-on:hover,
+.dx-sound.is-on:focus-within { opacity: 1; }
 .dx-mute {
   display: grid;
   place-items: center;

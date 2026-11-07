@@ -14,8 +14,12 @@ test.describe('領域展開: Expansão de domínio', () => {
     await openHome(page);
     await page.keyboard.type('domain');
     const domain = page.locator('[data-domain]');
-    await expect(domain).toHaveCount(1);
-    await page.waitForTimeout(1500);
+    // O código do domínio baixa na hora: com a suíte em paralelo pode passar de 5 s
+    await expect(domain).toHaveCount(1, { timeout: 15_000 });
+    // O volume do domínio só aparece com o vazio cobrindo a tela (antes ficava sobre o logo do menu)
+    await expect(page.locator('.dx-sound')).toBeHidden();
+    await expect(page.locator('.dx-sound')).toBeVisible({ timeout: 8_000 });
+    await page.waitForTimeout(500);
     await page.keyboard.press('Escape');
     // Saída: saturação curta + reconstrução do site (~2–3 s; mais com a máquina carregada)
     await expect(domain).toHaveCount(0, { timeout: 10_000 });

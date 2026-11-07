@@ -38,6 +38,22 @@ float fbm(vec2 p) {
   for (int i = 0; i < 5; i++) { v += a * noise(p); p = m * p; a *= 0.5; }
   return v;
 }
+// Ruído que dá a volta: em x o reticulado repete a cada period células. Com o ângulo medido em
+// voltas × period, o lado esquerdo do centro (onde o atan pula de π para -π) não vira uma costura;
+// antes ali aparecia uma linha reta cortando o vazio
+const float TURN = 6.28318;
+float pnoise(vec2 p, float period) {
+  vec2 i = floor(p), f = fract(p);
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  float x0 = mod(i.x, period), x1 = mod(i.x + 1.0, period);
+  return mix(mix(hash21(vec2(x0, i.y)), hash21(vec2(x1, i.y)), u.x),
+             mix(hash21(vec2(x0, i.y + 1.0)), hash21(vec2(x1, i.y + 1.0)), u.x), u.y);
+}
+float pfbm(vec2 p, float period) {
+  float v = 0.0, a = 0.5;
+  for (int i = 0; i < 4; i++) { v += a * pnoise(p, period); p *= 2.0; period *= 2.0; a *= 0.5; }
+  return v;
+}
 
 // Espaço azul-violeta do 無量空処: fundo quase preto, véus índigo e violeta, filetes de ciano
 vec3 nebula(vec2 p, float t) {
@@ -109,7 +125,8 @@ void main() {
   float ang = atan(fromO.y, fromO.x);
   float rev = uReveal * 1.08;
   float opening = step(0.001, uReveal) * (1.0 - smoothstep(0.88, 1.0, uReveal));
-  float ragged = ((fbm(vec2(ang * 2.2, uReveal * 3.0)) - 0.5) * 0.11 + (noise(vec2(ang * 22.0, 1.7)) - 0.5) * 0.03)
+  float turns = ang / TURN;
+  float ragged = ((pfbm(vec2(turns * 14.0, uReveal * 3.0), 14.0) - 0.5) * 0.11 + (pnoise(vec2(turns * 138.0, 1.7), 138.0) - 0.5) * 0.03)
     * smoothstep(0.0, 0.06, rev);
   float rr = rev + ragged;
   float inside = 1.0 - smoothstep(rr - 0.003, rr, dist);
@@ -138,16 +155,18 @@ void main() {
     float ring = exp(-pow((r - R) / 0.003, 2.0));
     // Brilho e raios só do lado de fora: o miolo fica negro
     float glow = (exp(-out_ * 11.0) * 0.55 + exp(-out_ * 2.6) * 0.14) * (1.0 - core);
-    float rays = pow(noise(vec2(a * 14.0, t * 0.6)), 4.0) * exp(-out_ * 3.6) * 0.8 * (1.0 - core);
+    float rays = pow(pnoise(vec2(a / TURN * 88.0, t * 0.6), 88.0), 4.0) * exp(-out_ * 3.6) * 0.8 * (1.0 - core);
     // 六眼: o anel em azul-gelo, a cor do olhar do Gojo
     vec3 rim = vec3(0.62, 0.88, 1.0);
     // Disco de acreção: riscos em espiral girando em volta do buraco, iridescentes (azul-gelo
     // passando por violeta e um âmbar fraco, como o vazio do anime)
     float swirl = a + log(r / R + 0.05) * 3.2 - t * 0.9;
-    float streak = pow(noise(vec2(swirl * 5.0, r * 38.0)), 3.0) + pow(noise(vec2(swirl * 11.0 + 4.0, r * 90.0)), 5.0) * 0.6;
+    float sw = swirl / TURN;
+    float streak = pow(pnoise(vec2(sw * 31.0, r * 38.0), 31.0), 3.0) + pow(pnoise(vec2(sw * 69.0 + 4.0, r * 90.0), 69.0), 5.0) * 0.6;
     float disk = streak * exp(-out_ * 7.5) * (1.0 - core);
-    vec3 iri = mix(vec3(0.55, 0.85, 1.0), vec3(0.78, 0.6, 1.0), 0.5 + 0.5 * sin(swirl * 1.3));
-    iri = mix(iri, vec3(1.0, 0.78, 0.55), pow(0.5 + 0.5 * sin(swirl * 0.7 + 2.0), 6.0) * 0.6);
+    // Frequências inteiras no ângulo: a cor fecha a volta sem degrau
+    vec3 iri = mix(vec3(0.55, 0.85, 1.0), vec3(0.78, 0.6, 1.0), 0.5 + 0.5 * sin(swirl));
+    iri = mix(iri, vec3(1.0, 0.78, 0.55), pow(0.5 + 0.5 * sin(swirl + 2.0), 6.0) * 0.6);
     col = mix(col, vec3(0.0), core);
     col += core * vec3(0.02, 0.05, 0.16) * smoothstep(R * 0.5, R, r);
     col += (ring * 2.4 + glow + rays) * rim * uOrb;

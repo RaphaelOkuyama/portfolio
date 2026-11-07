@@ -1,5 +1,5 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { EffectComposer, Bloom, GodRays, SMAA } from '@react-three/postprocessing';
 import { Color } from 'three';
@@ -7,6 +7,7 @@ import { journeyStore, useJourney, effectiveProgress } from '../../store/journey
 import { QUALITY_SETTINGS } from '../../lib/journey/quality';
 import { SCENE_ACCENTS } from '../../lib/palette';
 import { smoothstep } from '../../lib/journey/math';
+import { transitionPhase } from '../../lib/journey/skyTransition';
 import { celestialWorld } from './Celestial';
 import { CELESTIAL } from './config';
 import Grade from './Grade';
@@ -15,13 +16,20 @@ import Grade from './Grade';
 // raios passam pelo torii e pelos bambus no hero; depois a lua some e o disco apaga
 function RaysSource({ onReady }) {
   const color = useMemo(() => new Color(), []);
-  useFrame((state) => {
+  const level = useRef(1);
+  useFrame((state, delta) => {
     const mesh = state.scene.getObjectByName('rays-source');
     if (!mesh) return;
     const store = journeyStore.getState();
     const { theme } = store;
+    // Na troca de tema o astro desce atrás das montanhas e o outro sobe: a fonte dos raios não é
+    // mascarada pela cena e passava na frente do torii. Ela se apaga logo no começo da troca e volta
+    // devagar com o astro novo já no lugar
+    const calm = transitionPhase(performance.now() / 1000) === null ? 1 : 0;
+    level.current += (calm - level.current) * (1 - Math.exp(-delta * (calm ? 3 : 14)));
+    if (Math.abs(calm - level.current) > 0.005) state.invalidate();
     // Some fora do hero e quando a lua vira o olho do Tsukuyomi (o disco apareceria por trás dele)
-    const hero = store.tsukuyomi ? 0 : 1 - smoothstep(0.06, 0.16, effectiveProgress(store));
+    const hero = (store.tsukuyomi ? 0 : 1 - smoothstep(0.06, 0.16, effectiveProgress(store))) * level.current;
     // Um pouco atrás da lua, sempre de frente para a câmera
     mesh.position.copy(celestialWorld).sub(state.camera.position).setLength(0.6).add(celestialWorld);
     mesh.lookAt(state.camera.position);

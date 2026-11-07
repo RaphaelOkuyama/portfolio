@@ -23,6 +23,19 @@ test('cada seção tem o seu 丁石 a caminho do 奥の院', async ({ page }) =>
   await expect(page.locator('[data-station="experience"] .choishi-mark')).toHaveText('一丁');
   await expect(page.locator('[data-station="contato"] .choishi-mark')).toHaveText('奥の院');
   await expect(page.locator('[data-station="about"] .choishi-left')).toHaveText('Faltam quatro chō para o santuário');
+  // O marco é desenhado (gorintō sobre o pilar), sempre do mesmo tamanho, com o número dentro do pilar
+  const sizes = await page.locator('.choishi').evaluateAll((stones) => stones.map((stone) => {
+    const box = stone.getBoundingClientRect();
+    const mark = stone.querySelector('.choishi-mark').getBoundingClientRect();
+    const pillar = stone.querySelector('.choishi-pillar').getBoundingClientRect();
+    return {
+      size: `${Math.round(box.width)}x${Math.round(box.height)}`,
+      inside: mark.top >= pillar.top - 1 && mark.bottom <= pillar.bottom + 1,
+    };
+  }));
+  expect(sizes).toHaveLength(5);
+  expect(new Set(sizes.map((s) => s.size)).size).toBe(1);
+  expect(sizes.every((s) => s.inside)).toBe(true);
 });
 
 test('o rolo numera em daiji, em sequência, e mostra o que existe de cada projeto', async ({ page }) => {

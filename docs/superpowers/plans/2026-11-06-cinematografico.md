@@ -41,7 +41,9 @@
 - [x] IMACARDIOS: ilustração do ECG a pincel que vira o diagrama de isolamento + estudo de caso.
 - [x] Numeração sequencial no rolo, numerais daiji (壱 弐 参…) preenchidos.
 - [x] Cards → papel / lavado de nanquim; rótulos em caixa-alta → versalete serifado ou tategaki.
-- [x] 丁石 no lugar das placas de estação; ordem do Sobre no celular.
+- [x] 丁石 no lugar das placas de estação; ordem do Sobre no celular. Depois redesenhados a nanquim (gorintō sobre o pilar, tamanho fixo, número legível nos dois temas): o bloco de granito escuro ficava estranho.
+- [x] Troca de tema: os raios da lua/sol se apagam durante o pôr do sol (a fonte deles não é mascarada pela cena e passava na frente do torii) e voltam com o astro novo no lugar.
+- [x] Expansão de Domínio (easter egg, a pedido): sem a costura reta no vazio (ruído do ângulo fechando a volta) e o volume só aparece com o vazio cobrindo a tela.
 - [x] Copy: Sobre, Stack (onde cada ferramenta foi usada, sem Prettier/ESLint/Git), Projetos (bootcamp rotulado; rolo com projetos originais), EN "Formation" → "Program", erro do formulário com canal alternativo.
 
 ## Fase D — fechamento

@@ -208,7 +208,9 @@ export default function DomainExpansion({ origin, onDone }) {
       }, close + 0.15)
       .fromTo(q('.dx-name-jp'), { letterSpacing: '0.4em' }, { letterSpacing: '0.04em', duration: 1.1, ease: 'expo.out' }, close + 0.15)
       .fromTo(q('.dx-line'), { scaleX: 0 }, { scaleX: 1, duration: 0.9, ease: 'expo.inOut' }, close + 0.35)
-      .fromTo(q('.dx-label, .dx-count'), { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.7, stagger: 0.08, ease: 'power3.out' }, close + 0.45);
+      .fromTo(q('.dx-label, .dx-count'), { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.7, stagger: 0.08, ease: 'power3.out' }, close + 0.45)
+      // O volume só aparece com o vazio cobrindo a tela: antes ele ficava em cima do logo do menu
+      .call(() => root.querySelector('.dx-sound')?.classList.add('is-on'), null, close);
     const counter = root.querySelector('.dx-count');
     const layers = [glCanvas, itemsCanvas];
 
@@ -498,6 +500,8 @@ export default function DomainExpansion({ origin, onDone }) {
       });
       rebuild = { frozen, cells, at: performance.now() / 1000, pulseAt: 0, total: cells.filter((c) => c.target).length, landedCount: 0 };
       sound?.shatter();
+      // O site volta por baixo dos cacos: o volume sai junto com o vazio
+      root.querySelector('.dx-sound')?.classList.remove('is-on');
     };
 
     // O conteúdo do elemento que o caco carrega, montando-se conforme o caco chega (a = 0..1)
