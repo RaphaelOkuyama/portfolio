@@ -79,7 +79,7 @@ test.describe('Página de projeto (作)', () => {
     const errors = collectConsoleErrors(page);
     await page.goto('/projects/totem-autoatendimento');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Totem de Autoatendimento');
-    await expect(page.locator('.project-eyebrow')).toContainText('05 / 15');
+    await expect(page.locator('.project-eyebrow')).toContainText('08 / 15');
 
     // Ficha: papel, contexto, período e status vêm dos dados do projeto
     const meta = page.locator('.case-meta');
@@ -91,10 +91,10 @@ test.describe('Página de projeto (作)', () => {
     await expect(page.getByRole('link', { name: /Ver site/ })).toHaveAttribute('target', '_blank');
     await expect(page.getByRole('link', { name: /Ver no GitHub/ })).toHaveAttribute('rel', /noopener/);
 
-    // Stack: lista acessível com cada tecnologia uma vez; a faixa visual fica fora da árvore
-    const stack = page.getByRole('region', { name: 'Tecnologias' });
-    await expect(stack.getByRole('listitem')).toHaveCount(7);
-    await expect(page.locator('.case-marquee-track')).toHaveAttribute('aria-hidden', 'true');
+    // Stack: lista parada em camadas, cada tecnologia uma vez; a faixa em movimento fica fora da árvore
+    await expect(page.locator('.case-stack li')).toHaveCount(7);
+    await expect(page.locator('.case-stack dt')).toHaveText(['Front-end', 'Back-end & dados']);
+    await expect(page.locator('.case-marquee')).toHaveAttribute('aria-hidden', 'true');
 
     // Seções numeradas; com imagens, a galeria aparece
     await expect(page.getByRole('heading', { level: 2, name: 'Visão geral' })).toBeVisible();
@@ -102,10 +102,10 @@ test.describe('Página de projeto (作)', () => {
     await expect(page.locator('.project-gallery')).toHaveCount(1);
 
     const nav = page.getByRole('navigation', { name: 'Projeto' });
-    await expect(nav.getByRole('link', { name: /Projeto anterior/ })).toHaveAttribute('href', '/projects/fit-ai-frontend');
+    await expect(nav.getByRole('link', { name: /Projeto anterior/ })).toHaveAttribute('href', '/projects/fit-ai-api');
     await nav.getByRole('link', { name: /Próximo projeto/ }).click();
-    await expect(page).toHaveURL(/\/projects\/portfolio-okuyama$/);
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('Portfólio');
+    await expect(page).toHaveURL(/\/projects\/devflix-frontend$/);
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('DevFlix');
     expect(errors).toEqual([]);
   });
 

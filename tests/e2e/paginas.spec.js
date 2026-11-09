@@ -22,11 +22,12 @@ test.describe('Certificados: graduação, datas e visualizador', () => {
     expect(degreeBox.y).toBeLessThan(filtersBox.y);
   });
 
-  test('cada certificado traz mês e carga horária, do mais recente para o mais antigo', async ({ page }) => {
+  test('cada certificado traz mês e carga horária; a formação abre a área, depois do mais recente para o mais antigo', async ({ page }) => {
     await open(page, '/certificates');
     const full = page.locator('.cert-board > [data-lang="pt"] .cert-group[data-area="full"] .cert-item');
-    await expect(full.first()).toContainText('Bootcamp Self Checkout');
-    await expect(full.first().locator('.cert-inst')).toContainText('Full Stack Club · Mar 2026 · 18h');
+    await expect(full.first()).toContainText('Formação Fullstack JavaScript');
+    await expect(full.nth(1)).toContainText('Bootcamp Self Checkout');
+    await expect(full.nth(1).locator('.cert-inst')).toContainText('Full Stack Club · Mar 2026 · 18h');
     const trilha = page.locator('.cert-board > [data-lang="pt"] .cert-item', { hasText: 'Trilha JavaScript' });
     await expect(trilha.locator('.cert-inst')).toContainText('6 módulos · Nov 2024 – Mai 2025 · 70h');
   });
@@ -128,5 +129,56 @@ test.describe('Página de projeto: capa, ficha e o caso', () => {
     await expect(page).toHaveURL(/\/projects\/glow-laser$/);
     await page.getByRole('button', { name: 'Voltar', exact: true }).click();
     await expect(page).toHaveURL(/\/projects$/);
+  });
+});
+
+test.describe('Projetos: lista, stack e galeria', () => {
+  test('a lista começa pelo trabalho real; cartões sem print mostram as rotas ou uma janela', async ({ page }) => {
+    await open(page, '/projects');
+    const titles = page.locator('.pj-grid[data-lang="pt"] .pj-title');
+    await expect(titles.nth(1)).toContainText('Saeko');
+    await expect(titles.nth(2)).toContainText('ARCA');
+    await expect(titles.nth(3)).toContainText('GLOW LASER');
+    const lead = page.locator('.pj-grid[data-lang="pt"] .pj-card', { hasText: 'API Lead Magnet' });
+    await expect(lead.locator('.pj-thumb.is-routes .pj-route').first()).toContainText('/api/leads');
+    const player = page.locator('.pj-grid[data-lang="pt"] .pj-card', { hasText: 'Music Player Desktop' });
+    await expect(player.locator('.pj-thumb.is-plain')).toContainText('Electron');
+  });
+
+  test('o filtro dos certificados conta as linhas da lista', async ({ page }) => {
+    await open(page, '/certificates');
+    await expect(page.getByRole('button', { name: /Fundamentos/ })).toContainText('3');
+    await expect(page.locator('.cert-board > [data-lang="pt"] .cert-group[data-area="base"] .cert-list > .cert-item')).toHaveCount(3);
+  });
+
+  test('stack parada em camadas e galeria antes das funcionalidades, em tela cheia com zoom', async ({ page }) => {
+    const errors = collectConsoleErrors(page);
+    await open(page, '/projects/arca-construtora');
+    await expect(page.locator('.case-section-head h2')).toHaveText(['Visão geral', 'O caso', 'Galeria', 'O que faz']);
+    await expect(page.locator('.case-section-head .case-num')).toHaveText(['01', '02', '03', '04']);
+    await expect(page.locator('.case-stack li')).toContainText(['Next.js 16', 'Canvas API']);
+
+    const gallery = page.locator('.project-gallery');
+    await gallery.scrollIntoViewIfNeeded();
+    await gallery.getByRole('button', { name: 'Ver em tela cheia' }).click();
+    const box = page.locator('.glb[open]');
+    await expect(box).toBeVisible();
+    await expect(box.locator('.glb-count')).toHaveText('1 / 5');
+    await box.locator('.glb-stage').click({ position: { x: 200, y: 150 } });
+    await expect(box.locator('.glb-stage')).toHaveClass(/is-zoomed/);
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowRight');
+    await expect(box.locator('.glb-count')).toHaveText('3 / 5');
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.glb[open]')).toHaveCount(0);
+    // O carrossel fica na foto em que a pessoa parou
+    await expect(gallery.locator('.pic-count')).toHaveText('3 / 5');
+    expect(errors).toEqual([]);
+  });
+
+  test('o visualizador avisa que o QR code da OneBitCode não valida mais', async ({ page }) => {
+    await open(page, '/certificates');
+    await page.getByRole('link', { name: 'Ver certificado: Curso de React' }).click();
+    await expect(page.locator('.cert-viewer[open] .cert-viewer-note')).toContainText('QR code');
   });
 });

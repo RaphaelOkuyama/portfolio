@@ -1,7 +1,8 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import Image from 'next/image';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react';
+import GalleryLightbox from './projects/GalleryLightbox';
 import { gsap, useGSAP } from '../lib/gsap';
 
 /**
@@ -22,7 +23,10 @@ const SWIPE = 40; // px de arrasto para trocar de foto
 // na emenda durante a troca
 const OVERLAP = 0.3;
 
-const DEFAULT_LABELS = { prev: 'Foto anterior', next: 'Próxima foto', goTo: 'Ir para a foto {n}' };
+const DEFAULT_LABELS = {
+  prev: 'Foto anterior', next: 'Próxima foto', goTo: 'Ir para a foto {n}',
+  open: 'Ver em tela cheia', close: 'Fechar', zoom: 'Clique na imagem para ampliar',
+};
 
 const around = (i, n) => [i, (i + 1) % n, (i - 1 + n) % n];
 
@@ -37,6 +41,7 @@ export default function ProjectImageCarousel({ images = [], isMobile = false, la
   const media = useRef([]);
   const pointer = useRef(null);
   const { contextSafe } = useGSAP();
+  const [full, setFull] = useState(false);
 
   const goTo = contextSafe((next, dir) => {
     const from = currentRef.current;
@@ -81,6 +86,12 @@ export default function ProjectImageCarousel({ images = [], isMobile = false, la
     gsap.to(inn, { xPercent: 0, duration: DURATION, ease: EASE, onComplete: settle(inn) });
     gsap.to(inMedia, { xPercent: 0, duration: DURATION, ease: EASE, onComplete: settle(inMedia) });
   });
+
+  // Fechou a tela cheia: o carrossel fica na foto em que a pessoa parou
+  const closeFull = useCallback((at) => {
+    setFull(false);
+    if (at !== currentRef.current) goTo(at, at > currentRef.current ? 1 : -1);
+  }, [goTo]);
 
   if (!count) return null;
 
@@ -158,6 +169,21 @@ export default function ProjectImageCarousel({ images = [], isMobile = false, la
       ))}
     </div>
   ) : null;
+  const expand = (
+    <button type="button" className="pic-expand" onClick={() => setFull(true)} aria-label={text.open} title={text.open}>
+      <Maximize2 size={17} aria-hidden="true" />
+    </button>
+  );
+  const lightbox = (
+    <GalleryLightbox
+      images={images}
+      open={full}
+      start={current}
+      onClose={closeFull}
+      isMobile={isMobile}
+      labels={{ open: text.open, close: text.close, zoom: text.zoom, prev: text.prev, next: text.next }}
+    />
+  );
   const caption = (
     <p className="pic-caption" aria-live="polite">
       <span>{images[current].alt}</span>
@@ -173,9 +199,11 @@ export default function ProjectImageCarousel({ images = [], isMobile = false, la
           <span className="pic-notch" aria-hidden="true" />
           {frame}
           {arrows}
+          {expand}
         </div>
         {caption}
         {dots}
+        {lightbox}
       </div>
     );
   }
@@ -186,8 +214,10 @@ export default function ProjectImageCarousel({ images = [], isMobile = false, la
         {frame}
         {arrows}
         {dots}
+        {expand}
       </div>
       {caption}
+      {lightbox}
     </div>
   );
 }

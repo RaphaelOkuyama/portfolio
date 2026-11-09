@@ -21,14 +21,18 @@ export function certHours(item) {
   return item.hours ?? 0;
 }
 
-// Cada área com os itens do mais recente para o mais antigo (empate: a ordem dos dados)
+// A formação (o programa completo) abre a área; depois, do mais recente para o mais antigo
+// (empate: a ordem dos dados). `count` são as linhas da lista: no filtro, "Fundamentos 8" com 3
+// linhas na tela parecia que algo tinha sumido (a trilha mostra os módulos dentro dela)
+const weight = (c) => (c.kind === 'formation' ? 0 : 1);
+
 export function groupByArea(certificates, order = AREA_ORDER) {
   return order
     .map((area) => {
       const items = certificates
         .filter((c) => c.area === area)
-        .sort((a, b) => certDate(b).localeCompare(certDate(a)));
-      return { area, items, count: items.reduce((n, c) => n + certCount(c), 0) };
+        .sort((a, b) => weight(a) - weight(b) || certDate(b).localeCompare(certDate(a)));
+      return { area, items, count: items.length };
     })
     .filter((group) => group.items.length > 0);
 }
@@ -51,6 +55,15 @@ export function viewerEntries(certificates, order = AREA_ORDER) {
   }));
 }
 
+// Horas de estudo sem contar duas vezes: a formação já inclui os cursos avulsos da mesma escola
+// (os certificados de cada curso saem ao longo dela), então eles ficam fora da soma
+export function studyHours(certificates) {
+  const schools = new Set(certificates.filter((c) => c.kind === 'formation').map((c) => c.institution));
+  return certificates
+    .filter((c) => c.kind === 'formation' || !schools.has(c.institution))
+    .reduce((sum, c) => sum + certHours(c), 0);
+}
+
 export function summaryText(template, certificates) {
   const certs = certificates.reduce((n, c) => n + certCount(c), 0);
   const bootcamps = certificates.filter((c) => c.kind === 'bootcamp').length;
@@ -58,7 +71,8 @@ export function summaryText(template, certificates) {
   return template
     .replace('{certs}', certs)
     .replace('{bootcamps}', bootcamps)
-    .replace('{formations}', formations);
+    .replace('{formations}', formations)
+    .replace('{hours}', studyHours(certificates));
 }
 
 // Graduação: em andamento até o mês de conclusão, concluída depois dele ('AAAA-MM')

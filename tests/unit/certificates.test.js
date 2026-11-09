@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import {
-  groupByArea, summaryText, certCount, certDate, certHours, certKey, viewerEntries, degreeDone, AREA_ORDER,
+  groupByArea, summaryText, studyHours, certCount, certDate, certHours, certKey, viewerEntries, degreeDone, AREA_ORDER,
 } from '../../src/lib/certificates';
 import { resumeData } from '../../src/data/resume';
 import { TOOL_ICONS } from '../../src/components/stack/toolIcons';
@@ -17,11 +17,11 @@ describe('certificados', () => {
     { id: 4, area: 'full', name: 'Mais novo', date: '2026-03-27', hours: 18 },
   ];
 
-  it('agrupa na ordem das áreas, do mais recente para o mais antigo, e conta cada módulo da trilha', () => {
+  it('agrupa na ordem das áreas, a formação primeiro e o resto do mais recente para o mais antigo, contando linhas', () => {
     const groups = groupByArea(sample);
     expect(groups.map((g) => g.area)).toEqual(['full', 'base']);
-    expect(groups[0].items.map((c) => c.name)).toEqual(['Mais novo', 'Bootcamp', 'Formação']);
-    expect(groups.map((g) => g.count)).toEqual([3, 2]);
+    expect(groups[0].items.map((c) => c.name)).toEqual(['Formação', 'Mais novo', 'Bootcamp']);
+    expect(groups.map((g) => g.count)).toEqual([3, 1]);
     expect(certCount(sample[0])).toBe(2);
   });
 
@@ -33,12 +33,24 @@ describe('certificados', () => {
 
   it('o visualizador percorre cada módulo como um certificado, na ordem da página', () => {
     const entries = viewerEntries(sample);
-    expect(entries.map((e) => e.key)).toEqual(['4', '2', '3', certKey(sample[0], 0), certKey(sample[0], 1)]);
+    expect(entries.map((e) => e.key)).toEqual(['3', '4', '2', certKey(sample[0], 0), certKey(sample[0], 1)]);
     expect(entries.at(-1)).toMatchObject({ name: 'Trilha · II', area: 'base', hours: 12 });
   });
 
   it('monta o resumo do topo', () => {
     expect(summaryText('{certs} · {bootcamps} · {formations}', sample)).toBe('5 · 1 · 1');
+  });
+
+  it('soma as horas sem contar duas vezes os cursos que fazem parte da formação', () => {
+    const school = [
+      { id: 1, institution: 'Escola', kind: 'formation', hours: 200 },
+      { id: 2, institution: 'Escola', hours: 22 },
+      { id: 3, institution: 'Escola', modules: [{ hours: 10 }, { hours: 5 }] },
+      { id: 4, institution: 'Bootcamp', kind: 'bootcamp', hours: 18 },
+    ];
+    expect(studyHours(school)).toBe(218);
+    expect(studyHours(resumeData.pt.certificates)).toBe(228);
+    expect(summaryText('{hours}h', school)).toBe('218h');
   });
 
   it('a graduação fica prevista até o mês de conclusão e concluída depois dele', () => {
@@ -65,7 +77,7 @@ describe('certificados', () => {
       expect(AREA_ORDER).toContain(c.area);
       expect(c.icon === 'award' || TOOL_ICONS[c.icon]).toBeTruthy();
     });
-    expect(summaryText(resumeData[lang].certificatesPage.summary, list)).toMatch(/^22 /);
+    expect(summaryText(resumeData[lang].certificatesPage.summary, list)).toMatch(/^228h .* 22 /);
   });
 
   it('pt e en apontam para as mesmas imagens, datas e horas', () => {

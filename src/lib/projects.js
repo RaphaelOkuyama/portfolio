@@ -6,7 +6,7 @@ export const TYPE_ORDER = ['fullstack', 'front', 'back', 'desktop'];
 
 // Os projetos do emakimono da home (o resto fica na página /projects): o rolo com todos
 // passava de 5.600 px de rolagem no desktop
-export const HOME_PROJECTS = ['imacardios', 'saeko-artes', 'arca-construtora', 'fit-ai-frontend', 'totem-autoatendimento', 'portfolio-okuyama'];
+export const HOME_PROJECTS = ['imacardios', 'saeko-artes', 'arca-construtora', 'glow-laser', 'portfolio-okuyama', 'fit-ai-frontend'];
 
 // Projetos da home com a posição na lista completa (a mesma numeração das páginas de projeto)
 export function homeProjects(projects, slugs = HOME_PROJECTS) {

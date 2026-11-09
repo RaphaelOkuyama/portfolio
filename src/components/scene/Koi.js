@@ -14,7 +14,7 @@ import { isSceneClick } from '../../lib/journey/sceneClick';
 import KoiDragon from './KoiDragon';
 import { NOISE, noiseDefines } from './glsl';
 import { koiGeometry } from './koiGeometry';
-import { revealWhenCompiled } from './warmup';
+import { warm } from './warmup';
 import { KOI } from './config';
 
 // 餌: a ração que flutua na água (bolinhas mornas com brilho), no plano do rio
@@ -297,10 +297,20 @@ export default function Koi({ river, released }) {
   const gl = useThree((s) => s.gl);
   const camera = useThree((s) => s.camera);
   const scene = useThree((s) => s.scene);
-  // Escondidas até o shader compilar: desenhar antes faria a página esperar a compilação (travada)
+  // Escondidas até o shader compilar: desenhar antes faria a página esperar a compilação (travada).
+  // Depende do material: numa troca de qualidade (a queda de FPS baixa sozinha) o rio troca de
+  // material, o das carpas vem junto e o instancedMesh é recriado, nascendo com visible={false}.
+  // Sem revelar de novo, as carpas sumiam até a página ser recarregada
   useEffect(() => {
-    if (meshRef.current) revealWhenCompiled(gl, meshRef.current, camera, scene);
-  }, [gl, camera, scene]);
+    const mesh = meshRef.current;
+    if (!mesh) return undefined;
+    let alive = true;
+    mesh.visible = false;
+    warm(gl, mesh, camera, scene).then(() => {
+      if (alive && meshRef.current === mesh) mesh.visible = true;
+    });
+    return () => { alive = false; };
+  }, [gl, camera, scene, material, geometry]);
 
   const dummy = useMemo(() => new Object3D(), []);
   const ray = useMemo(() => ({

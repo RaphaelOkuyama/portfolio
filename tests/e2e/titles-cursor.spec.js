@@ -65,7 +65,8 @@ test.describe('Nome dos projetos', () => {
 
   test('palavra composta não quebra no hífen em nenhuma lista', async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 640 });
-    for (const [path, selector] of [['/projects', 'main h2'], ['/', '.emaki-title'], ['/projects/totem-autoatendimento', '.case-title']]) {
+    // O Totem ("Self-Service Kiosk") saiu do rolo da home: a lista e a página dele seguem cobertas
+    for (const [path, selector] of [['/projects', 'main h2'], ['/projects/totem-autoatendimento', '.case-title']]) {
       await page.goto(path);
       await waitLoader(page);
       const word = page.locator(selector).filter({ hasText: 'Kiosk' }).locator('.nowrap');

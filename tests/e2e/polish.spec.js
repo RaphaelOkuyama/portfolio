@@ -25,7 +25,7 @@ test.describe('Certificados (証)', () => {
     const board = page.locator('.cert-board > [data-lang="pt"]');
     await expect(board.locator('.cert-group')).toHaveCount(4);
     await expect(board.locator('.cert-group-title')).toContainText(['Bootcamps & Formações', 'Front-end', 'Back-end & Dados', 'Fundamentos']);
-    await expect(page.locator('.cert-summary')).toContainText('22 certificados · 2 bootcamps · 1 formação');
+    await expect(page.locator('.cert-summary')).toContainText('228h de estudo · 22 certificados · 2 bootcamps · 1 formação');
     // JavaScript I a VI viram uma trilha com seis links
     const trilha = board.locator('.cert-item', { hasText: 'Trilha JavaScript' });
     await expect(trilha.locator('.cert-modules a')).toHaveText(['I', 'II', 'III', 'IV', 'V', 'VI']);

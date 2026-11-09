@@ -14,6 +14,7 @@ import { useEdgePiece } from '../../lib/edgeGuard';
 import { hasInternalHistory } from '../../lib/navigation';
 import { formatSpan } from '../../lib/experience';
 import ProjectCover, { hasCover } from './ProjectCover';
+import { groupStack } from '../../lib/stackGroups';
 
 const pad = (n) => String(n).padStart(2, '0');
 
@@ -178,6 +179,9 @@ export default function ProjectCase({ slug }) {
   const status = project.deployLink ? labels.statusLive : labels.statusCode;
   // Duas cópias da stack para o marquee dar a volta sem emenda
   const marquee = [...project.stack, ...project.stack];
+  // Seções numeradas na ordem em que aparecem (o caso e a galeria só existem em alguns projetos)
+  const order = ['overview', project.caseStudy && 'case', hasGallery && 'gallery', project.features?.length > 0 && 'features'].filter(Boolean);
+  const num = (id) => pad(order.indexOf(id) + 1);
 
   return (
     <article ref={rootRef} className="case">
@@ -265,10 +269,7 @@ export default function ProjectCase({ slug }) {
       ) : null}
 
       {/* Stack: lista acessível + faixa em movimento só visual */}
-      <section className="case-marquee" aria-label={labels.techs}>
-        <ul className="sr-only">
-          {project.stack.map((tech) => <li key={tech}>{tech}</li>)}
-        </ul>
+      <section className="case-marquee" aria-hidden="true">
         <div className="case-marquee-track" aria-hidden="true">
           {marquee.map((tech, i) => (
             <span key={`${tech}-${i}`} className={i % 2 ? 'is-outline' : undefined}>
@@ -281,7 +282,7 @@ export default function ProjectCase({ slug }) {
       <div className="case-paper">
         <section className="case-section case-wrap">
           <div className="case-section-head">
-            <span className="case-num">01</span>
+            <span className="case-num">{num('overview')}</span>
             <h2>{labels.overview}</h2>
           </div>
           <div className="case-section-body">
@@ -289,13 +290,24 @@ export default function ProjectCase({ slug }) {
             {paragraphs.map((text) => (
               <p key={text.slice(0, 32)} className="case-reveal">{text}</p>
             ))}
+            {/* A stack parada e legível, em camadas (a faixa acima é só o movimento) */}
+            <dl className="case-stack case-reveal" aria-label={labels.techs}>
+              {groupStack(project.stack, project.type).map(({ layer, items }) => (
+                <div key={layer}>
+                  <dt>{labels.stackLayers?.[layer] ?? layer}</dt>
+                  <dd>
+                    <ul>{items.map((tech) => <li key={tech}>{tech}</li>)}</ul>
+                  </dd>
+                </div>
+              ))}
+            </dl>
           </div>
         </section>
 
         {project.caseStudy && (
           <section className="case-section case-wrap case-study">
             <div className="case-section-head">
-              <span className="case-num">02</span>
+              <span className="case-num">{num('case')}</span>
               <h2>{labels.caseTitle}</h2>
             </div>
             <div className="case-section-body">
@@ -312,10 +324,29 @@ export default function ProjectCase({ slug }) {
           </section>
         )}
 
+        {hasGallery && (
+          <section className="case-section case-wrap project-gallery" aria-label={labels.gallery}>
+            <div className="case-section-head">
+              <span className="case-num">{num('gallery')}</span>
+              <h2>{labels.gallery}</h2>
+            </div>
+            <div className="case-section-body case-reveal">
+              <ProjectImageCarousel
+                images={project.images}
+                isMobile={project.imageMobile}
+                labels={{
+                  prev: labels.galleryPrev, next: labels.galleryNext, goTo: labels.galleryGoTo,
+                  open: labels.galleryOpen, close: labels.galleryClose, zoom: labels.galleryZoom,
+                }}
+              />
+            </div>
+          </section>
+        )}
+
         {project.features?.length > 0 && (
           <section className="case-section case-wrap">
             <div className="case-section-head">
-              <span className="case-num">{project.caseStudy ? '03' : '02'}</span>
+              <span className="case-num">{num('features')}</span>
               <h2>{labels.features}</h2>
             </div>
             <ol className="case-features case-section-body">
@@ -326,22 +357,6 @@ export default function ProjectCase({ slug }) {
                 </li>
               ))}
             </ol>
-          </section>
-        )}
-
-        {hasGallery && (
-          <section className="case-section case-wrap project-gallery" aria-label={labels.gallery}>
-            <div className="case-section-head">
-              <span className="case-num">{String(2 + (project.caseStudy ? 1 : 0) + (project.features?.length ? 1 : 0)).padStart(2, '0')}</span>
-              <h2>{labels.gallery}</h2>
-            </div>
-            <div className="case-section-body case-reveal">
-              <ProjectImageCarousel
-                images={project.images}
-                isMobile={project.imageMobile}
-                labels={{ prev: labels.galleryPrev, next: labels.galleryNext, goTo: labels.galleryGoTo }}
-              />
-            </div>
           </section>
         )}
 

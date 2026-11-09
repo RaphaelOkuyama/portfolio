@@ -41,11 +41,32 @@ function Status({ project, labels }) {
   return <span className={live ? 'pj-status is-live' : 'pj-status'}>{live ? labels.statusLive : labels.statusCode}</span>;
 }
 
-// Miniatura do cartão: o primeiro print do GitHub (na Saeko, uma peça de crochê); sem print, nada
+// Miniatura do cartão: o primeiro print (na Saeko, uma peça de crochê). Sem print, as rotas da
+// API ou uma janela com o nome: um cartão sem miniatura ao lado de um com ela ficava com um vão
 function Thumb({ project }) {
+  if (!project) return null;
   // IMACARDIOS é privado: o traço de ECG no lugar do print
-  if (project?.slug === 'imacardios') return <span className="pj-thumb is-ecg" aria-hidden="true"><EcgMark /></span>;
-  if (!project?.images?.length) return null;
+  if (project.slug === 'imacardios') return <span className="pj-thumb is-ecg" aria-hidden="true"><EcgMark /></span>;
+  if (!project.images?.length && project.endpoints?.length) {
+    return (
+      <span className="pj-thumb is-routes" aria-hidden="true">
+        {project.endpoints.slice(0, 5).map(({ method, path }) => (
+          <span key={`${method} ${path}`} className="pj-route">
+            <b className={`is-${method.toLowerCase()}`}>{method}</b>
+            <code>{path}</code>
+          </span>
+        ))}
+      </span>
+    );
+  }
+  if (!project.images?.length) {
+    return (
+      <span className="pj-thumb is-plain" aria-hidden="true">
+        <span className="pj-plain-dots"><i /><i /><i /></span>
+        <span className="pj-plain-stack">{project.stack.slice(0, 3).join(' · ')}</span>
+      </span>
+    );
+  }
   const products = project.imageProducts ? project.images.filter((img) => img.fit === 'contain') : [];
   const img = products[0] ?? project.images[0];
   return (
@@ -110,7 +131,7 @@ function GroupCard({ card, labels }) {
         <span className="pj-num">{card.parts.map((p) => pad(p.index)).join(' · ')}</span>
         <span className="pj-status is-pair">{card.parts.map((p) => p.project.part).join(' + ')}</span>
       </p>
-      <Thumb project={card.parts.find((p) => p.project.images?.length)?.project} />
+      <Thumb project={(card.parts.find((p) => p.project.images?.length) ?? card.parts.find((p) => p.project.endpoints?.length) ?? first).project} />
       <h2 className="pj-title"><KeepHyphenated>{group.title}</KeepHyphenated></h2>
       <p className="pj-desc">{group.desc}</p>
       <ul className="pj-parts" aria-label={labels.partsLabel}>

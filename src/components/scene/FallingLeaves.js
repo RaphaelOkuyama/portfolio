@@ -93,7 +93,10 @@ const fragmentShader = /* glsl */ `
 // densidade). Em pé fica a caixa original, desenhando só a parte proporcional das peças
 export default function FallingLeaves({ volume, seed = 7, size = [0.22, 0.16], accent, shape = 0, weight, countScale = 1, wide = null }) {
   const quality = useJourney((s) => s.quality);
-  const wideScale = wide?.scale ?? 1;
+  // `wide.near`: quanto a caixa avança em z na direção da câmera (o chão perto dela, no canto de
+  // baixo da tela, ficava fora da caixa e sem nenhuma peça); as peças crescem na mesma proporção
+  const wideNear = wide?.near ?? 0;
+  const wideScale = (wide?.scale ?? 1) * (1 + wideNear / (volume.z[1] - volume.z[0]));
   const count = Math.round(QUALITY_SETTINGS[quality].particles * countScale * wideScale);
   const meshRef = useRef(null);
   const [w, h] = size;
@@ -149,13 +152,13 @@ export default function FallingLeaves({ volume, seed = 7, size = [0.22, 0.16], a
     // Aqui ela estreita e cresce para cima na proporção da tela (mesma quantidade, mais densas)
     const portrait = Math.min(1, aspect);
     const isWide = aspect >= 1 && wide;
-    const half = ((vx[1] - vx[0]) / 2) * Math.max(0.4, portrait) * (isWide ? wideScale : 1);
+    const half = ((vx[1] - vx[0]) / 2) * Math.max(0.4, portrait) * (isWide ? wide.scale : 1);
     const cx = (vx[0] + vx[1]) / 2 + (isWide ? wide.shift : 0);
     // Em pé, só a parte das peças que cabe na caixa original (a mesma densidade de antes)
     mesh.count = isWide || !wide ? count : Math.round(count / wideScale);
     const top = vy[1] + (1 / portrait - 1) * (vy[1] - vy[0]) * 0.6;
     // ...e chega mais perto da câmera: em pé, a parte de baixo da tela é o chão logo à frente dela
-    const near = vz[1] + (1 / portrait - 1) * 10;
+    const near = vz[1] + (1 / portrait - 1) * 10 + (isWide ? wideNear : 0);
     uniforms.uVolumeMin.value.set(cx - half, vy[0], vz[0]);
     uniforms.uVolumeSize.value.set(half * 2, top - vy[0], near - vz[0]);
     if (!reducedMotion) {

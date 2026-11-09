@@ -103,6 +103,11 @@ export default function CertificateViewer({ entries, current, onChange, onClose,
               <p className="cert-viewer-meta">
                 {entry.institution} · {labels.issued} {formatMonth(entry.date, lang)} · {entry.hours}h
               </p>
+              {/* O domínio de validação do QR code da OneBitCode não existe mais: avisar antes que
+                  alguém escaneie e ache que o certificado é falso */}
+              {entry.institution === 'OneBitCode' && labels.verifyNote ? (
+                <p className="cert-viewer-note">{labels.verifyNote}</p>
+              ) : null}
             </figcaption>
           </figure>
           {entries.length > 1 ? (

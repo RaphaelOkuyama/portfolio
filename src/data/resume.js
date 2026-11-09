@@ -210,8 +210,9 @@ export const resumeData = {
     },
     certificatesPage: {
       title: "Certificados & Cursos",
-      // {certs}, {bootcamps} e {formations} vêm da contagem dos dados
-      summary: "{certs} certificados · {bootcamps} bootcamps · {formations} formação",
+      // {certs}, {bootcamps}, {formations} e {hours} vêm dos dados (horas sem contar duas vezes
+      // os cursos que já fazem parte da formação)
+      summary: "{hours}h de estudo · {certs} certificados · {bootcamps} bootcamps · {formations} formação",
       filterLabel: "Filtrar por área",
       filterAll: "Todos",
       btnView: "Ver certificado",
@@ -219,7 +220,7 @@ export const resumeData = {
       degreeTitle: "Formação acadêmica",
       degreeExpected: "Conclusão prevista",
       degreeDone: "Concluída em",
-      viewer: { close: "Fechar", prev: "Certificado anterior", next: "Próximo certificado", issued: "emitido em", image: "Certificado" },
+      viewer: { close: "Fechar", prev: "Certificado anterior", next: "Próximo certificado", issued: "emitido em", image: "Certificado", verifyNote: "A OneBitCode encerrou a validação online: o QR code impresso no certificado não abre mais." },
       areas: { full: "Bootcamps & Formações", front: "Front-end", back: "Back-end & Dados", base: "Fundamentos" },
     },
     // Agrupados por área; trilhas juntam módulos do mesmo curso (cada módulo tem o seu certificado)
@@ -275,6 +276,10 @@ export const resumeData = {
       btnCode: "Ver no GitHub",
       btnDeploy: "Ver site",
       techs: "Tecnologias",
+      stackLayers: { front: "Front-end", back: "Back-end & dados", tools: "Ferramentas & testes" },
+      galleryOpen: "Ver em tela cheia",
+      galleryClose: "Fechar",
+      galleryZoom: "Clique na imagem para ampliar",
       features: "O que faz",
       aboutProject: "Sobre o projeto",
       projectImage: "Imagem do projeto",
@@ -343,37 +348,6 @@ export const resumeData = {
         images: imagesIn([...SAEKO_SITE, ...SAEKO_SHOTS], 'pt'), imageMobile: false, imageProducts: true, image: null
       },
       {
-        id: 1, slug: 'fit-ai-frontend', origin: 'bootcamp', type: 'front', group: 'fit-ai', part: 'App', title: 'FIT.AI: App de Treinos',
-        role: "Front-end", context: "Bootcamp Full Stack Club", period: {start: "2026-03",end: "2026-03"},
-        caseStudy: {challenge: "Montar um plano de treino exige saber peso, altura, objetivo e rotina da pessoa, e um formulário longo afasta justamente quem está começando.",decisions: ["O cadastro é uma conversa: o coach de IA (Gemini 2.5 Flash) coleta os dados e, no fim, já monta o plano da semana.","Respostas em streaming, palavra a palavra, pelo AI SDK: a conversa nunca parece travada.","Contrato tipado de ponta a ponta: as rotas da API em Fastify são validadas com Zod, o OpenAPI sai delas e o Orval gera o cliente do front. Uma mudança na API quebra o build, não o usuário.","Server Components para buscar os dados e Server Actions para as mudanças; JavaScript no navegador só onde há interação."],result: "Do primeiro login ao plano de treino numa conversa só, com o app e a API falando o mesmo contrato tipado."},
-        stack: ['Next.js 16', 'React 19', 'TypeScript', 'Tailwind CSS v4', 'shadcn/ui', 'Google Gemini', 'Better Auth', 'Orval'],
-        shortDesc: 'App mobile-first de treinos com coach de IA em tempo real.',
-        longDesc: 'Projeto do bootcamp da Full Stack Club. O FIT.AI é um aplicativo mobile-first de gestão de treinos com personal trainer virtual integrado. Desenvolvido com Next.js 16 e React 19, o app oferece um onboarding conversacional com IA (Google Gemini 2.5 Flash), onde o coach coleta seus dados físicos e monta um plano de treino personalizado.\n\nAs respostas do coach chegam em streaming via @ai-sdk/react, palavra a palavra, enquanto os dados vêm de Server Components e as mutações passam por Server Actions.',
-        features: ['Chat com coach de IA em tempo real', 'Onboarding inteligente e conversacional', 'Dashboard com streak e estatísticas', 'Plano de treino semanal personalizado pela IA', 'Server Components + Server Actions', 'Autenticação com Google OAuth'],
-        repoLink: 'https://github.com/RaphaelOkuyama/gestao-de-treino-frontend', deployLink: 'https://gestao-de-treino-frontend.onrender.com',
-        images: imagesIn(FIT_AI_SHOTS, 'pt'), imageMobile: true, image: null
-      },
-      {
-        id: 2, slug: 'fit-ai-api', origin: 'bootcamp', type: 'back', group: 'fit-ai', part: 'API', title: 'FIT.AI: API',
-        role: "Back-end", context: "Bootcamp Full Stack Club", period: {start: "2026-03",end: "2026-03"},
-        stack: ['Node.js', 'TypeScript', 'Fastify', 'Prisma', 'PostgreSQL', 'Google Gemini', 'Better Auth', 'Docker', 'Swagger/OpenAPI'],
-        shortDesc: 'API da FIT.AI: treinos, progresso e o coach de IA com respostas em streaming.',
-        longDesc: 'Projeto do bootcamp da Full Stack Club. Back-end da plataforma FIT.AI. A API gerencia usuários, planos de treino, exercícios, sessões e estatísticas de progresso. O ponto central é a integração com o Google Gemini para geração de planos de treino personalizados e respostas em streaming do coach virtual.',
-        features: ['Integração com Google Gemini', 'Streaming de respostas do coach via SSE', 'Documentação automática com Swagger/OpenAPI', 'Autenticação com Google OAuth', 'Containerizado com Docker', 'Arquitetura em camadas com Fastify', 'Prisma ORM com PostgreSQL'],
-        repoLink: 'https://github.com/RaphaelOkuyama/gestao-de-treino-api', deployLink: 'https://gestao-de-treino-api.onrender.com',
-        images: imagesIn(FIT_AI_API_SHOTS, 'pt'), imageMobile: false, image: null
-      },
-      {
-        id: 3, slug: 'totem-autoatendimento', origin: 'bootcamp', type: 'fullstack', title: 'Totem de Autoatendimento',
-        role: "Full-stack", context: "Bootcamp Full Stack Club", period: {start: "2026-02",end: "2026-03"},
-        stack: ['Next.js', 'TypeScript', 'Tailwind CSS', 'shadcn/ui', 'Prisma', 'PostgreSQL', 'Stripe'],
-        shortDesc: 'Autoatendimento para totem touchscreen, do cardápio ao pagamento com Stripe.',
-        longDesc: 'Projeto do bootcamp da Full Stack Club. Sistema de autoatendimento feito para rodar num totem touchscreen físico. O fluxo cobre da seleção do tipo de pedido até o pagamento integrado com Stripe, passando por cardápio com categorias, detalhes do produto e sacola.',
-        features: ['Interface otimizada para touchscreen', 'Cardápio com categorias dinâmicas', 'Sacola com controle de quantidade e total', 'Pagamento integrado com Stripe Checkout', 'Tela de confirmação de pagamento em tempo real', 'Consulta de pedidos por CPF', 'Banco de dados com Prisma + PostgreSQL'],
-        repoLink: 'https://github.com/RaphaelOkuyama/totem-autoatendimento', deployLink: 'https://totem-autoatendimento.vercel.app',
-        images: imagesIn(TOTEM_SHOTS, 'pt'), imageMobile: true, image: null
-      },
-      {
         id: 13, slug: 'arca-construtora', type: 'front', title: 'ARCA: Landing Page para Construtora',
         role: "Front-end", context: "Projeto conceito", period: {start: "2026-04",end: "2026-04"},
         caseStudy: {challenge: "Uma construtora de alto padrão vende sofisticação: a página precisava da presença de um portfólio de arquitetura, com vídeo, animação e profundidade, sem ficar pesada no celular.",decisions: ["A obra sobe com a rolagem: 63 quadros desenhados num canvas e presos ao scroll, que só começam a baixar quando a seção se aproxima da tela.","O peso se ajusta ao aparelho: no celular entram 1 a cada 3 quadros (cerca de 21 imagens) e o vídeo do hero é um vídeo nativo que só baixa quando toca; no desktop, o vídeo de drone é desenhado num canvas, com o enquadramento corrigido.","Cards de obras com profundidade de verdade: duas camadas (o fundo e o recorte do prédio) e um reflexo de luz que acompanha a inclinação do mouse.","Uma página 100% estática, em treze blocos independentes, do preloader ao rodapé."],result: "Uma landing page que se comporta como portfólio de arquitetura e manda só um terço dos quadros da animação para quem chega pelo celular."},
@@ -404,6 +378,37 @@ export const resumeData = {
         features: ['Cena 3D com estações, névoa, floresta, jardim zen e rio desenhados com shaders próprios', 'Projetos num emakimono que se desenrola na horizontal com o scroll', 'Formulário de contato que vira uma lanterna descendo o rio', 'Imagens de compartilhamento geradas por projeto e dados estruturados de Pessoa', 'Fundo pintado em SVG para quem não tem WebGL', 'Testes unitários e e2e de cada seção'],
         repoLink: 'https://github.com/RaphaelOkuyama/portfolio', deployLink: 'https://portfolio-raphael-okuyama.vercel.app',
         images: imagesIn(PORTFOLIO_SHOTS, 'pt'), imageMobile: false, image: null
+      },
+      {
+        id: 1, slug: 'fit-ai-frontend', origin: 'bootcamp', type: 'front', group: 'fit-ai', part: 'App', title: 'FIT.AI: App de Treinos',
+        role: "Front-end", context: "Bootcamp Full Stack Club", period: {start: "2026-03",end: "2026-03"},
+        caseStudy: {challenge: "Montar um plano de treino exige saber peso, altura, objetivo e rotina da pessoa, e um formulário longo afasta justamente quem está começando.",decisions: ["O cadastro é uma conversa: o coach de IA (Gemini 2.5 Flash) coleta os dados e, no fim, já monta o plano da semana.","Respostas em streaming, palavra a palavra, pelo AI SDK: a conversa nunca parece travada.","Contrato tipado de ponta a ponta: as rotas da API em Fastify são validadas com Zod, o OpenAPI sai delas e o Orval gera o cliente do front. Uma mudança na API quebra o build, não o usuário.","Server Components para buscar os dados e Server Actions para as mudanças; JavaScript no navegador só onde há interação."],result: "Do primeiro login ao plano de treino numa conversa só, com o app e a API falando o mesmo contrato tipado."},
+        stack: ['Next.js 16', 'React 19', 'TypeScript', 'Tailwind CSS v4', 'shadcn/ui', 'Google Gemini', 'Better Auth', 'Orval'],
+        shortDesc: 'App mobile-first de treinos com coach de IA em tempo real.',
+        longDesc: 'Projeto do bootcamp da Full Stack Club. O FIT.AI é um aplicativo mobile-first de gestão de treinos com personal trainer virtual integrado. Desenvolvido com Next.js 16 e React 19, o app oferece um onboarding conversacional com IA (Google Gemini 2.5 Flash), onde o coach coleta seus dados físicos e monta um plano de treino personalizado.\n\nAs respostas do coach chegam em streaming via @ai-sdk/react, palavra a palavra, enquanto os dados vêm de Server Components e as mutações passam por Server Actions.',
+        features: ['Chat com coach de IA em tempo real', 'Onboarding inteligente e conversacional', 'Dashboard com streak e estatísticas', 'Plano de treino semanal personalizado pela IA', 'Server Components + Server Actions', 'Autenticação com Google OAuth'],
+        repoLink: 'https://github.com/RaphaelOkuyama/gestao-de-treino-frontend', deployLink: 'https://gestao-de-treino-frontend.onrender.com',
+        images: imagesIn(FIT_AI_SHOTS, 'pt'), imageMobile: true, image: null
+      },
+      {
+        id: 2, slug: 'fit-ai-api', origin: 'bootcamp', type: 'back', group: 'fit-ai', part: 'API', title: 'FIT.AI: API',
+        role: "Back-end", context: "Bootcamp Full Stack Club", period: {start: "2026-03",end: "2026-03"},
+        stack: ['Node.js', 'TypeScript', 'Fastify', 'Prisma', 'PostgreSQL', 'Google Gemini', 'Better Auth', 'Docker', 'Swagger/OpenAPI'],
+        shortDesc: 'API da FIT.AI: treinos, progresso e o coach de IA com respostas em streaming.',
+        longDesc: 'Projeto do bootcamp da Full Stack Club. Back-end da plataforma FIT.AI. A API gerencia usuários, planos de treino, exercícios, sessões e estatísticas de progresso. O ponto central é a integração com o Google Gemini para geração de planos de treino personalizados e respostas em streaming do coach virtual.',
+        features: ['Integração com Google Gemini', 'Streaming de respostas do coach via SSE', 'Documentação automática com Swagger/OpenAPI', 'Autenticação com Google OAuth', 'Containerizado com Docker', 'Arquitetura em camadas com Fastify', 'Prisma ORM com PostgreSQL'],
+        repoLink: 'https://github.com/RaphaelOkuyama/gestao-de-treino-api', deployLink: 'https://gestao-de-treino-api.onrender.com',
+        images: imagesIn(FIT_AI_API_SHOTS, 'pt'), imageMobile: false, image: null
+      },
+      {
+        id: 3, slug: 'totem-autoatendimento', origin: 'bootcamp', type: 'fullstack', title: 'Totem de Autoatendimento',
+        role: "Full-stack", context: "Bootcamp Full Stack Club", period: {start: "2026-02",end: "2026-03"},
+        stack: ['Next.js', 'TypeScript', 'Tailwind CSS', 'shadcn/ui', 'Prisma', 'PostgreSQL', 'Stripe'],
+        shortDesc: 'Autoatendimento para totem touchscreen, do cardápio ao pagamento com Stripe.',
+        longDesc: 'Projeto do bootcamp da Full Stack Club. Sistema de autoatendimento feito para rodar num totem touchscreen físico. O fluxo cobre da seleção do tipo de pedido até o pagamento integrado com Stripe, passando por cardápio com categorias, detalhes do produto e sacola.',
+        features: ['Interface otimizada para touchscreen', 'Cardápio com categorias dinâmicas', 'Sacola com controle de quantidade e total', 'Pagamento integrado com Stripe Checkout', 'Tela de confirmação de pagamento em tempo real', 'Consulta de pedidos por CPF', 'Banco de dados com Prisma + PostgreSQL'],
+        repoLink: 'https://github.com/RaphaelOkuyama/totem-autoatendimento', deployLink: 'https://totem-autoatendimento.vercel.app',
+        images: imagesIn(TOTEM_SHOTS, 'pt'), imageMobile: true, image: null
       },
       { 
         id: 4, slug: 'devflix-frontend', type: 'front', group: 'devflix', part: 'Front-end', title: 'DevFlix Frontend', 
@@ -648,7 +653,7 @@ export const resumeData = {
     },
     certificatesPage: {
       title: "Certificates & Courses",
-      summary: "{certs} certificates · {bootcamps} bootcamps · {formations} program",
+      summary: "{hours}h of study · {certs} certificates · {bootcamps} bootcamps · {formations} program",
       filterLabel: "Filter by area",
       filterAll: "All",
       btnView: "View certificate",
@@ -656,7 +661,7 @@ export const resumeData = {
       degreeTitle: "Education",
       degreeExpected: "Expected",
       degreeDone: "Completed",
-      viewer: { close: "Close", prev: "Previous certificate", next: "Next certificate", issued: "issued", image: "Certificate" },
+      viewer: { close: "Close", prev: "Previous certificate", next: "Next certificate", issued: "issued", image: "Certificate", verifyNote: "OneBitCode has shut down online verification: the QR code printed on the certificate no longer opens." },
       areas: { full: "Bootcamps & Programs", front: "Front-end", back: "Back-end & Data", base: "Fundamentals" },
     },
     // Agrupados por área; trilhas juntam módulos do mesmo curso (cada módulo tem o seu certificado)
@@ -712,6 +717,10 @@ export const resumeData = {
       btnCode: "View on GitHub",
       btnDeploy: "Visit site",
       techs: "Technologies",
+      stackLayers: { front: "Front-end", back: "Back-end & data", tools: "Tooling & tests" },
+      galleryOpen: "View full screen",
+      galleryClose: "Close",
+      galleryZoom: "Click the image to zoom",
       features: "What It Does",
       aboutProject: "About the Project",
       projectImage: "Project Image",
@@ -780,37 +789,6 @@ export const resumeData = {
         images: imagesIn([...SAEKO_SITE, ...SAEKO_SHOTS], 'en'), imageMobile: false, imageProducts: true, image: null
       },
       {
-        id: 1, slug: 'fit-ai-frontend', origin: 'bootcamp', type: 'front', group: 'fit-ai', part: 'App', title: 'FIT.AI: Workout App',
-        role: "Front-end", context: "Full Stack Club bootcamp", period: {start: "2026-03",end: "2026-03"},
-        caseStudy: {challenge: "Building a workout plan requires knowing a person’s weight, height, goals and routine, and a long form drives away exactly the people who are just starting.",decisions: ["Sign-up is a conversation: the AI coach (Gemini 2.5 Flash) collects the data and, at the end, builds the weekly plan.","Streaming answers, word by word, through the AI SDK: the conversation never feels stuck.","An end-to-end typed contract: the Fastify API routes are validated with Zod, the OpenAPI spec comes from them and Orval generates the front-end client. A change in the API breaks the build, not the user.","Server Components to fetch data and Server Actions for mutations; JavaScript in the browser only where there is interaction."],result: "From the first login to a workout plan in a single conversation, with the app and the API speaking the same typed contract."},
-        stack: ['Next.js 16', 'React 19', 'TypeScript', 'Tailwind CSS v4', 'shadcn/ui', 'Google Gemini', 'Better Auth', 'Orval'],
-        shortDesc: 'Mobile-first workout app with real-time AI coach.',
-        longDesc: 'Full Stack Club bootcamp project. FIT.AI is a mobile-first workout management app with an integrated virtual personal trainer. Built with Next.js 16 and React 19, the app features a conversational AI onboarding (Google Gemini 2.5 Flash), where the coach collects your physical data and builds a personalized workout plan.',
-        features: ['Real-time AI coach chat', 'Intelligent conversational onboarding', 'Dashboard with streak and statistics', 'AI-generated personalized weekly workout plan', 'Server Components + Server Actions', 'Google OAuth authentication'],
-        repoLink: 'https://github.com/RaphaelOkuyama/gestao-de-treino-frontend', deployLink: 'https://gestao-de-treino-frontend.onrender.com',
-        images: imagesIn(FIT_AI_SHOTS, 'en'), imageMobile: true, image: null
-      },
-      {
-        id: 2, slug: 'fit-ai-api', origin: 'bootcamp', type: 'back', group: 'fit-ai', part: 'API', title: 'FIT.AI: API',
-        role: "Back-end", context: "Full Stack Club bootcamp", period: {start: "2026-03",end: "2026-03"},
-        stack: ['Node.js', 'TypeScript', 'Fastify', 'Prisma', 'PostgreSQL', 'Google Gemini', 'Better Auth', 'Docker', 'Swagger/OpenAPI'],
-        shortDesc: 'The FIT.AI API: workouts, progress and the AI coach with streamed replies.',
-        longDesc: 'Full Stack Club bootcamp project. Back end of the FIT.AI platform. The API manages users, workout plans, exercises, sessions and progress statistics. The core feature is the integration with Google Gemini for generating personalized workout plans and streaming virtual coach responses.',
-        features: ['Google Gemini integration for workout generation', 'Streaming coach responses via SSE', 'Automatic documentation with Swagger/OpenAPI', 'Google OAuth authentication', 'Containerized with Docker', 'Layered architecture with Fastify', 'Prisma ORM with PostgreSQL'],
-        repoLink: 'https://github.com/RaphaelOkuyama/gestao-de-treino-api', deployLink: 'https://gestao-de-treino-api.onrender.com',
-        images: imagesIn(FIT_AI_API_SHOTS, 'en'), imageMobile: false, image: null
-      },
-      {
-        id: 3, slug: 'totem-autoatendimento', origin: 'bootcamp', type: 'fullstack', title: 'Self-Service Kiosk',
-        role: "Full-stack", context: "Full Stack Club bootcamp", period: {start: "2026-02",end: "2026-03"},
-        stack: ['Next.js', 'TypeScript', 'Tailwind CSS', 'shadcn/ui', 'Prisma', 'PostgreSQL', 'Stripe'],
-        shortDesc: 'Self-service ordering for a touchscreen kiosk, from menu to Stripe payment.',
-        longDesc: 'Full Stack Club bootcamp project. A self-service system built to run on a physical touchscreen kiosk. The flow covers everything from order type selection to Stripe payment processing, through a dynamic menu with categories, product details and bag management.',
-        features: ['Interface optimized for touchscreen', 'Dynamic menu with categories', 'Bag with quantity control and total', 'Stripe Checkout payment integration', 'Real-time payment confirmation screen', 'Order history lookup by CPF', 'Database with Prisma + PostgreSQL'],
-        repoLink: 'https://github.com/RaphaelOkuyama/totem-autoatendimento', deployLink: 'https://totem-autoatendimento.vercel.app',
-        images: imagesIn(TOTEM_SHOTS, 'en'), imageMobile: true, image: null
-      },
-      {
         id: 13, slug: 'arca-construtora', type: 'front', title: 'ARCA: Construction Company Landing Page',
         role: "Front-end", context: "Concept project", period: {start: "2026-04",end: "2026-04"},
         caseStudy: {challenge: "A high-end construction company sells sophistication: the page needed the presence of an architecture portfolio, with video, animation and depth, without getting heavy on phones.",decisions: ["The building rises as you scroll: 63 frames drawn on a canvas and tied to the scroll, which only start downloading when the section gets close to the screen.","The weight adapts to the device: phones get 1 in every 3 frames (about 21 images) and the hero video is a native video that only downloads when it plays; on desktop, the drone video is drawn on a canvas with corrected framing.","Project cards with real depth: two layers (the background and the cut-out of the building) and a light glare that follows the tilt of the mouse.","A 100% static page made of thirteen independent blocks, from the preloader to the footer."],result: "A landing page that behaves like an architecture portfolio and sends only a third of the animation frames to visitors on phones."},
@@ -841,6 +819,37 @@ export const resumeData = {
         features: ['3D scene with seasons, fog, forest, zen garden and river drawn with custom shaders', 'Projects on an emakimono scroll that unrolls horizontally', 'Contact form that turns into a lantern floating down the river', 'Per-project share images and Person structured data', 'Painted SVG backdrop for browsers without WebGL', 'Unit and e2e tests for every section'],
         repoLink: 'https://github.com/RaphaelOkuyama/portfolio', deployLink: 'https://portfolio-raphael-okuyama.vercel.app',
         images: imagesIn(PORTFOLIO_SHOTS, 'en'), imageMobile: false, image: null
+      },
+      {
+        id: 1, slug: 'fit-ai-frontend', origin: 'bootcamp', type: 'front', group: 'fit-ai', part: 'App', title: 'FIT.AI: Workout App',
+        role: "Front-end", context: "Full Stack Club bootcamp", period: {start: "2026-03",end: "2026-03"},
+        caseStudy: {challenge: "Building a workout plan requires knowing a person’s weight, height, goals and routine, and a long form drives away exactly the people who are just starting.",decisions: ["Sign-up is a conversation: the AI coach (Gemini 2.5 Flash) collects the data and, at the end, builds the weekly plan.","Streaming answers, word by word, through the AI SDK: the conversation never feels stuck.","An end-to-end typed contract: the Fastify API routes are validated with Zod, the OpenAPI spec comes from them and Orval generates the front-end client. A change in the API breaks the build, not the user.","Server Components to fetch data and Server Actions for mutations; JavaScript in the browser only where there is interaction."],result: "From the first login to a workout plan in a single conversation, with the app and the API speaking the same typed contract."},
+        stack: ['Next.js 16', 'React 19', 'TypeScript', 'Tailwind CSS v4', 'shadcn/ui', 'Google Gemini', 'Better Auth', 'Orval'],
+        shortDesc: 'Mobile-first workout app with real-time AI coach.',
+        longDesc: 'Full Stack Club bootcamp project. FIT.AI is a mobile-first workout management app with an integrated virtual personal trainer. Built with Next.js 16 and React 19, the app features a conversational AI onboarding (Google Gemini 2.5 Flash), where the coach collects your physical data and builds a personalized workout plan.',
+        features: ['Real-time AI coach chat', 'Intelligent conversational onboarding', 'Dashboard with streak and statistics', 'AI-generated personalized weekly workout plan', 'Server Components + Server Actions', 'Google OAuth authentication'],
+        repoLink: 'https://github.com/RaphaelOkuyama/gestao-de-treino-frontend', deployLink: 'https://gestao-de-treino-frontend.onrender.com',
+        images: imagesIn(FIT_AI_SHOTS, 'en'), imageMobile: true, image: null
+      },
+      {
+        id: 2, slug: 'fit-ai-api', origin: 'bootcamp', type: 'back', group: 'fit-ai', part: 'API', title: 'FIT.AI: API',
+        role: "Back-end", context: "Full Stack Club bootcamp", period: {start: "2026-03",end: "2026-03"},
+        stack: ['Node.js', 'TypeScript', 'Fastify', 'Prisma', 'PostgreSQL', 'Google Gemini', 'Better Auth', 'Docker', 'Swagger/OpenAPI'],
+        shortDesc: 'The FIT.AI API: workouts, progress and the AI coach with streamed replies.',
+        longDesc: 'Full Stack Club bootcamp project. Back end of the FIT.AI platform. The API manages users, workout plans, exercises, sessions and progress statistics. The core feature is the integration with Google Gemini for generating personalized workout plans and streaming virtual coach responses.',
+        features: ['Google Gemini integration for workout generation', 'Streaming coach responses via SSE', 'Automatic documentation with Swagger/OpenAPI', 'Google OAuth authentication', 'Containerized with Docker', 'Layered architecture with Fastify', 'Prisma ORM with PostgreSQL'],
+        repoLink: 'https://github.com/RaphaelOkuyama/gestao-de-treino-api', deployLink: 'https://gestao-de-treino-api.onrender.com',
+        images: imagesIn(FIT_AI_API_SHOTS, 'en'), imageMobile: false, image: null
+      },
+      {
+        id: 3, slug: 'totem-autoatendimento', origin: 'bootcamp', type: 'fullstack', title: 'Self-Service Kiosk',
+        role: "Full-stack", context: "Full Stack Club bootcamp", period: {start: "2026-02",end: "2026-03"},
+        stack: ['Next.js', 'TypeScript', 'Tailwind CSS', 'shadcn/ui', 'Prisma', 'PostgreSQL', 'Stripe'],
+        shortDesc: 'Self-service ordering for a touchscreen kiosk, from menu to Stripe payment.',
+        longDesc: 'Full Stack Club bootcamp project. A self-service system built to run on a physical touchscreen kiosk. The flow covers everything from order type selection to Stripe payment processing, through a dynamic menu with categories, product details and bag management.',
+        features: ['Interface optimized for touchscreen', 'Dynamic menu with categories', 'Bag with quantity control and total', 'Stripe Checkout payment integration', 'Real-time payment confirmation screen', 'Order history lookup by CPF', 'Database with Prisma + PostgreSQL'],
+        repoLink: 'https://github.com/RaphaelOkuyama/totem-autoatendimento', deployLink: 'https://totem-autoatendimento.vercel.app',
+        images: imagesIn(TOTEM_SHOTS, 'en'), imageMobile: true, image: null
       },
       { 
         id: 4, slug: 'devflix-frontend', type: 'front', group: 'devflix', part: 'Front-end', title: 'DevFlix Frontend', 
@@ -958,12 +967,13 @@ export const resumeData = {
   }
 };
 
-// Ordem dos projetos em todo o site: primeiro o que está em produção e os projetos originais,
-// depois os de bootcamp e os estudos. Os seis primeiros formam o rolo da home (lib/projects.js),
-// então os numerais do rolo são sequenciais e iguais aos das páginas de projeto
+// Ordem dos projetos em todo o site: produção e cliente, depois os projetos conceito e o pessoal,
+// e só então os de bootcamp e os estudos (o bootcamp no meio diluía o trabalho real). Os seis
+// primeiros formam o rolo da home (lib/projects.js), então os numerais do rolo são sequenciais e
+// iguais aos das páginas de projeto
 export const PROJECT_ORDER = [
-  'imacardios', 'saeko-artes', 'arca-construtora', 'fit-ai-frontend', 'totem-autoatendimento', 'portfolio-okuyama',
-  'glow-laser', 'fit-ai-api',
+  'imacardios', 'saeko-artes', 'arca-construtora', 'glow-laser', 'portfolio-okuyama', 'fit-ai-frontend',
+  'fit-ai-api', 'totem-autoatendimento',
 ];
 const rank = (slug) => {
   const i = PROJECT_ORDER.indexOf(slug);

@@ -28,8 +28,8 @@ test('o emakimono lista os projetos com o IMACARDIOS primeiro', async ({ page })
   await expect(panels.first()).toHaveAttribute('href', '/projects/imacardios');
   await expect(panels.last()).toHaveAttribute('href', '/projects');
   await expect(panels.last()).toContainText('Todos os 15 projetos');
-  // O numeral (daiji) é o da lista completa, que começa pelos seis do rolo (Este Portfólio é o 陸)
-  await expect(page.locator('.emaki-panel[data-project="portfolio-okuyama"] .emaki-number')).toHaveText('陸');
+  // O numeral (daiji) é o da lista completa, que começa pelos seis do rolo (Este Portfólio é o 伍)
+  await expect(page.locator('.emaki-panel[data-project="portfolio-okuyama"] .emaki-number')).toHaveText('伍');
 });
 
 test('o scroll vertical desenrola o rolo na horizontal com a seção fixada', async ({ page }) => {
