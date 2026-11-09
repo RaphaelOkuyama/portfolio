@@ -81,10 +81,12 @@ test.describe('Página de projeto (作)', () => {
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Totem de Autoatendimento');
     await expect(page.locator('.project-eyebrow')).toContainText('05 / 15');
 
-    // Ficha: status e contagens vêm dos dados do projeto
+    // Ficha: papel, contexto, período e status vêm dos dados do projeto
     const meta = page.locator('.case-meta');
     await expect(meta).toContainText('No ar');
-    await expect(meta).toContainText('07');
+    await expect(meta).toContainText('Full-stack');
+    await expect(meta).toContainText('Bootcamp Full Stack Club');
+    await expect(meta).toContainText('Fev – Mar 2026');
 
     await expect(page.getByRole('link', { name: /Ver site/ })).toHaveAttribute('target', '_blank');
     await expect(page.getByRole('link', { name: /Ver no GitHub/ })).toHaveAttribute('rel', /noopener/);

@@ -6,6 +6,15 @@ export function setLenis(instance) {
   lenis = instance;
 }
 
+// Página parada por baixo de um modal (o visualizador de certificados): o Lenis rolaria o fundo
+export function pauseScroll() {
+  lenis?.stop();
+}
+
+export function resumeScroll() {
+  lenis?.start();
+}
+
 export function scrollToTop() {
   if (lenis) {
     lenis.scrollTo(0, { duration: 1.8 });

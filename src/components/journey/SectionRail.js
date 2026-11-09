@@ -1,17 +1,22 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { journeyStore, useJourney } from '../../store/journey';
 import { inkOn, seasonInk } from '../../lib/dentoushoku';
 import { useSettings } from '../../context/SettingsContext';
 import { scrollToId } from '../../lib/scroll';
+import { useEdgePiece } from '../../lib/edgeGuard';
 import Ruby from '../Ruby';
 
 // Degraus da cor da estação por estação (ver o efeito do --season)
 const INK_STEPS = 12;
 
 // 山 人 技 作 歩 縁: o mapa do caminho montanha adentro. Um kanji por seção da home, aceso na seção atual
-// (a mesma que a cena 3D usa); clicar leva até ela. No celular vira só o indicador da seção atual
+// (a mesma que a cena 3D usa); clicar leva até ela. No tablet e no celular o trilho some e a seção
+// atual vira um selo na navbar (SectionChip)
 export default function SectionRail({ sections }) {
+  const railRef = useRef(null);
+  // Sobre o rolo do emakimono e o rodapé (largura total) o trilho some até eles passarem
+  useEdgePiece(railRef);
   const current = useJourney((s) => s.section);
   // Só a estação mais próxima (nome da cor): o React não re-renderiza a cada quadro da rolagem
   const nearest = useJourney((s) => Math.round(s.seasonMix));
@@ -41,7 +46,6 @@ export default function SectionRail({ sections }) {
     };
   }, []);
   const label = (s) => s[language] ?? s.pt;
-  const active = sections.find((s) => s.id === current) ?? sections[0];
 
   const go = (e, id) => {
     e.preventDefault();
@@ -50,39 +54,32 @@ export default function SectionRail({ sections }) {
   };
 
   return (
-    <>
-      {/* No emakimono (largura total) o trilho fica por cima dos painéis: esmaece até o mouse chegar */}
-      <nav
-        className="section-rail"
-        data-dim={current === 'projects' || undefined}
-        aria-label={label({ pt: 'Seções da página', en: 'Page sections' })}
-      >
-        <ol>
-          {sections.map((s) => (
-            <li key={s.id}>
-              <a
-                href={`#${s.id}`}
-                className="section-rail-link"
-                aria-current={s.id === current ? 'location' : undefined}
-                onClick={(e) => go(e, s.id)}
-              >
-                <span className="section-rail-kanji font-jp" aria-hidden="true"><Ruby>{s.kanji}</Ruby></span>
-                <span className="section-rail-label">{label(s)}</span>
-              </a>
-            </li>
-          ))}
-        </ol>
-        {/* O nome da cor, em 縦書き, embaixo do trilho */}
-        <p className="section-rail-ink" data-season-ink={ink.reading}>
-          <span className="section-rail-swatch" aria-hidden="true" />
-          <span className="font-jp" lang="ja">{ink.kanji}</span>
-          <span className="section-rail-ink-name">{ink.reading} · {ink[language] ?? ink.pt}</span>
-        </p>
-      </nav>
-      {/* key: a cada troca de seção o selo reaparece por um instante e some (não cobre o conteúdo) */}
-      <p key={active.id} className="section-chip" aria-hidden="true">
-        <span className="font-jp">{active.kanji}</span> {label(active)}
+    <nav
+      ref={railRef}
+      className="section-rail"
+      aria-label={label({ pt: 'Seções da página', en: 'Page sections' })}
+    >
+      <ol>
+        {sections.map((s) => (
+          <li key={s.id}>
+            <a
+              href={`#${s.id}`}
+              className="section-rail-link"
+              aria-current={s.id === current ? 'location' : undefined}
+              onClick={(e) => go(e, s.id)}
+            >
+              <span className="section-rail-kanji font-jp" aria-hidden="true"><Ruby>{s.kanji}</Ruby></span>
+              <span className="section-rail-label">{label(s)}</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+      {/* O nome da cor, em 縦書き, embaixo do trilho */}
+      <p className="section-rail-ink" data-season-ink={ink.reading}>
+        <span className="section-rail-swatch" aria-hidden="true" />
+        <span className="font-jp" lang="ja">{ink.kanji}</span>
+        <span className="section-rail-ink-name">{ink.reading} · {ink[language] ?? ink.pt}</span>
       </p>
-    </>
+    </nav>
   );
 }

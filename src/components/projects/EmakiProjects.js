@@ -12,6 +12,7 @@ import { homeProjects } from '../../lib/projects';
 import StationSign from '../journey/StationSign';
 import Image from 'next/image';
 import { EcgMark } from './Ecg';
+import { useEdgeGuard } from '../../lib/edgeGuard';
 
 
 // Modos do rolo: pin horizontal no desktop, arrastar no celular, grade estática com movimento reduzido
@@ -55,6 +56,8 @@ export default function EmakiProjects({ projects, labels }) {
   const rollerRef = useRef(null);
   const router = useRouter();
   const projectsKey = projects.map((p) => p.slug).join('|');
+  // O rolo ocupa a largura toda: o trilho de seções e a barra social somem enquanto ele passa
+  useEdgeGuard(viewportRef);
 
   useGSAP(() => {
     const mm = gsap.matchMedia();

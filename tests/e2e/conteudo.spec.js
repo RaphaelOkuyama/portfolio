@@ -48,7 +48,8 @@ test('o rolo numera em daiji, em sequência, e mostra o que existe de cada proje
   await expect(page.locator('[data-project="arca-construtora"] .emaki-shot')).toHaveCount(1);
   await expect(page.locator('[data-project="fit-ai-frontend"] .emaki-media.is-phones .emaki-shot')).toHaveCount(3);
   await expect(page.locator('[data-project="fit-ai-frontend"] .emaki-origin')).toHaveText('Bootcamp');
-  await expect(page.locator('[data-project="portfolio-okuyama"] .emaki-media')).toHaveCount(0);
+  // Este portfólio: o print do próprio site (gerado com Playwright)
+  await expect(page.locator('[data-project="portfolio-okuyama"] .emaki-shot')).toHaveCount(1);
   expect(errors).toEqual([]);
 });
 

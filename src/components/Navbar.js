@@ -9,6 +9,7 @@ import Kamon from './Kamon';
 import Sensu, { sensuStep } from './Sensu';
 import QualityPicker from './QualityPicker';
 import SoundToggle from './SoundToggle';
+import SectionChip from './journey/SectionChip';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -83,7 +84,10 @@ export default function Navbar() {
             <Kamon size={28} className="nav-kamon" />
             Raphael Okuyama
           </Link>
-          
+
+          {/* Home no tablet/celular: a seção atual ao lado do nome (o trilho lateral só no desktop) */}
+          {pathname === '/' && <SectionChip />}
+
           {/* DESKTOP MENU */}
           <div className="desktop-menu" style={{ alignItems: 'center', gap: '30px' }}>
             <div style={{ display: 'flex', gap: '20px' }}>
@@ -122,17 +126,21 @@ export default function Navbar() {
           <div ref={menuRef} className="mobile-menu" data-mobile-menu="">
             <Sensu width={fan.width} height={fan.height} />
             <div className="mobile-menu-content">
+            {/* Links e botões em dois grupos: em pé, um embaixo do outro; deitado, lado a lado */}
+            <div className="mobile-menu-links">
             {links.map((link) => (
-              <Link 
-                key={link.path} 
-                href={link.path} 
+              <Link
+                key={link.path}
+                href={link.path}
                 onClick={toggleMenu}
                 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: pathname === link.path ? 'var(--accent)' : 'var(--text-primary)' }}
               >
                 {link.name}
               </Link>
             ))}
+            </div>
 
+            <div className="mobile-menu-extras">
             {/* Ícones Sociais no Mobile (NOVO) */}
             <div style={{ display: 'flex', gap: '25px', marginTop: '10px' }}>
               <a href="https://github.com/RaphaelOkuyama" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-secondary)' }}>
@@ -152,6 +160,7 @@ export default function Navbar() {
               <SoundToggle inline />
             </div>
             <QualityPicker inline />
+            </div>
             </div>
           </div>
       )}

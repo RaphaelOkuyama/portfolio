@@ -58,9 +58,19 @@ h1, h2, h3, .section-title, .emaki-title, .zen-panel-title {
   text-wrap: balance;
 }
 p, li { text-wrap: pretty; }
-/* No tablet a barra social fixa cobria o conteúdo; lá o contato já tem os links */
-@media (max-width: 1099px) {
-  .social-sidebar { display: none !important; }
+
+/* Bordas livres: do 1101px para cima ficam fixos o trilho de seções (home, à esquerda) e a barra
+   social (à direita), e o conteúdo da página nunca passa por baixo deles. Em tela larga a margem
+   automática do container já basta; em laptop (1101–1330px, ou 1280 com zoom de 150% no Windows)
+   o container ganha o respiro que falta, igual dos dois lados (o rolo do emakimono, de largura
+   total, continua centrado). Áreas de largura total escondem as peças por onde passam
+   (lib/edgeGuard) */
+:root { --edge-clear: 0px; }
+@media (min-width: 1101px) {
+  :root { --edge-clear: 80px; }
+}
+main .container {
+  padding-inline: max(var(--page-pad, 20px), calc(var(--edge-clear) - max(0px, (100% - var(--container-max, 1200px)) / 2)));
 }
 
 /* Visível só para leitores de tela */
@@ -105,7 +115,7 @@ p, li { text-wrap: pretty; }
 }
 
 /* --- 作 Projetos (/projects): filtro por tipo e cartões em papel washi com o numeral em kanji --- */
-.pj-page { padding: 80px 24px 120px; }
+.pj-page { --page-pad: 24px; padding-block: 80px 120px; }
 .pj-subtitle {
   margin: -12px 0 26px;
   font-size: 1.05rem;
@@ -376,7 +386,8 @@ p, li { text-wrap: pretty; }
 .mobile-menu-btn { display: flex; }
 .desktop-menu { display: none; }
 
-@media (min-width: 768px) {
+/* Menu completo só com folga para ele ao lado do nome: entre 768 e 800px os dois se encostavam */
+@media (min-width: 880px) {
   .mobile-menu-btn { display: none !important; }
   .desktop-menu { display: flex !important; }
 }
@@ -388,10 +399,13 @@ p, li { text-wrap: pretty; }
   text-align: left;
   text-wrap: initial;
 }
+/* Mínimos que encolhem nos celulares estreitos (320px, Galaxy Fold fechado): o nome inteiro cabe ao
+   lado do 奥山 em pé (44px), sem passar da margem. As razões largura/tamanho da fonte foram medidas
+   (nomes dados 12.2, sobrenome 4.7); de 360px para cima nada muda */
 .hero-name-given {
   display: block;
   margin-bottom: 0.18em;
-  font-size: clamp(1.35rem, 2.6vw, 2.5rem);
+  font-size: clamp(min(1.35rem, calc((100vw - 88px) / 12.3)), 2.6vw, 2.5rem);
   font-weight: 600;
   letter-spacing: 0.01em;
   color: color-mix(in srgb, var(--text-primary) 88%, var(--text-secondary));
@@ -400,7 +414,7 @@ p, li { text-wrap: pretty; }
   display: block;
   /* Folga para o "y" e o "k" não serem cortados nas transições */
   padding-bottom: 0.06em;
-  font-size: clamp(3.6rem, 8vw, 8.4rem);
+  font-size: clamp(min(3.6rem, calc((100vw - 88px) / 4.75)), 8vw, 8.4rem);
   letter-spacing: -0.015em;
 }
 
@@ -412,10 +426,6 @@ p, li { text-wrap: pretty; }
   z-index: 90;
   translate: 0 -50%;
 }
-.section-rail { transition: opacity 0.3s; }
-.section-rail[data-dim] { opacity: 0.3; }
-.section-rail[data-dim]:hover,
-.section-rail[data-dim]:focus-within { opacity: 1; }
 .section-rail ol {
   position: relative;
   list-style: none;
@@ -528,38 +538,55 @@ p, li { text-wrap: pretty; }
 }
 .section-rail-link:hover .section-rail-label,
 .section-rail-link:focus-visible .section-rail-label { opacity: 1; translate: 0 0; }
-/* Celular: só a seção atual, num selo discreto */
-.section-chip {
-  display: none;
-}
+/* Tablet e celular: sem o trilho, a seção atual vira um selo na barra do topo, logo depois do nome
+   (components/journey/SectionChip). Dentro da navbar ele nunca cobre o conteúdo (antes era um selo
+   fixo no canto de baixo, por cima do texto). Só o kanji quando falta espaço para o nome */
+.nav-section { display: none; }
 @media (max-width: 1100px) {
   .section-rail { display: none; }
-  .section-chip {
-    position: fixed;
-    left: 14px;
-    bottom: calc(env(safe-area-inset-bottom) + 14px);
-    z-index: 90;
-    display: inline-flex;
+  .nav-section {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
     align-items: center;
-    gap: 6px;
-    margin: 0;
-    padding: 5px 12px 5px 8px;
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--bg-color) 92%, transparent);
-    color: var(--text-secondary);
-    font-size: 0.78rem;
-    font-weight: 600;
-    pointer-events: none;
-    opacity: 0;
-    animation: section-chip-flash 2.2s ease forwards;
+    padding-inline: 8px;
+    container-type: inline-size;
   }
-  .section-chip .font-jp { color: var(--accent); font-size: 0.95rem; }
 }
-@keyframes section-chip-flash {
-  0% { opacity: 0; }
-  12%, 75% { opacity: 1; }
-  100% { opacity: 0; }
+/* Fio separando o nome do site (quem) da seção (onde), como entre os links e os botões do menu */
+.nav-section-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding-left: 8px;
+  border-left: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  animation: nav-section-in 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.nav-section-kanji {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--season, var(--accent));
+  color: var(--season-on, var(--on-accent));
+  font-size: 0.9rem;
+  line-height: 1;
+}
+.nav-section-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+@container (max-width: 132px) {
+  .nav-section-label { display: none; }
+}
+@keyframes nav-section-in {
+  from { opacity: 0; translate: -6px 0; }
+  to { opacity: 1; translate: 0 0; }
 }
 
 /* Hero: o texto num bloco à esquerda e o torii no terço direito da cena (a câmera gira no hero, ver
@@ -608,12 +635,25 @@ p, li { text-wrap: pretty; }
 .hero-roles {
   display: flex;
   flex-wrap: wrap;
+  /* O vão entre os papéis é o lugar do ponto separador (abaixo) */
+  column-gap: 1.4em;
   margin: 22px 0 0;
   font-size: clamp(0.95rem, 1.25vw, 1.08rem);
   font-weight: 500;
   color: color-mix(in srgb, var(--text-primary) 82%, var(--text-secondary));
+  /* Cada papel traz o ponto antes dele, puxado para dentro do vão. Quem começa uma linha (o primeiro,
+     ou o que quebrou para baixo no celular estreito) fica com o ponto fora da caixa, e o recorte da
+     esquerda o esconde: nenhuma linha começa com "·". Folga nos outros lados para o halo do texto */
+  clip-path: inset(-24px -24px -24px -0.4em);
 }
-.hero-role + .hero-role::before { content: '·'; margin: 0 0.6em; color: var(--accent); }
+.hero-role { margin-left: -1.4em; }
+.hero-role::before {
+  content: '·';
+  display: inline-block;
+  width: 1.4em;
+  text-align: center;
+  color: var(--accent);
+}
 .hero-summary {
   max-width: 44ch;
   margin: 14px 0 0;
@@ -681,10 +721,48 @@ p, li { text-wrap: pretty; }
   .cards-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; }
 }
 
-/* --- SOCIAL SIDEBAR --- */
-.social-sidebar { display: none !important; }
-@media (min-width: 768px) {
-  .social-sidebar { display: flex !important; flex-direction: column; gap: 15px; }
+/* --- Barra social fixa (desktop): no canto de baixo à direita, fora do conteúdo (--edge-clear) --- */
+.social-sidebar {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 9990;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+@media (min-width: 1101px) {
+  .social-sidebar { display: flex; }
+}
+.social-sidebar-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.1);
+}
+/* Linha de tinta descendo até a borda */
+.social-sidebar::after {
+  content: '';
+  width: 1px;
+  height: 48px;
+  background: var(--border);
+}
+
+/* Peça fixa coberta por uma área de largura total (o rolo do emakimono, o rodapé): some até a área
+   passar (lib/edgeGuard). visibility: fora do Tab e dos cliques enquanto some */
+.section-rail, .social-sidebar, .case-progress {
+  transition: opacity 0.3s ease, visibility 0.3s;
+}
+:is(.section-rail, .social-sidebar, .case-progress)[data-covered] {
+  opacity: 0;
+  visibility: hidden;
 }
 
 /* ============================================================
@@ -695,11 +773,13 @@ p, li { text-wrap: pretty; }
    visíveis: estável, a hero cabe sempre e não pula
    ============================================================ */
 .hero-section {
-  /* Fallback para browsers sem suporte a dvh */
-  height: calc(100vh - 80px);
-  height: calc(100svh - 80px);
+  /* Fallback para browsers sem suporte a svh */
+  min-height: calc(100vh - 80px);
+  min-height: calc(100svh - 80px);
   /* svh, não dvh: o dvh muda toda vez que a barra do navegador some ou volta na rolagem, e a página
-     inteira mudava de altura no meio do gesto (os triggers recalculavam e a rolagem dava trancos) */
+     inteira mudava de altura no meio do gesto (os triggers recalculavam e a rolagem dava trancos).
+     Altura mínima, não fixa: onde o texto não cabe na tela (celular deitado) a hero cresce em vez de
+     o texto vazar por baixo da navbar e por cima do Sobre */
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -737,6 +817,15 @@ p, li { text-wrap: pretty; }
   }
   .hero-copy::before { inset: -14% -12% -20% -12%; background: radial-gradient(ellipse 70% 62% at 50% 55%, color-mix(in srgb, var(--bg-color) 70%, transparent) 0%, color-mix(in srgb, var(--bg-color) 34%, transparent) 55%, transparent 80%); }
   .hero-scroll { bottom: calc(env(safe-area-inset-bottom) + 22px); }
+}
+/* Tela baixa e larga (laptop de 1280×720 ou 1366×768 já sem a barra do navegador, celular deitado):
+   o bloco do hero quase não cabe, e a dica de rolar, presa embaixo, caía em cima da disponibilidade
+   e dos botões. Ela ganha o próprio espaço embaixo do texto */
+@media (max-height: 760px) and (min-aspect-ratio: 1/1) {
+  .hero-section {
+    padding-top: 2vh;
+    padding-bottom: 72px;
+  }
 }
 @media (max-width: 420px) {
   .hero-scroll-cue { font-size: 0.74rem; max-width: 30ch; }
@@ -2160,7 +2249,7 @@ textarea.contact-input { resize: vertical; min-height: 130px; }
 }
 
 /* --- 証 Certificados: filtros por área, um bloco por área e lista compacta --- */
-.cert-page { padding: 80px 24px 120px; }
+.cert-page { --page-pad: 24px; padding-block: 80px 120px; }
 .responsive-title.section-title {
   border-left: none;
   padding-left: 0;
@@ -2338,6 +2427,199 @@ textarea.contact-input { resize: vertical; min-height: 130px; }
   .cert-view-text { display: none; }
   .cert-view { padding: 8px; }
 }
+.cert-when { white-space: nowrap; }
+
+/* 学 A graduação no topo: papel washi claro também à noite (como o emakimono e a carta do contato),
+   o kanji grande à esquerda e o selo 卒業見込 do 履歴書 à direita */
+.cert-degree {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(16px, 3vw, 36px);
+  margin: 0 0 30px;
+  padding: clamp(20px, 3vw, 30px) clamp(20px, 3.4vw, 40px);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background:
+    repeating-linear-gradient(95deg, transparent 0 22px, color-mix(in srgb, var(--ink) 3%, transparent) 22px 23px),
+    var(--paper);
+  color: var(--text-primary);
+}
+[data-theme='night'] .cert-degree {
+  --paper: #e6dece;
+  --ink: #1f1d1a;
+  --text-primary: #211e1a;
+  --text-secondary: #57514a;
+  --border: #cfc4ad;
+  --hanko: #b0352b;
+  box-shadow: inset 0 0 60px rgb(120 96 60 / 0.18);
+}
+.cert-degree-kanji {
+  font-size: clamp(3rem, 6vw, 4.4rem);
+  line-height: 1;
+  color: var(--hanko);
+}
+.cert-degree-eyebrow {
+  margin: 0 0 6px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--hanko);
+}
+.cert-degree-course {
+  margin: 0;
+  font-size: clamp(1.45rem, 2.8vw, 2.1rem);
+  line-height: 1.1;
+  color: var(--text-primary);
+}
+.cert-degree-summary {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+}
+.cert-degree-when {
+  margin: 10px 0 0;
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+}
+.cert-degree-when strong { color: var(--text-primary); }
+.cert-degree-stamp {
+  writing-mode: vertical-rl;
+  padding: 10px 6px;
+  border: 2px solid var(--hanko);
+  border-radius: 4px;
+  color: var(--hanko);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  rotate: -4deg;
+  user-select: none;
+}
+@media (max-width: 560px) {
+  .cert-degree { grid-template-columns: auto minmax(0, 1fr); padding-right: 64px; }
+  .cert-degree-kanji { align-self: start; font-size: 2.6rem; }
+  .cert-degree-stamp { position: absolute; top: 16px; right: 14px; font-size: 0.9rem; }
+}
+
+/* Prévia que segue o mouse sobre a linha da lista: o certificado em miniatura, emoldurado */
+.cert-peek {
+  --ratio: 1.41;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 70;
+  width: 248px;
+  aspect-ratio: var(--ratio);
+  padding: 5px;
+  border: 5px solid var(--wood);
+  border-radius: 3px;
+  background: #f3eee3;
+  box-shadow: 0 18px 40px rgb(0 0 0 / 0.45);
+  opacity: 0;
+  visibility: hidden;
+  rotate: -2deg;
+  pointer-events: none;
+}
+.cert-peek img { display: block; width: 100%; height: 100%; object-fit: contain; }
+
+/* 賞状 O visualizador: o certificado numa moldura de madeira com passe-partout de papel, como um
+   diploma na parede. Cabe na largura e na altura da tela (a altura livre vezes a proporção do
+   certificado limita a largura da moldura) */
+.cert-viewer {
+  width: min(1000px, calc(100vw - 24px));
+  max-width: none;
+  max-height: calc(100dvh - 16px);
+  margin: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #f3eee3;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.cert-viewer::backdrop {
+  background: color-mix(in srgb, #05070d 80%, transparent);
+  backdrop-filter: blur(6px);
+}
+.cert-viewer-body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 52px 0 8px;
+}
+.cert-viewer-figure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  margin: 0;
+}
+.cert-viewer-frame {
+  --ratio: 1.41;
+  --fm: calc(clamp(7px, 1.2vw, 13px) + clamp(7px, 1.5vw, 16px));
+  position: relative;
+  width: min(100%, calc((100dvh - 230px - 2 * var(--fm)) * var(--ratio) + 2 * var(--fm)));
+  padding: clamp(7px, 1.5vw, 16px);
+  border: clamp(7px, 1.2vw, 13px) solid var(--wood);
+  border-image: linear-gradient(135deg, #7a5230, #4a2e1a 38%, #6b4428 62%, #3f2716) 1;
+  background: #f3eee3;
+  box-shadow: 0 40px 90px rgb(0 0 0 / 0.55);
+}
+.cert-viewer-mat { box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.12); }
+.cert-viewer-image { display: block; width: 100%; height: auto; }
+.cert-viewer-caption {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  justify-content: center;
+  column-gap: 14px;
+  max-width: min(100%, 720px);
+  padding: 0 12px;
+  text-align: left;
+}
+.cert-viewer-stamp {
+  grid-row: span 2;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 2px solid #e8665a;
+  border-radius: 6px;
+  color: #e8665a;
+  font-size: 1.2rem;
+  font-weight: 700;
+  rotate: -8deg;
+}
+.cert-viewer-title {
+  margin: 0;
+  font-size: clamp(1.05rem, 2.2vw, 1.35rem);
+  line-height: 1.25;
+  color: #f3eee3;
+}
+.cert-viewer-meta { margin: 4px 0 0; font-size: 0.88rem; color: rgb(243 238 227 / 0.72); }
+.cert-viewer-nav { display: flex; align-items: center; gap: 16px; }
+.cert-viewer-count { min-width: 64px; text-align: center; font-size: 0.85rem; font-variant-numeric: tabular-nums; color: rgb(243 238 227 / 0.72); }
+.cert-viewer-arrow,
+.cert-viewer-close {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid rgb(243 238 227 / 0.35);
+  border-radius: 50%;
+  background: rgb(5 7 13 / 0.4);
+  color: #f3eee3;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+.cert-viewer-close { position: absolute; top: 4px; right: 4px; }
+.cert-viewer-arrow:hover, .cert-viewer-arrow:focus-visible,
+.cert-viewer-close:hover, .cert-viewer-close:focus-visible { border-color: #f3eee3; background: rgb(243 238 227 / 0.12); }
 
 /* --- 404 金継ぎ --- */
 .nf-root {
@@ -2518,11 +2800,6 @@ html[data-visited].is-loading body { overflow: visible; }
   .emaki-hint-scroll { display: none; }
   .emaki-hint-drag { display: inline; }
 }
-/* Tablet: a barra social fixa cobria o conteúdo (regra no fim para vencer a de >= 768px) */
-@media (max-width: 1099px) {
-  .social-sidebar { display: none !important; }
-}
-
 /* Fundo pintado (sem WebGL): a névoa entre as cristas deriva devagar */
 .backdrop-mist { animation: backdrop-drift 38s ease-in-out infinite alternate; }
 .backdrop-mist.is-slow { animation-duration: 54s; animation-direction: alternate-reverse; }
@@ -2680,7 +2957,8 @@ html.no-gpu .washi {
   width: 100%;
   max-width: 1240px;
   margin: 0 auto;
-  padding: 0 clamp(20px, 5vw, 64px);
+  /* Nunca por baixo da barra social (ver --edge-clear) */
+  padding-inline: max(clamp(20px, 5vw, 64px), calc(var(--edge-clear) - max(0px, (100% - 1240px) / 2)));
 }
 
 /* Linha de leitura: tinta descendo pela lateral */
@@ -2829,7 +3107,8 @@ html.no-gpu .washi {
   --rule: 1;
   position: relative;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  /* Papel, contexto, período e status; a dica de rolar no canto */
+  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
   gap: 24px;
   margin: 0;
   padding-top: 22px;
@@ -2853,8 +3132,9 @@ html.no-gpu .washi {
 .case-meta dd {
   margin: 8px 0 0;
   font-family: var(--font-display), var(--font-jp), 'Yu Mincho', serif;
-  font-size: clamp(1.25rem, 2vw, 1.7rem);
+  font-size: clamp(1.05rem, 1.55vw, 1.35rem);
   font-weight: 800;
+  line-height: 1.25;
   color: var(--text-primary);
 }
 .case-cue dd {
@@ -2875,6 +3155,131 @@ html.no-gpu .washi {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(6px); }
 }
+
+/* Capa do estudo de caso, logo depois do topo (components/projects/ProjectCover) */
+.case-cover-band {
+  position: relative;
+  padding: clamp(4px, 1.5vw, 20px) 0 clamp(56px, 8vw, 110px);
+  background: var(--bg-color);
+}
+.case-cover { margin: 0; }
+.case-cover-window {
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--text-primary) 16%, transparent);
+  border-radius: 12px;
+  background: var(--card-bg);
+  box-shadow: 0 40px 100px -30px rgb(0 0 0 / 0.6);
+}
+.case-cover-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 38px;
+  padding: 0 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--text-primary) 12%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 75%, var(--bg-color));
+}
+.case-cover-dots { display: flex; gap: 6px; }
+.case-cover-dots i { width: 10px; height: 10px; border-radius: 50%; background: color-mix(in srgb, var(--text-primary) 22%, transparent); }
+.case-cover-dots i:first-child { background: var(--hanko); }
+.case-cover-address {
+  flex: 0 1 420px;
+  margin: 0 auto;
+  padding: 3px 14px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-color) 70%, transparent);
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* O print inteiro, na proporção dele (~2:1): sem paralaxe nem zoom, que cortavam as bordas */
+.case-cover-shot { position: relative; aspect-ratio: 2 / 1; overflow: hidden; background: var(--bg-color); }
+.case-cover-shot > img,
+.case-cover-shot > video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+}
+/* Telas de celular lado a lado, a do meio maior */
+.case-cover.is-phones {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: clamp(12px, 3vw, 40px);
+}
+.case-cover-phone {
+  position: relative;
+  width: clamp(96px, 21vw, 240px);
+  aspect-ratio: 9 / 19;
+  overflow: hidden;
+  border: clamp(4px, 0.6vw, 7px) solid #0e0e10;
+  border-radius: clamp(16px, 2.8vw, 32px);
+  background: #0e0e10;
+  box-shadow: 0 30px 70px -20px rgb(0 0 0 / 0.6);
+}
+.case-cover-phone:nth-child(2) { width: clamp(110px, 24vw, 272px); }
+.case-cover-phone img { object-fit: cover; object-position: top center; }
+/* IMACARDIOS (privado): o ECG a pincel no papel, como no emakimono */
+.case-cover.is-ecg .case-cover-paper {
+  aspect-ratio: 3 / 1;
+  display: grid;
+  place-items: center;
+  padding: clamp(18px, 4vw, 48px) clamp(18px, 6vw, 80px);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background:
+    repeating-linear-gradient(95deg, transparent 0 22px, color-mix(in srgb, var(--ink) 3%, transparent) 22px 23px),
+    var(--paper);
+}
+[data-theme='night'] .case-cover.is-ecg .case-cover-paper {
+  --paper: #e6dece;
+  --ink: #1f1d1a;
+  --border: #cfc4ad;
+  --hanko: #b0352b;
+  box-shadow: inset 0 0 60px rgb(120 96 60 / 0.18);
+}
+/* APIs sem tela: as rotas numa janela escura de terminal (escura nos dois temas) */
+.case-cover.is-api .case-cover-window {
+  max-width: 780px;
+  margin: 0 auto;
+  border-color: #2a3247;
+  background: #11151f;
+}
+.case-cover.is-api .case-cover-bar { border-color: #232a3b; background: #0b0e16; }
+.case-cover.is-api .case-cover-address { background: #1a2030; color: #a7adbd; }
+.case-cover-routes {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 20px clamp(16px, 3vw, 28px) 24px;
+  list-style: none;
+  font-family: ui-monospace, 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  font-size: clamp(0.8rem, 1.4vw, 0.96rem);
+  color: #e8e4da;
+}
+.case-cover-routes li { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.case-cover-routes code { min-width: 0; overflow-wrap: anywhere; }
+.case-cover-method {
+  flex: none;
+  width: 62px;
+  padding: 3px 0;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+.case-cover-method.is-get { background: rgb(127 176 105 / 0.16); color: #95d27b; }
+.case-cover-method.is-post { background: rgb(217 164 65 / 0.16); color: #e6b552; }
+.case-cover-method.is-put { background: rgb(106 164 216 / 0.16); color: #86bbe8; }
+.case-cover-method.is-delete { background: rgb(232 102 90 / 0.16); color: #f08a7c; }
+.case-cover-auth { display: inline-flex; flex: none; color: #a7adbd; }
 
 /* Stack em marquee: cheia e contorno alternados */
 .case-marquee {
@@ -3086,6 +3491,7 @@ html.no-gpu .washi {
   /* Numerais de um traço (一, 二) viram retângulos soltos em tela estreita */
   .case-kanji, .case-next-kanji { display: none; }
   .case-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 20px; }
+  .case-cover-shot { aspect-ratio: 16 / 10; }
   .case-cue { display: none; }
   .case-section { grid-template-columns: 1fr; }
   .case-section-head { position: static; }
@@ -3880,6 +4286,31 @@ html:not(:lang(en)) [data-lang="en"] { display: none !important; }
   align-items: center;
   gap: 30px;
   padding-top: 100px;
+}
+.mobile-menu-links,
+.mobile-menu-extras {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+}
+/* Celular deitado (ou tablet com o menu do leque em tela baixa): a coluna de links + botões (~540px)
+   não cabia e idioma, tema, som e gráficos ficavam cortados embaixo. Os dois grupos ficam lado a
+   lado; se ainda faltar altura, o conteúdo rola por cima do leque parado */
+@media (max-height: 560px) and (orientation: landscape) {
+  .mobile-menu-content {
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-start;
+    gap: clamp(40px, 8vw, 96px);
+    max-height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-top: 92px;
+    padding-bottom: 24px;
+  }
+  .mobile-menu-links, .mobile-menu-extras { gap: 18px; }
+  .mobile-menu-extras > * { margin-top: 0 !important; }
 }
 .sensu { position: absolute; inset: 0; }
 .sensu-paper { fill: var(--bg-color); }
@@ -4694,7 +5125,7 @@ html.dx-frozen :is([data-cursor], [data-cursor-trail], .water-gl, .water-shadow)
 
 
 /* --- 裏 Bastidores (/bastidores): o making-of, texto sobre lavado de nanquim --- */
-.making { position: relative; isolation: isolate; max-width: 760px; padding: 60px 20px 120px; }
+.making { --container-max: 760px; position: relative; isolation: isolate; max-width: 760px; padding-block: 60px 120px; }
 .making::before {
   content: '';
   position: absolute;

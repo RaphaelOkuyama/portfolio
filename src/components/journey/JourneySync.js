@@ -5,6 +5,7 @@ import { useSettings } from '../../context/SettingsContext';
 import { journeyStore, useJourney } from '../../store/journey';
 import { seasonNameFromMix } from '../../lib/journey/season';
 import { useQuality } from '../../hooks/useQuality';
+import { markInternalNavigation } from '../../lib/navigation';
 
 // Liga o mundo React (rota, tema, preferências) à store e espelha o estado no <html>
 export default function JourneySync() {
@@ -18,6 +19,13 @@ export default function JourneySync() {
 
   useEffect(() => {
     journeyStore.getState().setRoute(pathname === '/' ? 'journey' : 'frozen');
+  }, [pathname]);
+
+  // Saiu da primeira rota: há uma página do próprio site no histórico (lib/navigation). Compara com
+  // a rota inicial, e não "segunda execução": o StrictMode roda o efeito duas vezes no dev
+  const firstPath = useRef(pathname);
+  useEffect(() => {
+    if (pathname !== firstPath.current) markInternalNavigation();
   }, [pathname]);
 
   // Fora da home: baixa os chunks das seções dela quando o navegador fica ocioso (ver HomeSections)

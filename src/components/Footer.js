@@ -8,6 +8,7 @@ import { gsap, SplitText, useGSAP } from '../lib/gsap';
 import { createClickCounter, TSURU_EVENT } from '../lib/easterEgg';
 import { cityTime, scrollToTop } from '../lib/scroll';
 import { microseasonFor } from '../lib/microseasons';
+import { useEdgeGuard } from '../lib/edgeGuard';
 
 const SOCIAL = [
   { label: 'GitHub', href: 'https://github.com/RaphaelOkuyama' },
@@ -89,6 +90,8 @@ export default function Footer() {
   const rootRef = useRef(null);
   const countClick = useMemo(() => createClickCounter(5, 2500), []);
   useFitWordmark(rootRef);
+  // Largura total, com os próprios links: o trilho, a barra social e a linha de leitura somem aqui
+  useEdgeGuard(rootRef);
 
   // Cada clique carimba; o quinto seguido solta o bando de tsurus (千羽鶴)
   const stamp = (e) => {

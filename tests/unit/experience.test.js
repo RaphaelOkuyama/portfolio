@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  monthsBetween, formatMonth, formatPeriod, formatDuration, orderTimeline, currentMonth,
+  monthsBetween, formatMonth, formatPeriod, formatSpan, formatDuration, orderTimeline, currentMonth,
 } from '../../src/lib/experience';
 import { resumeData } from '../../src/data/resume';
 
@@ -18,6 +18,13 @@ describe('formatação', () => {
     expect(formatMonth('2025-05', 'en')).toBe('May 2025');
     expect(formatPeriod('2022-04', '2025-02', 'pt', 'Atual')).toBe('Abr 2022 - Fev 2025');
     expect(formatPeriod('2025-02', null, 'en', 'Present')).toBe('Feb 2025 - Present');
+  });
+
+  it('período curto dos projetos: um mês, meses do mesmo ano, anos diferentes e em andamento', () => {
+    expect(formatSpan('2026-04', '2026-04', 'pt', 'atual')).toBe('Abr 2026');
+    expect(formatSpan('2026-02', '2026-03', 'pt', 'atual')).toBe('Fev – Mar 2026');
+    expect(formatSpan('2025-08', '2026-01', 'en', 'present')).toBe('Aug 2025 – Jan 2026');
+    expect(formatSpan('2025-05', null, 'pt', 'atual')).toBe('Mai 2025 – atual');
   });
 
   it.each([

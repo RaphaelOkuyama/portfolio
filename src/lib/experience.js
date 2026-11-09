@@ -28,6 +28,16 @@ export function formatMonth(ym, lang) {
   return `${MONTHS[lang][m - 1]} ${y}`;
 }
 
+// Período curto de um projeto: "Abr 2026", "Fev – Mar 2026", "Ago 2025 – Jan 2026", "Mai 2025 – atual"
+export function formatSpan(start, end, lang, currentLabel) {
+  if (!end) return `${formatMonth(start, lang)} – ${currentLabel}`;
+  if (start === end) return formatMonth(start, lang);
+  const a = parse(start);
+  const b = parse(end);
+  if (a.y === b.y) return `${MONTHS[lang][a.m - 1]} – ${formatMonth(end, lang)}`;
+  return `${formatMonth(start, lang)} – ${formatMonth(end, lang)}`;
+}
+
 export function formatPeriod(start, end, lang, currentLabel) {
   return `${formatMonth(start, lang)} - ${end ? formatMonth(end, lang) : currentLabel}`;
 }

@@ -49,12 +49,12 @@ test.describe('Certificados (証)', () => {
     await expect(page.locator('.cert-board > [data-lang="pt"] .cert-group:visible')).toHaveCount(4);
   });
 
-  test('os 22 links continuam lá e abrem em nova aba', async ({ page }) => {
+  test('os 22 certificados levam à imagem própria, sem nenhum link para os PDFs (que trazem o CPF)', async ({ page }) => {
     await page.goto('/certificates');
-    const links = page.locator('.cert-board > [data-lang="pt"] a[href*="drive.google.com"]');
+    const links = page.locator('.cert-board > [data-lang="pt"] [data-cert]');
     await expect(links).toHaveCount(22);
-    await expect(links.first()).toHaveAttribute('target', '_blank');
-    await expect(links.first()).toHaveAttribute('rel', /noopener/);
+    await expect(links.first()).toHaveAttribute('href', /^\/certificates\/[a-z0-9-]+\.webp$/);
+    await expect(page.locator('a[href*="drive.google.com"], a[href$=".pdf"]')).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Ver certificado: Curso de React' })).toBeAttached();
   });
 

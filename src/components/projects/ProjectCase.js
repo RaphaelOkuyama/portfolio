@@ -10,6 +10,10 @@ import { EcgDiagram } from './Ecg';
 import ProjectImageCarousel from '../ProjectImageCarousel';
 import KeepHyphenated from '../KeepHyphenated';
 import { takeMorph, landMorph, returnMorph } from '../../lib/panelMorph';
+import { useEdgePiece } from '../../lib/edgeGuard';
+import { hasInternalHistory } from '../../lib/navigation';
+import { formatSpan } from '../../lib/experience';
+import ProjectCover, { hasCover } from './ProjectCover';
 
 const pad = (n) => String(n).padStart(2, '0');
 
@@ -41,8 +45,11 @@ function magnetize(scope) {
 // seções numeradas e o próximo projeto em destaque no fim do rolo
 export default function ProjectCase({ slug }) {
   const router = useRouter();
-  const { currentData } = useSettings();
+  const { currentData, language } = useSettings();
   const rootRef = useRef(null);
+  // A linha de leitura fica fixa na borda: some quando o rodapé (fim da leitura) chega
+  const progressRef = useRef(null);
+  useEdgePiece(progressRef);
 
   const projects = currentData?.projects ?? [];
   const labels = currentData?.projectsPage ?? {};
@@ -79,6 +86,9 @@ export default function ProjectCase({ slug }) {
       });
       cleanups.push(() => loop.kill());
     }
+
+    // Movimento reduzido: o vídeo da capa fica parado no primeiro quadro (o pôster)
+    if (reduced) rootRef.current.querySelectorAll('video').forEach((video) => video.pause());
 
     if (reduced) return () => cleanups.forEach((fn) => fn());
 
@@ -117,6 +127,14 @@ export default function ProjectCase({ slug }) {
       yPercent: 35, ease: 'none',
       scrollTrigger: { trigger: '.case-hero', start: 'top top', end: 'bottom top', scrub: true },
     });
+
+    // Capa: sobe e assenta quando entra na tela
+    if (rootRef.current.querySelector('.case-cover')) {
+      gsap.from('.case-cover', {
+        opacity: 0, y: 70, scale: 0.97, duration: 1.1, ease: 'power3.out',
+        scrollTrigger: { trigger: '.case-cover', start: 'top 92%' },
+      });
+    }
 
     // Cada seção: título e linha entram ao aparecer
     gsap.utils.toArray('.case-section').forEach((section) => {
@@ -163,13 +181,18 @@ export default function ProjectCase({ slug }) {
 
   return (
     <article ref={rootRef} className="case">
-      <div className="case-progress" aria-hidden="true"><span /></div>
+      <div ref={progressRef} className="case-progress" aria-hidden="true"><span /></div>
 
       <header className="case-hero">
         <span className="case-kanji font-jp" aria-hidden="true">{kanjiNumber(index)}</span>
         <div className="case-wrap case-hero-inner">
           <div className="case-topline">
-            <button type="button" className="case-back hover-back" onClick={() => router.back()}>
+            {/* Voltar pelo histórico só se a página anterior for do site; quem chegou direto vai à lista */}
+            <button
+              type="button"
+              className="case-back hover-back"
+              onClick={() => (hasInternalHistory() ? router.back() : router.push('/projects'))}
+            >
               <ArrowLeft size={18} aria-hidden="true" /> {labels.btnBack || 'Voltar'}
             </button>
             <p className="case-eyebrow project-eyebrow">
@@ -201,18 +224,29 @@ export default function ProjectCase({ slug }) {
             </div>
           )}
 
+          {/* Ficha: o que fiz, em que contexto e quando (o que o recrutador procura primeiro) */}
           <dl className="case-meta">
+            {project.role ? (
+              <div>
+                <dt>{labels.role}</dt>
+                <dd>{project.role}</dd>
+              </div>
+            ) : null}
+            {project.context ? (
+              <div>
+                <dt>{labels.context}</dt>
+                <dd>{project.context}</dd>
+              </div>
+            ) : null}
+            {project.period ? (
+              <div>
+                <dt>{labels.period}</dt>
+                <dd>{formatSpan(project.period.start, project.period.end, language, labels.periodNow)}</dd>
+              </div>
+            ) : null}
             <div>
               <dt>{labels.status}</dt>
               <dd>{status}</dd>
-            </div>
-            <div>
-              <dt>{labels.techCount}</dt>
-              <dd>{pad(project.stack.length)}</dd>
-            </div>
-            <div>
-              <dt>{labels.featureCount}</dt>
-              <dd>{pad(project.features?.length ?? 0)}</dd>
             </div>
             <div className="case-cue">
               <dt className="sr-only">{labels.scrollCue}</dt>
@@ -221,6 +255,14 @@ export default function ProjectCase({ slug }) {
           </dl>
         </div>
       </header>
+
+      {hasCover(project) ? (
+        <div className="case-cover-band">
+          <div className="case-wrap">
+            <ProjectCover project={project} labels={labels} />
+          </div>
+        </div>
+      ) : null}
 
       {/* Stack: lista acessível + faixa em movimento só visual */}
       <section className="case-marquee" aria-label={labels.techs}>
@@ -257,7 +299,7 @@ export default function ProjectCase({ slug }) {
               <h2>{labels.caseTitle}</h2>
             </div>
             <div className="case-section-body">
-              <EcgDiagram labels={project.caseStudy.diagram} />
+              {project.caseStudy.diagram ? <EcgDiagram labels={project.caseStudy.diagram} /> : null}
               <h3 className="case-study-label">{labels.caseChallenge}</h3>
               <p className="case-reveal">{project.caseStudy.challenge}</p>
               <h3 className="case-study-label">{labels.caseDecisions}</h3>

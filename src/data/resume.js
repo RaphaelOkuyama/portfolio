@@ -1,7 +1,10 @@
 // ============================================================
 // FOTOS DOS PROJETOS: só imagens que existem nos repositórios do GitHub (prints da pasta docs/ de
 // cada projeto, os do repositório portifolio-freelance e as fotos dos amigurumis do catálogo da
-// Saeko), copiadas para /public/projects/<projeto>/. Projeto sem imagem no GitHub fica sem foto.
+// Saeko), copiadas para /public/projects/<projeto>/. Projeto sem imagem no GitHub fica sem foto, a não
+// ser os prints feitos com Playwright do próprio site no ar (este portfólio e o Star Wars Catalog) ou
+// do projeto rodando localmente (o React Kanban, com o db.json do repositório);
+// as APIs sem tela mostram as rotas (endpoints) no lugar da imagem.
 // ============================================================
 const shot = (dir, file, pt, en) => ({ src: `/projects/${dir}/${file}.png`, alt: { pt, en } });
 const FIT_AI_SHOTS = [
@@ -47,6 +50,23 @@ const range = (n) => Array.from({ length: n }, (_, i) => i + 1);
 const SAEKO_SITE = range(5).map((n) => screen('saeko-artes', 'site', n, 'Catálogo da Saeko Artes', 'Saeko Artes catalog'));
 const ARCA_SHOTS = range(5).map((n) => screen('arca', 'arca', n, 'Landing page da ARCA', 'ARCA landing page'));
 const GLOW_SHOTS = range(10).map((n) => screen('glow-laser', 'glow', n, 'Landing page da Glow Laser', 'Glow Laser landing page'));
+// Prints feitos com Playwright: este site (com a cena 3D) e o Star Wars Catalog no ar
+const site = (dir, file, pt, en) => ({ src: `/projects/${dir}/${file}.jpg`, alt: { pt, en } });
+const PORTFOLIO_SHOTS = [
+  site('portfolio-okuyama', 'site-1', 'Hero à noite, com o torii na cena 3D', 'Hero at night, with the torii in the 3D scene'),
+  site('portfolio-okuyama', 'site-2', 'Seção Sobre, com a foto num kakejiku', 'About section, with the photo on a kakejiku'),
+  site('portfolio-okuyama', 'site-3', 'Stack nas tiras de papel do Tanabata', 'Stack on Tanabata paper strips'),
+  site('portfolio-okuyama', 'site-4', 'Projetos num emakimono que se desenrola com a rolagem', 'Projects on an emakimono that unrolls as you scroll'),
+  site('portfolio-okuyama', 'site-5', 'Contato à beira do rio de lanternas', 'Contact by the lantern river'),
+];
+const KANBAN_SHOTS = [
+  { src: '/projects/react-kanban/board-1.jpg', alt: { pt: 'Quadro com as tarefas nas três colunas', en: 'Board with tasks in the three columns' } },
+  { src: '/projects/react-kanban/board-2.jpg', alt: { pt: 'Diálogo de nova tarefa, com situação e prioridade', en: 'New task dialog, with status and priority' } },
+];
+const STAR_WARS_SHOTS = [
+  site('star-wars-catalog', 'site-3', 'Página de detalhes do X-Wing', 'X-Wing detail page'),
+  site('star-wars-catalog', 'site-2', 'Lista de todas as espaçonaves', 'List of all spaceships'),
+];
 const imagesIn = (list, lang) => list.map(({ src, alt, fit }) => ({ src, alt: alt[lang], ...(fit ? { fit } : {}) }));
 
 // Nome em latim e em japonês (kanji, katakana e hiragana); o hero cicla katakana ↔ hiragana
@@ -196,26 +216,30 @@ export const resumeData = {
       filterAll: "Todos",
       btnView: "Ver certificado",
       modules: "módulos",
+      degreeTitle: "Formação acadêmica",
+      degreeExpected: "Conclusão prevista",
+      degreeDone: "Concluída em",
+      viewer: { close: "Fechar", prev: "Certificado anterior", next: "Próximo certificado", issued: "emitido em", image: "Certificado" },
       areas: { full: "Bootcamps & Formações", front: "Front-end", back: "Back-end & Dados", base: "Fundamentos" },
     },
     // Agrupados por área; trilhas juntam módulos do mesmo curso (cada módulo tem o seu certificado)
     certificates: [
-      { id: 1, area: "full", icon: "award", name: "Bootcamp: Gestão de Treinos com IA", institution: "Full Stack Club", link: "https://drive.google.com/file/d/1J4_pW5k-evrK_8dXGEmkQQbfwGxRMTEU/view?usp=sharing", kind: "bootcamp" },
-      { id: 2, area: "full", icon: "award", name: "Bootcamp Self Checkout", institution: "Full Stack Club", link: "https://drive.google.com/file/d/1P_JxOakam_Lco3Tv2MNo66Vv5jGSCI-C/view?usp=sharing", kind: "bootcamp" },
-      { id: 3, area: "full", icon: "award", name: "Formação Fullstack JavaScript", institution: "OneBitCode", link: "https://drive.google.com/file/d/1gluZITKLl67R8j4oVN8QurlOF9EzMZXY/view?usp=sharing", kind: "formation" },
-      { id: 4, area: "front", icon: "react", name: "Projeto EAD Inspirado no Netflix", institution: "OneBitCode", link: "https://drive.google.com/file/d/1qGPGox8LHMQvd20dD4pstXmW2VPXht_y/view?usp=sharing" },
-      { id: 5, area: "front", icon: "next.js", name: "Curso de NextJS", institution: "OneBitCode", link: "https://drive.google.com/file/d/1I7Jr9McP_IQKRmEDMO2j2A3WGVGGT77e/view?usp=sharing" },
-      { id: 10, area: "front", icon: "react", name: "Curso de React", institution: "OneBitCode", link: "https://drive.google.com/file/d/143jdZvzdgUTiT0R6_V_ZCymxu0Is5Vpt/view?usp=sharing" },
-      { id: 11, area: "front", icon: "css3", name: "CSS Moderno", institution: "OneBitCode", link: "https://drive.google.com/file/d/1Q6N1BaPZFOH0ECOJie2FTGjGQDOLCUNA/view?usp=sharing" },
-      { id: 12, area: "front", icon: "bootstrap", name: "Bootstrap e SASS", institution: "OneBitCode", link: "https://drive.google.com/file/d/1_PgBGaWfj5Eqh9I80gETuPDQUgF1C5Ri/view?usp=sharing" },
-      { id: 22, area: "front", icon: "html5", name: "Curso de HTML5", institution: "OneBitCode", link: "https://drive.google.com/file/d/1hCZmPBx-J6WAThP4KQ9ITreUmMPJDbdQ/view?usp=sharing" },
-      { id: 21, area: "front", icon: "css3", name: "Curso de CSS3", institution: "OneBitCode", link: "https://drive.google.com/file/d/1V-AgaPuW-leQy-qSWsBmzcXM3DC7oMht/view?usp=sharing" },
-      { id: 6, area: "back", icon: "prisma", name: "SQL no NodeJS e Prisma ORM", institution: "OneBitCode", link: "https://drive.google.com/file/d/1X9EpEiLNA7LZc08FDdAZXLUlyt4jxBl7/view?usp=sharing" },
-      { id: 23, area: "back", icon: "node.js", name: "Trilha NodeJS", institution: "OneBitCode", modules: [{ label: "Curso de NodeJS", link: "https://drive.google.com/file/d/1jMbrhElEAFEOHY5ph5wtRQOCDQSz74mE/view?usp=sharing" }, { label: "NodeJS em Aplicações Web", link: "https://drive.google.com/file/d/1YBDj_Hz9bAF7C5Z9ZYs8T3DeVdFNsWi2/view?usp=sharing" }] },
-      { id: 9, area: "back", icon: "postgresql", name: "Curso de Banco de Dados SQL", institution: "OneBitCode", link: "https://drive.google.com/file/d/1Wob8BdSy3bIvIGk_is74AgBpmS9hNsew/view?usp=sharing" },
-      { id: 24, area: "base", icon: "javascript", name: "Trilha JavaScript", institution: "OneBitCode", modules: [{ label: "I", link: "https://drive.google.com/file/d/1J3Pdmk_8pK1hA7Cd4devshM-shOnq-6w/view?usp=sharing" }, { label: "II", link: "https://drive.google.com/file/d/1Z5Jhrd9rvUtMd7tCh-VC1TYonAwHzeLC/view?usp=sharing" }, { label: "III", link: "https://drive.google.com/file/d/1l6zWN9JktClgEZkRvMaK_36A4U9mxu0A/view?usp=sharing" }, { label: "IV", link: "https://drive.google.com/file/d/1pbuD3XndCasiNHj19GhzltGbI3P7pUoN/view?usp=sharing" }, { label: "V", link: "https://drive.google.com/file/d/1fgRLJXx3DUgjQTHKmV4X17mtBmr90RhV/view?usp=sharing" }, { label: "VI", link: "https://drive.google.com/file/d/1V0vWxi38c02czMZz9MdrYeQfmySThWgq/view?usp=sharing" }] },
-      { id: 14, area: "base", icon: "typescript", name: "Curso de TypeScript", institution: "OneBitCode", link: "https://drive.google.com/file/d/149wMZ6nlMpb_ZZSry_ghUJFeCUi7Gblf/view?usp=sharing" },
-      { id: 13, area: "base", icon: "git", name: "Git e GitHub", institution: "OneBitCode", link: "https://drive.google.com/file/d/16SjZpNj47YW_ceOeEWhM81rBJyYWd5Vt/view?usp=sharing" },
+      { id: 1, area: "full", icon: "award", name: "Bootcamp: Gestão de Treinos com IA", institution: "Full Stack Club", date: "2026-03-11", hours: 10, image: { src: "/certificates/bootcamp-fit-ai.webp", width: 1600, height: 898 }, kind: "bootcamp" },
+      { id: 2, area: "full", icon: "award", name: "Bootcamp Self Checkout", institution: "Full Stack Club", date: "2026-03-27", hours: 18, image: { src: "/certificates/bootcamp-self-checkout.webp", width: 1600, height: 898 }, kind: "bootcamp" },
+      { id: 3, area: "full", icon: "award", name: "Formação Fullstack JavaScript", institution: "OneBitCode", date: "2025-10-07", hours: 200, image: { src: "/certificates/formacao-fullstack-javascript.webp", width: 1600, height: 1132 }, kind: "formation" },
+      { id: 4, area: "front", icon: "react", name: "Projeto EAD Inspirado no Netflix", institution: "OneBitCode", date: "2025-10-07", hours: 56, image: { src: "/certificates/projeto-ead-netflix.webp", width: 1600, height: 1132 } },
+      { id: 5, area: "front", icon: "next.js", name: "Curso de NextJS", institution: "OneBitCode", date: "2025-08-15", hours: 14, image: { src: "/certificates/nextjs.webp", width: 1600, height: 1132 } },
+      { id: 10, area: "front", icon: "react", name: "Curso de React", institution: "OneBitCode", date: "2025-07-01", hours: 22, image: { src: "/certificates/react.webp", width: 1600, height: 1132 } },
+      { id: 11, area: "front", icon: "css3", name: "CSS Moderno", institution: "OneBitCode", date: "2025-06-04", hours: 18, image: { src: "/certificates/css-moderno.webp", width: 1600, height: 1132 } },
+      { id: 12, area: "front", icon: "bootstrap", name: "Bootstrap e SASS", institution: "OneBitCode", date: "2025-06-18", hours: 10, image: { src: "/certificates/bootstrap-sass.webp", width: 1600, height: 1132 } },
+      { id: 22, area: "front", icon: "html5", name: "Curso de HTML5", institution: "OneBitCode", date: "2024-12-02", hours: 12, image: { src: "/certificates/html5.webp", width: 1600, height: 1132 } },
+      { id: 21, area: "front", icon: "css3", name: "Curso de CSS3", institution: "OneBitCode", date: "2024-12-02", hours: 14, image: { src: "/certificates/css3.webp", width: 1600, height: 1132 } },
+      { id: 6, area: "back", icon: "prisma", name: "SQL no NodeJS e Prisma ORM", institution: "OneBitCode", date: "2025-08-03", hours: 30, image: { src: "/certificates/sql-nodejs-prisma.webp", width: 1600, height: 1132 } },
+      { id: 23, area: "back", icon: "node.js", name: "Trilha NodeJS", institution: "OneBitCode", modules: [{ label: "Curso de NodeJS", date: "2025-07-12", hours: 10, image: { src: "/certificates/nodejs-introducao.webp", width: 1600, height: 1132 } }, { label: "NodeJS em Aplicações Web", date: "2025-07-21", hours: 30, image: { src: "/certificates/nodejs-aplicacoes-web.webp", width: 1600, height: 1132 } }] },
+      { id: 9, area: "back", icon: "postgresql", name: "Curso de Banco de Dados SQL", institution: "OneBitCode", date: "2025-07-24", hours: 22, image: { src: "/certificates/banco-de-dados-sql.webp", width: 1600, height: 1132 } },
+      { id: 24, area: "base", icon: "javascript", name: "Trilha JavaScript", institution: "OneBitCode", modules: [{ label: "I", date: "2024-11-27", hours: 8, image: { src: "/certificates/javascript-1.webp", width: 1600, height: 1131 } }, { label: "II", date: "2024-12-17", hours: 12, image: { src: "/certificates/javascript-2.webp", width: 1600, height: 1132 } }, { label: "III", date: "2025-03-26", hours: 12, image: { src: "/certificates/javascript-3.webp", width: 1600, height: 1132 } }, { label: "IV", date: "2025-04-08", hours: 14, image: { src: "/certificates/javascript-4.webp", width: 1600, height: 1132 } }, { label: "V", date: "2025-04-16", hours: 12, image: { src: "/certificates/javascript-5.webp", width: 1600, height: 1132 } }, { label: "VI", date: "2025-05-02", hours: 12, image: { src: "/certificates/javascript-6.webp", width: 1600, height: 1132 } }] },
+      { id: 14, area: "base", icon: "typescript", name: "Curso de TypeScript", institution: "OneBitCode", date: "2025-05-07", hours: 10, image: { src: "/certificates/typescript.webp", width: 1600, height: 1132 } },
+      { id: 13, area: "base", icon: "git", name: "Git e GitHub", institution: "OneBitCode", date: "2025-05-18", hours: 12, image: { src: "/certificates/git-github.webp", width: 1600, height: 1132 } },
     ],
     projectsPage: { 
       title: "Projetos", 
@@ -269,12 +293,19 @@ export const resumeData = {
       statusCode: "Código aberto",
       techCount: "Tecnologias",
       featureCount: "Funcionalidades",
+      role: "Papel",
+      context: "Contexto",
+      period: "Período",
+      periodNow: "atual",
+      apiTitle: "Rotas da API",
+      apiAuth: "pede login",
       scrollCue: "Role para ler"
     },
     easterEgg: { message: "千羽鶴: mil tsurus de origami para te desejar sorte!" },
     projects: [
       {
         id: 11, slug: 'imacardios', type: 'fullstack', featured: true, title: 'IMACARDIOS: Telemedicina e Telelaudos',
+        role: "Full-stack, em dupla", context: "Freelance remunerado", period: {start: "2025-05",end: null},
         stack: ['Next.js', 'React', 'NestJS', 'TypeScript', 'Prisma', 'PostgreSQL', 'Swagger', 'Jest', 'Playwright', 'Supertest'],
         shortDesc: 'Plataforma B2B de telecardiologia em produção: 42+ clínicas e 2.000+ laudos por mês.',
         longDesc: 'Freelance remunerado, desenvolvido em dupla. A IMACARDIOS é uma plataforma B2B de telecardiologia em produção, atendendo redes de saúde no Brasil e na América Latina, hoje com mais de 42 clínicas e mais de 2.000 laudos assinados por mês.\n\nProjetei o isolamento de dados sensíveis (CPF e diagnóstico fora do banco principal) e o isolamento entre clínicas em duas camadas: na aplicação e nas regras do Postgres. O back-end em NestJS + Prisma/PostgreSQL é documentado com Swagger e coberto por testes.',
@@ -302,6 +333,8 @@ export const resumeData = {
       },
       {
         id: 12, slug: 'saeko-artes', type: 'front', title: 'Saeko Artes: Catálogo de Amigurumis',
+        role: "Front-end", context: "Cliente real", period: {start: "2026-04",end: "2026-04"},
+        caseStudy: {challenge: "Um ateliê de crochê precisava vender as peças pela internet sem montar uma loja virtual: nada de checkout, cadastro ou banco de dados para manter, mas com o frete real dos Correios calculado na hora.",decisions: ["O pedido termina no WhatsApp, onde o ateliê já atende: a mensagem chega montada com as peças, as quantidades, o frete, o CEP e o total.","Frete cotado de verdade na API do Melhor Envio, dentro de uma Server Action: o token fica no servidor e o navegador recebe só a opção mais barata entre PAC e SEDEX, com o prazo.","Server Components por padrão; o modelo 3D do hero chega depois do texto (import dinâmico, sem SSR) e não pesa no primeiro carregamento.","Cada uma das 28 peças tem página estática própria, com metadata e Open Graph: o link compartilhado já aparece com a foto da peça."],result: "Catálogo no ar com as 28 peças, frete calculado na hora e o pedido chegando pronto no WhatsApp, sem banco de dados nem painel para manter."},
         stack: ['Next.js 16', 'React 19', 'TypeScript', 'Tailwind CSS v4', 'React Three Fiber', 'Zustand', 'Framer Motion', 'Lenis'],
         shortDesc: 'Catálogo de um ateliê de crochê com frete real dos Correios, cotado pelo Melhor Envio, e pedido pelo WhatsApp.',
         longDesc: 'Landing page e catálogo digital da Saeko Artes, ateliê artesanal de amigurumis de Mairinque (SP). As peças aparecem numa vitrine editorial minimalista, o frete dos Correios é cotado de verdade pela API do Melhor Envio e o pedido é finalizado no WhatsApp, sem checkout, cadastro ou banco de dados.\n\nServer Components por padrão, com "use client" só onde há interação: o carrinho, as animações e o modelo 3D do hero. Cada uma das 28 peças tem uma página estática própria, com metadata e Open Graph.',
@@ -311,6 +344,8 @@ export const resumeData = {
       },
       {
         id: 1, slug: 'fit-ai-frontend', origin: 'bootcamp', type: 'front', group: 'fit-ai', part: 'App', title: 'FIT.AI: App de Treinos',
+        role: "Front-end", context: "Bootcamp Full Stack Club", period: {start: "2026-03",end: "2026-03"},
+        caseStudy: {challenge: "Montar um plano de treino exige saber peso, altura, objetivo e rotina da pessoa, e um formulário longo afasta justamente quem está começando.",decisions: ["O cadastro é uma conversa: o coach de IA (Gemini 2.5 Flash) coleta os dados e, no fim, já monta o plano da semana.","Respostas em streaming, palavra a palavra, pelo AI SDK: a conversa nunca parece travada.","Contrato tipado de ponta a ponta: as rotas da API em Fastify são validadas com Zod, o OpenAPI sai delas e o Orval gera o cliente do front. Uma mudança na API quebra o build, não o usuário.","Server Components para buscar os dados e Server Actions para as mudanças; JavaScript no navegador só onde há interação."],result: "Do primeiro login ao plano de treino numa conversa só, com o app e a API falando o mesmo contrato tipado."},
         stack: ['Next.js 16', 'React 19', 'TypeScript', 'Tailwind CSS v4', 'shadcn/ui', 'Google Gemini', 'Better Auth', 'Orval'],
         shortDesc: 'App mobile-first de treinos com coach de IA em tempo real.',
         longDesc: 'Projeto do bootcamp da Full Stack Club. O FIT.AI é um aplicativo mobile-first de gestão de treinos com personal trainer virtual integrado. Desenvolvido com Next.js 16 e React 19, o app oferece um onboarding conversacional com IA (Google Gemini 2.5 Flash), onde o coach coleta seus dados físicos e monta um plano de treino personalizado.\n\nAs respostas do coach chegam em streaming via @ai-sdk/react, palavra a palavra, enquanto os dados vêm de Server Components e as mutações passam por Server Actions.',
@@ -320,6 +355,7 @@ export const resumeData = {
       },
       {
         id: 2, slug: 'fit-ai-api', origin: 'bootcamp', type: 'back', group: 'fit-ai', part: 'API', title: 'FIT.AI: API',
+        role: "Back-end", context: "Bootcamp Full Stack Club", period: {start: "2026-03",end: "2026-03"},
         stack: ['Node.js', 'TypeScript', 'Fastify', 'Prisma', 'PostgreSQL', 'Google Gemini', 'Better Auth', 'Docker', 'Swagger/OpenAPI'],
         shortDesc: 'API da FIT.AI: treinos, progresso e o coach de IA com respostas em streaming.',
         longDesc: 'Projeto do bootcamp da Full Stack Club. Back-end da plataforma FIT.AI. A API gerencia usuários, planos de treino, exercícios, sessões e estatísticas de progresso. O ponto central é a integração com o Google Gemini para geração de planos de treino personalizados e respostas em streaming do coach virtual.',
@@ -329,6 +365,7 @@ export const resumeData = {
       },
       {
         id: 3, slug: 'totem-autoatendimento', origin: 'bootcamp', type: 'fullstack', title: 'Totem de Autoatendimento',
+        role: "Full-stack", context: "Bootcamp Full Stack Club", period: {start: "2026-02",end: "2026-03"},
         stack: ['Next.js', 'TypeScript', 'Tailwind CSS', 'shadcn/ui', 'Prisma', 'PostgreSQL', 'Stripe'],
         shortDesc: 'Autoatendimento para totem touchscreen, do cardápio ao pagamento com Stripe.',
         longDesc: 'Projeto do bootcamp da Full Stack Club. Sistema de autoatendimento feito para rodar num totem touchscreen físico. O fluxo cobre da seleção do tipo de pedido até o pagamento integrado com Stripe, passando por cardápio com categorias, detalhes do produto e sacola.',
@@ -338,6 +375,8 @@ export const resumeData = {
       },
       {
         id: 13, slug: 'arca-construtora', type: 'front', title: 'ARCA: Landing Page para Construtora',
+        role: "Front-end", context: "Projeto conceito", period: {start: "2026-04",end: "2026-04"},
+        caseStudy: {challenge: "Uma construtora de alto padrão vende sofisticação: a página precisava da presença de um portfólio de arquitetura, com vídeo, animação e profundidade, sem ficar pesada no celular.",decisions: ["A obra sobe com a rolagem: 63 quadros desenhados num canvas e presos ao scroll, que só começam a baixar quando a seção se aproxima da tela.","O peso se ajusta ao aparelho: no celular entram 1 a cada 3 quadros (cerca de 21 imagens) e o vídeo do hero é um vídeo nativo que só baixa quando toca; no desktop, o vídeo de drone é desenhado num canvas, com o enquadramento corrigido.","Cards de obras com profundidade de verdade: duas camadas (o fundo e o recorte do prédio) e um reflexo de luz que acompanha a inclinação do mouse.","Uma página 100% estática, em treze blocos independentes, do preloader ao rodapé."],result: "Uma landing page que se comporta como portfólio de arquitetura e manda só um terço dos quadros da animação para quem chega pelo celular."},
         stack: ['Next.js 16', 'React 19', 'TypeScript', 'Tailwind CSS v4', 'shadcn/ui', 'Canvas API'],
         shortDesc: 'Landing page de alto padrão com animações em canvas e storytelling guiado pelo scroll.',
         longDesc: 'Landing page institucional (projeto conceito) para uma construtora de alto padrão. O foco está na camada visual: animações em canvas, storytelling controlado pelo scroll e microinterações que transmitem a sofisticação de um portfólio arquitetônico.\n\nUma única página, 100% estática, composta por treze blocos independentes, do preloader ao rodapé.',
@@ -347,6 +386,8 @@ export const resumeData = {
       },
       {
         id: 14, slug: 'glow-laser', type: 'front', title: 'GLOW LASER: Landing Page para Clínica',
+        role: "Front-end", context: "Projeto conceito", period: {start: "2026-04",end: "2026-04"},
+        caseStudy: {challenge: "Clínicas de estética disputam atenção no celular: a página precisava gerar desejo e, principalmente, transformar a visita em conversa no WhatsApp.",decisions: ["Duas ferramentas de captação: um quiz de 4 perguntas que sugere protocolo e número de sessões, e uma calculadora de investimento em reais. As duas terminam no WhatsApp com o resultado.","Comparador antes e depois arrastável (mouse e toque) que mexe no clip-path direto, quadro a quadro, sem re-render do React; até o primeiro toque, ele se demonstra sozinho.","Vídeo no hero com plano B: se o navegador do celular bloqueia o autoplay, o vídeo começa no primeiro toque na tela.","Server Components por padrão; só as partes com interação (rolagem, arraste, quiz e calculadora) rodam no navegador."],result: "Todos os caminhos da página levam ao WhatsApp, e quem chega lá já sabe o protocolo, as sessões e o investimento estimados."},
         stack: ['Next.js 16', 'React', 'TypeScript', 'Tailwind CSS v4'],
         shortDesc: 'Landing page com quiz de diagnóstico e calculadora de investimento que levam ao WhatsApp.',
         longDesc: 'Landing page (projeto conceito) para clínicas de estética e depilação a laser, com identidade editorial e duas ferramentas de captação de clientes: um quiz de diagnóstico e uma calculadora de investimento. Todos os caminhos levam ao WhatsApp.\n\nServer Components por padrão e "use client" só nas partes interativas.',
@@ -356,15 +397,17 @@ export const resumeData = {
       },
       {
         id: 15, slug: 'portfolio-okuyama', type: 'front', title: 'Este Portfólio: a Montanha Okuyama',
+        role: "Design, 3D e código", context: "Projeto pessoal", period: {start: "2025-12",end: null},
         stack: ['Next.js 16', 'React 19', 'Three.js', 'React Three Fiber', 'GSAP', 'Zustand', 'Lenis', 'Playwright'],
         shortDesc: 'Portfólio imersivo em 3D: uma caminhada para dentro da montanha pelas quatro estações.',
         longDesc: 'Este site. Um portfólio imersivo em que rolar a página é adentrar a montanha (奥山, "montanha profunda"): a cena 3D passa pelas quatro estações, do sakura à neve, com torii, jardim zen e um rio de lanternas no fim.\n\nCena em Three.js com React Three Fiber e shaders próprios, animações com GSAP e testes unitários (Vitest) e e2e (Playwright) cobrindo cada seção.',
         features: ['Cena 3D com estações, névoa, floresta, jardim zen e rio desenhados com shaders próprios', 'Projetos num emakimono que se desenrola na horizontal com o scroll', 'Formulário de contato que vira uma lanterna descendo o rio', 'Imagens de compartilhamento geradas por projeto e dados estruturados de Pessoa', 'Fundo pintado em SVG para quem não tem WebGL', 'Testes unitários e e2e de cada seção'],
         repoLink: 'https://github.com/RaphaelOkuyama/portfolio', deployLink: 'https://portfolio-raphael-okuyama.vercel.app',
-        images: [], imageMobile: false, image: null
+        images: imagesIn(PORTFOLIO_SHOTS, 'pt'), imageMobile: false, image: null
       },
       { 
         id: 4, slug: 'devflix-frontend', type: 'front', group: 'devflix', part: 'Front-end', title: 'DevFlix Frontend', 
+        role: "Front-end", context: "Curso OneBitCode", period: {start: "2025-08",end: "2025-09"},
         stack: ['Next.js', 'React', 'TypeScript', 'Sass', 'Bootstrap', 'Axios', 'SWR'], 
         shortDesc: 'Front-end de uma plataforma de cursos inspirada na Netflix.',
         longDesc: 'Front-end da DevFlix, uma plataforma de cursos online com a navegação da Netflix: vitrines por categoria, episódios e progresso de cada aula. Consome a API da DevFlix com Axios e SWR.',
@@ -373,6 +416,8 @@ export const resumeData = {
       },
       { 
         id: 5, slug: 'devflix-backend', type: 'back', group: 'devflix', part: 'API', title: 'DevFlix API', 
+        role: "Back-end", context: "Curso OneBitCode", period: {start: "2025-08",end: "2025-09"},
+        endpoints: [{method: "POST",path: "/auth/register"},{method: "POST",path: "/auth/login"},{method: "GET",path: "/courses/featured",auth: true},{method: "GET",path: "/courses/search",auth: true},{method: "GET",path: "/episodes/stream",auth: true},{method: "POST",path: "/episodes/:id/watchTime",auth: true},{method: "POST",path: "/favorites",auth: true},{method: "GET",path: "/users/current/watching",auth: true}],
         stack: ['Node.js', 'Express', 'Sequelize', 'PostgreSQL', 'AdminJS', 'JWT'], 
         shortDesc: 'API da DevFlix: cursos, episódios, favoritos e login com JWT.',
         longDesc: 'API REST da DevFlix em Express, Sequelize e PostgreSQL. Guarda o catálogo de cursos e episódios, os favoritos e o progresso de cada aluno, com login por JWT e um painel administrativo em AdminJS.',
@@ -381,6 +426,7 @@ export const resumeData = {
       },
       { 
         id: 6, slug: 'player-electron', type: 'desktop', title: 'Music Player Desktop', 
+        role: "Desktop", context: "Projeto de estudo", period: {start: "2025-09",end: "2025-10"},
         stack: ['Electron', 'React', 'Next.js', 'TailwindCSS', 'Node.js', 'JavaScript'], 
         shortDesc: 'Player de música desktop com Electron, tocando arquivos locais.',
         longDesc: 'App desktop multiplataforma feito com Electron e React. Lê as músicas direto do computador, monta playlists e controla a reprodução, coisas que uma página no navegador não consegue fazer sozinha.',
@@ -389,14 +435,17 @@ export const resumeData = {
       },
       { 
         id: 7, slug: 'react-kanban', type: 'front', title: 'React Kanban', 
+        role: "Front-end", context: "Projeto de estudo", period: {start: "2025-09",end: "2025-09"},
         stack: ['React', 'TypeScript', 'Vite', 'Radix UI', 'Zod', 'json-server'], 
-        shortDesc: 'Quadro Kanban com arrastar e soltar entre colunas.',
-        longDesc: 'Quadro Kanban em React e TypeScript: as tarefas são arrastadas entre colunas, criadas e editadas em diálogos acessíveis do Radix UI e validadas com Zod antes de ir para a API (json-server).',
-        features: ['Arrastar e soltar tarefas entre colunas', 'Criar, editar e excluir tarefas (json-server)', 'Validação de formulários com Zod', 'Componentes acessíveis com Radix UI'],
-        repoLink: 'https://github.com/RaphaelOkuyama/react-kanban', deployLink: null, images: [], imageMobile: false, image: null
+        shortDesc: 'Quadro Kanban em que as tarefas avançam de coluna em coluna, com prioridade.',
+        longDesc: 'Quadro Kanban em React e TypeScript: as tarefas nascem num diálogo acessível do Radix UI, validadas com Zod, e avançam de A fazer para Em progresso e Concluídas. Os dados ficam numa API REST simulada com o json-server.',
+        features: ['Tarefas que avançam entre as colunas (A fazer, Em progresso, Concluídas)', 'Criar e excluir tarefas, com prioridade (json-server)', 'Validação de formulários com Zod', 'Componentes acessíveis com Radix UI'],
+        repoLink: 'https://github.com/RaphaelOkuyama/react-kanban', deployLink: null, images: imagesIn(KANBAN_SHOTS, 'pt'), imageMobile: false, image: null
       },
       { 
         id: 8, slug: 'api-leadmagnet', type: 'back', title: 'API Lead Magnet', 
+        role: "Back-end", context: "Curso OneBitCode", period: {start: "2025-09",end: "2025-09"},
+        endpoints: [{method: "GET",path: "/api/leads"},{method: "POST",path: "/api/leads"},{method: "PUT",path: "/api/leads/:id"},{method: "POST",path: "/api/groups/:groupId/leads"},{method: "POST",path: "/api/campaigns"},{method: "PUT",path: "/api/campaigns/:campaignId/leads/:leadId"},{method: "GET",path: "/api/status"}],
         stack: ['Node.js', 'Express', 'TypeScript', 'Prisma', 'PostgreSQL', 'Zod'], 
         shortDesc: 'API REST para organizar leads em grupos e campanhas.',
         longDesc: 'API REST em Express e TypeScript para guardar leads e organizá-los em grupos e campanhas. Toda entrada é validada com Zod e os dados ficam no PostgreSQL via Prisma.',
@@ -405,6 +454,8 @@ export const resumeData = {
       },
       { 
         id: 9, slug: 'api-library', type: 'back', title: 'Library Auth API', 
+        role: "Back-end", context: "Curso OneBitCode", period: {start: "2025-09",end: "2025-09"},
+        endpoints: [{method: "POST",path: "/auth/register"},{method: "POST",path: "/auth/login"},{method: "GET",path: "/api/books"},{method: "POST",path: "/api/books"},{method: "PUT",path: "/api/books/:id"},{method: "POST",path: "/api/loans",auth: true},{method: "POST",path: "/api/loans/:id/return"}],
         stack: ['Node.js', 'Express', 'JavaScript', 'JWT', 'Bcrypt', 'UUID'], 
         shortDesc: 'API de biblioteca com login por JWT e senhas com hash.',
         longDesc: 'Simula o back-end de uma biblioteca: livros, usuários e empréstimos. As senhas são guardadas com hash Bcrypt, nunca em texto puro, e as rotas sensíveis só respondem com um token JWT válido.',
@@ -413,11 +464,12 @@ export const resumeData = {
       },
       { 
         id: 10, slug: 'star-wars-catalog', type: 'front', title: 'Star Wars Catalog', 
+        role: "Front-end", context: "Projeto de estudo", period: {start: "2025-08",end: "2025-08"},
         stack: ['Next.js', 'React', 'TypeScript', 'CSS3'], 
         shortDesc: 'Catálogo de naves de Star Wars com dados da SWAPI.',
         longDesc: 'Catálogo em Next.js que busca as naves na API pública de Star Wars (SWAPI) e gera uma página de detalhes para cada uma, com rotas dinâmicas.',
         features: ['Dados da API pública SWAPI', 'Carregamento assíncrono dos dados', 'Navegação por categorias', 'Página de detalhes com rota dinâmica'],
-        repoLink: 'https://github.com/RaphaelOkuyama/star-wars-spaceships-catalog', deployLink: 'https://star-wars-spaceships-catalog.vercel.app', images: [], imageMobile: false, image: null
+        repoLink: 'https://github.com/RaphaelOkuyama/star-wars-spaceships-catalog', deployLink: 'https://star-wars-spaceships-catalog.vercel.app', images: imagesIn(STAR_WARS_SHOTS, 'pt'), imageMobile: false, image: null
       },
     ],
     contactPage: {
@@ -601,26 +653,30 @@ export const resumeData = {
       filterAll: "All",
       btnView: "View certificate",
       modules: "modules",
+      degreeTitle: "Education",
+      degreeExpected: "Expected",
+      degreeDone: "Completed",
+      viewer: { close: "Close", prev: "Previous certificate", next: "Next certificate", issued: "issued", image: "Certificate" },
       areas: { full: "Bootcamps & Programs", front: "Front-end", back: "Back-end & Data", base: "Fundamentals" },
     },
     // Agrupados por área; trilhas juntam módulos do mesmo curso (cada módulo tem o seu certificado)
     certificates: [
-      { id: 1, area: "full", icon: "award", name: "Bootcamp: AI Workout Management", institution: "Full Stack Club", link: "https://drive.google.com/file/d/1J4_pW5k-evrK_8dXGEmkQQbfwGxRMTEU/view?usp=sharing", kind: "bootcamp" },
-      { id: 2, area: "full", icon: "award", name: "Self Checkout Bootcamp", institution: "Full Stack Club", link: "https://drive.google.com/file/d/1P_JxOakam_Lco3Tv2MNo66Vv5jGSCI-C/view?usp=sharing", kind: "bootcamp" },
-      { id: 3, area: "full", icon: "award", name: "Fullstack JavaScript Program", institution: "OneBitCode", link: "https://drive.google.com/file/d/1gluZITKLl67R8j4oVN8QurlOF9EzMZXY/view?usp=sharing", kind: "formation" },
-      { id: 4, area: "front", icon: "react", name: "Netflix-Inspired E-Learning Project", institution: "OneBitCode", link: "https://drive.google.com/file/d/1qGPGox8LHMQvd20dD4pstXmW2VPXht_y/view?usp=sharing" },
-      { id: 5, area: "front", icon: "next.js", name: "NextJS Course", institution: "OneBitCode", link: "https://drive.google.com/file/d/1I7Jr9McP_IQKRmEDMO2j2A3WGVGGT77e/view?usp=sharing" },
-      { id: 10, area: "front", icon: "react", name: "React Course", institution: "OneBitCode", link: "https://drive.google.com/file/d/143jdZvzdgUTiT0R6_V_ZCymxu0Is5Vpt/view?usp=sharing" },
-      { id: 11, area: "front", icon: "css3", name: "Modern CSS", institution: "OneBitCode", link: "https://drive.google.com/file/d/1Q6N1BaPZFOH0ECOJie2FTGjGQDOLCUNA/view?usp=sharing" },
-      { id: 12, area: "front", icon: "bootstrap", name: "Bootstrap and SASS", institution: "OneBitCode", link: "https://drive.google.com/file/d/1_PgBGaWfj5Eqh9I80gETuPDQUgF1C5Ri/view?usp=sharing" },
-      { id: 22, area: "front", icon: "html5", name: "HTML5 Course", institution: "OneBitCode", link: "https://drive.google.com/file/d/1hCZmPBx-J6WAThP4KQ9ITreUmMPJDbdQ/view?usp=sharing" },
-      { id: 21, area: "front", icon: "css3", name: "CSS3 Course", institution: "OneBitCode", link: "https://drive.google.com/file/d/1V-AgaPuW-leQy-qSWsBmzcXM3DC7oMht/view?usp=sharing" },
-      { id: 6, area: "back", icon: "prisma", name: "SQL in NodeJS and Prisma ORM", institution: "OneBitCode", link: "https://drive.google.com/file/d/1X9EpEiLNA7LZc08FDdAZXLUlyt4jxBl7/view?usp=sharing" },
-      { id: 23, area: "back", icon: "node.js", name: "NodeJS Track", institution: "OneBitCode", modules: [{ label: "NodeJS Course", link: "https://drive.google.com/file/d/1jMbrhElEAFEOHY5ph5wtRQOCDQSz74mE/view?usp=sharing" }, { label: "NodeJS in Web Applications", link: "https://drive.google.com/file/d/1YBDj_Hz9bAF7C5Z9ZYs8T3DeVdFNsWi2/view?usp=sharing" }] },
-      { id: 9, area: "back", icon: "postgresql", name: "SQL Database Course", institution: "OneBitCode", link: "https://drive.google.com/file/d/1Wob8BdSy3bIvIGk_is74AgBpmS9hNsew/view?usp=sharing" },
-      { id: 24, area: "base", icon: "javascript", name: "JavaScript Track", institution: "OneBitCode", modules: [{ label: "I", link: "https://drive.google.com/file/d/1J3Pdmk_8pK1hA7Cd4devshM-shOnq-6w/view?usp=sharing" }, { label: "II", link: "https://drive.google.com/file/d/1Z5Jhrd9rvUtMd7tCh-VC1TYonAwHzeLC/view?usp=sharing" }, { label: "III", link: "https://drive.google.com/file/d/1l6zWN9JktClgEZkRvMaK_36A4U9mxu0A/view?usp=sharing" }, { label: "IV", link: "https://drive.google.com/file/d/1pbuD3XndCasiNHj19GhzltGbI3P7pUoN/view?usp=sharing" }, { label: "V", link: "https://drive.google.com/file/d/1fgRLJXx3DUgjQTHKmV4X17mtBmr90RhV/view?usp=sharing" }, { label: "VI", link: "https://drive.google.com/file/d/1V0vWxi38c02czMZz9MdrYeQfmySThWgq/view?usp=sharing" }] },
-      { id: 14, area: "base", icon: "typescript", name: "TypeScript Course", institution: "OneBitCode", link: "https://drive.google.com/file/d/149wMZ6nlMpb_ZZSry_ghUJFeCUi7Gblf/view?usp=sharing" },
-      { id: 13, area: "base", icon: "git", name: "Git and GitHub", institution: "OneBitCode", link: "https://drive.google.com/file/d/16SjZpNj47YW_ceOeEWhM81rBJyYWd5Vt/view?usp=sharing" },
+      { id: 1, area: "full", icon: "award", name: "Bootcamp: AI Workout Management", institution: "Full Stack Club", date: "2026-03-11", hours: 10, image: { src: "/certificates/bootcamp-fit-ai.webp", width: 1600, height: 898 }, kind: "bootcamp" },
+      { id: 2, area: "full", icon: "award", name: "Self Checkout Bootcamp", institution: "Full Stack Club", date: "2026-03-27", hours: 18, image: { src: "/certificates/bootcamp-self-checkout.webp", width: 1600, height: 898 }, kind: "bootcamp" },
+      { id: 3, area: "full", icon: "award", name: "Fullstack JavaScript Program", institution: "OneBitCode", date: "2025-10-07", hours: 200, image: { src: "/certificates/formacao-fullstack-javascript.webp", width: 1600, height: 1132 }, kind: "formation" },
+      { id: 4, area: "front", icon: "react", name: "Netflix-Inspired E-Learning Project", institution: "OneBitCode", date: "2025-10-07", hours: 56, image: { src: "/certificates/projeto-ead-netflix.webp", width: 1600, height: 1132 } },
+      { id: 5, area: "front", icon: "next.js", name: "NextJS Course", institution: "OneBitCode", date: "2025-08-15", hours: 14, image: { src: "/certificates/nextjs.webp", width: 1600, height: 1132 } },
+      { id: 10, area: "front", icon: "react", name: "React Course", institution: "OneBitCode", date: "2025-07-01", hours: 22, image: { src: "/certificates/react.webp", width: 1600, height: 1132 } },
+      { id: 11, area: "front", icon: "css3", name: "Modern CSS", institution: "OneBitCode", date: "2025-06-04", hours: 18, image: { src: "/certificates/css-moderno.webp", width: 1600, height: 1132 } },
+      { id: 12, area: "front", icon: "bootstrap", name: "Bootstrap and SASS", institution: "OneBitCode", date: "2025-06-18", hours: 10, image: { src: "/certificates/bootstrap-sass.webp", width: 1600, height: 1132 } },
+      { id: 22, area: "front", icon: "html5", name: "HTML5 Course", institution: "OneBitCode", date: "2024-12-02", hours: 12, image: { src: "/certificates/html5.webp", width: 1600, height: 1132 } },
+      { id: 21, area: "front", icon: "css3", name: "CSS3 Course", institution: "OneBitCode", date: "2024-12-02", hours: 14, image: { src: "/certificates/css3.webp", width: 1600, height: 1132 } },
+      { id: 6, area: "back", icon: "prisma", name: "SQL in NodeJS and Prisma ORM", institution: "OneBitCode", date: "2025-08-03", hours: 30, image: { src: "/certificates/sql-nodejs-prisma.webp", width: 1600, height: 1132 } },
+      { id: 23, area: "back", icon: "node.js", name: "NodeJS Track", institution: "OneBitCode", modules: [{ label: "NodeJS Course", date: "2025-07-12", hours: 10, image: { src: "/certificates/nodejs-introducao.webp", width: 1600, height: 1132 } }, { label: "NodeJS in Web Applications", date: "2025-07-21", hours: 30, image: { src: "/certificates/nodejs-aplicacoes-web.webp", width: 1600, height: 1132 } }] },
+      { id: 9, area: "back", icon: "postgresql", name: "SQL Database Course", institution: "OneBitCode", date: "2025-07-24", hours: 22, image: { src: "/certificates/banco-de-dados-sql.webp", width: 1600, height: 1132 } },
+      { id: 24, area: "base", icon: "javascript", name: "JavaScript Track", institution: "OneBitCode", modules: [{ label: "I", date: "2024-11-27", hours: 8, image: { src: "/certificates/javascript-1.webp", width: 1600, height: 1131 } }, { label: "II", date: "2024-12-17", hours: 12, image: { src: "/certificates/javascript-2.webp", width: 1600, height: 1132 } }, { label: "III", date: "2025-03-26", hours: 12, image: { src: "/certificates/javascript-3.webp", width: 1600, height: 1132 } }, { label: "IV", date: "2025-04-08", hours: 14, image: { src: "/certificates/javascript-4.webp", width: 1600, height: 1132 } }, { label: "V", date: "2025-04-16", hours: 12, image: { src: "/certificates/javascript-5.webp", width: 1600, height: 1132 } }, { label: "VI", date: "2025-05-02", hours: 12, image: { src: "/certificates/javascript-6.webp", width: 1600, height: 1132 } }] },
+      { id: 14, area: "base", icon: "typescript", name: "TypeScript Course", institution: "OneBitCode", date: "2025-05-07", hours: 10, image: { src: "/certificates/typescript.webp", width: 1600, height: 1132 } },
+      { id: 13, area: "base", icon: "git", name: "Git and GitHub", institution: "OneBitCode", date: "2025-05-18", hours: 12, image: { src: "/certificates/git-github.webp", width: 1600, height: 1132 } },
     ],
     projectsPage: { 
       title: "Projects", 
@@ -674,12 +730,19 @@ export const resumeData = {
       statusCode: "Open source",
       techCount: "Technologies",
       featureCount: "Features",
+      role: "Role",
+      context: "Context",
+      period: "Period",
+      periodNow: "present",
+      apiTitle: "API routes",
+      apiAuth: "requires login",
       scrollCue: "Scroll to read"
     },
     easterEgg: { message: "千羽鶴: a thousand paper cranes wishing you good luck!" },
     projects: [
       {
         id: 11, slug: 'imacardios', type: 'fullstack', featured: true, title: 'IMACARDIOS: Telemedicine & Remote Reports',
+        role: "Full-stack, in a pair", context: "Paid freelance", period: {start: "2025-05",end: null},
         stack: ['Next.js', 'React', 'NestJS', 'TypeScript', 'Prisma', 'PostgreSQL', 'Swagger', 'Jest', 'Playwright', 'Supertest'],
         shortDesc: 'B2B telecardiology platform in production: 42+ clinics and 2,000+ reports per month.',
         longDesc: 'Paid freelance project, built in a team of two. IMACARDIOS is a B2B telecardiology platform in production, serving healthcare networks in Brazil and Latin America, now with 42+ clinics and 2,000+ signed reports per month.\n\nI designed the isolation of sensitive data (CPF and diagnosis kept outside the main database) and tenant isolation between clinics in two layers: in the application and in Postgres rules. The NestJS + Prisma/PostgreSQL back end is documented with Swagger and covered by tests.',
@@ -707,6 +770,8 @@ export const resumeData = {
       },
       {
         id: 12, slug: 'saeko-artes', type: 'front', title: 'Saeko Artes: Amigurumi Catalog',
+        role: "Front-end", context: "Real client", period: {start: "2026-04",end: "2026-04"},
+        caseStudy: {challenge: "A crochet studio needed to sell its pieces online without running an online store: no checkout, sign-up or database to maintain, but with real shipping rates from the Brazilian postal service calculated on the spot.",decisions: ["Orders end on WhatsApp, where the studio already talks to customers: the message arrives with the pieces, quantities, shipping, postal code and total already filled in.","Real shipping quotes from the Melhor Envio API inside a Server Action: the token stays on the server and the browser only gets the cheapest option between PAC and SEDEX, with the delivery time.","Server Components by default; the 3D model in the hero arrives after the text (dynamic import, no SSR) and does not weigh on the first load.","Each of the 28 pieces has its own static page with metadata and Open Graph: a shared link already shows the photo of the piece."],result: "A live catalog with all 28 pieces, shipping calculated on the spot and orders arriving ready on WhatsApp, with no database or admin panel to maintain."},
         stack: ['Next.js 16', 'React 19', 'TypeScript', 'Tailwind CSS v4', 'React Three Fiber', 'Zustand', 'Framer Motion', 'Lenis'],
         shortDesc: 'Catalog for a crochet studio with real shipping quotes and ordering through WhatsApp.',
         longDesc: 'Landing page and digital catalog for Saeko Artes, a handmade amigurumi studio from Mairinque (Brazil). Pieces are shown in a minimalist editorial gallery, real Brazilian postal shipping is quoted through the Melhor Envio API, and orders are completed on WhatsApp, with no checkout, sign-up or database.\n\nServer Components by default, with "use client" only where there is interaction: the cart, the animations and the 3D model in the hero. Each of the 28 pieces has its own static page, with metadata and Open Graph.',
@@ -716,6 +781,8 @@ export const resumeData = {
       },
       {
         id: 1, slug: 'fit-ai-frontend', origin: 'bootcamp', type: 'front', group: 'fit-ai', part: 'App', title: 'FIT.AI: Workout App',
+        role: "Front-end", context: "Full Stack Club bootcamp", period: {start: "2026-03",end: "2026-03"},
+        caseStudy: {challenge: "Building a workout plan requires knowing a person’s weight, height, goals and routine, and a long form drives away exactly the people who are just starting.",decisions: ["Sign-up is a conversation: the AI coach (Gemini 2.5 Flash) collects the data and, at the end, builds the weekly plan.","Streaming answers, word by word, through the AI SDK: the conversation never feels stuck.","An end-to-end typed contract: the Fastify API routes are validated with Zod, the OpenAPI spec comes from them and Orval generates the front-end client. A change in the API breaks the build, not the user.","Server Components to fetch data and Server Actions for mutations; JavaScript in the browser only where there is interaction."],result: "From the first login to a workout plan in a single conversation, with the app and the API speaking the same typed contract."},
         stack: ['Next.js 16', 'React 19', 'TypeScript', 'Tailwind CSS v4', 'shadcn/ui', 'Google Gemini', 'Better Auth', 'Orval'],
         shortDesc: 'Mobile-first workout app with real-time AI coach.',
         longDesc: 'Full Stack Club bootcamp project. FIT.AI is a mobile-first workout management app with an integrated virtual personal trainer. Built with Next.js 16 and React 19, the app features a conversational AI onboarding (Google Gemini 2.5 Flash), where the coach collects your physical data and builds a personalized workout plan.',
@@ -725,6 +792,7 @@ export const resumeData = {
       },
       {
         id: 2, slug: 'fit-ai-api', origin: 'bootcamp', type: 'back', group: 'fit-ai', part: 'API', title: 'FIT.AI: API',
+        role: "Back-end", context: "Full Stack Club bootcamp", period: {start: "2026-03",end: "2026-03"},
         stack: ['Node.js', 'TypeScript', 'Fastify', 'Prisma', 'PostgreSQL', 'Google Gemini', 'Better Auth', 'Docker', 'Swagger/OpenAPI'],
         shortDesc: 'The FIT.AI API: workouts, progress and the AI coach with streamed replies.',
         longDesc: 'Full Stack Club bootcamp project. Back end of the FIT.AI platform. The API manages users, workout plans, exercises, sessions and progress statistics. The core feature is the integration with Google Gemini for generating personalized workout plans and streaming virtual coach responses.',
@@ -734,6 +802,7 @@ export const resumeData = {
       },
       {
         id: 3, slug: 'totem-autoatendimento', origin: 'bootcamp', type: 'fullstack', title: 'Self-Service Kiosk',
+        role: "Full-stack", context: "Full Stack Club bootcamp", period: {start: "2026-02",end: "2026-03"},
         stack: ['Next.js', 'TypeScript', 'Tailwind CSS', 'shadcn/ui', 'Prisma', 'PostgreSQL', 'Stripe'],
         shortDesc: 'Self-service ordering for a touchscreen kiosk, from menu to Stripe payment.',
         longDesc: 'Full Stack Club bootcamp project. A self-service system built to run on a physical touchscreen kiosk. The flow covers everything from order type selection to Stripe payment processing, through a dynamic menu with categories, product details and bag management.',
@@ -743,6 +812,8 @@ export const resumeData = {
       },
       {
         id: 13, slug: 'arca-construtora', type: 'front', title: 'ARCA: Construction Company Landing Page',
+        role: "Front-end", context: "Concept project", period: {start: "2026-04",end: "2026-04"},
+        caseStudy: {challenge: "A high-end construction company sells sophistication: the page needed the presence of an architecture portfolio, with video, animation and depth, without getting heavy on phones.",decisions: ["The building rises as you scroll: 63 frames drawn on a canvas and tied to the scroll, which only start downloading when the section gets close to the screen.","The weight adapts to the device: phones get 1 in every 3 frames (about 21 images) and the hero video is a native video that only downloads when it plays; on desktop, the drone video is drawn on a canvas with corrected framing.","Project cards with real depth: two layers (the background and the cut-out of the building) and a light glare that follows the tilt of the mouse.","A 100% static page made of thirteen independent blocks, from the preloader to the footer."],result: "A landing page that behaves like an architecture portfolio and sends only a third of the animation frames to visitors on phones."},
         stack: ['Next.js 16', 'React 19', 'TypeScript', 'Tailwind CSS v4', 'shadcn/ui', 'Canvas API'],
         shortDesc: 'High-end landing page with canvas animations and scroll-driven storytelling.',
         longDesc: 'Institutional landing page (concept project) for a high-end construction company. The focus is the visual layer: canvas animations, scroll-driven storytelling and micro-interactions that convey the sophistication of an architecture portfolio.\n\nA single, fully static page made of thirteen independent blocks, from the preloader to the footer.',
@@ -752,6 +823,8 @@ export const resumeData = {
       },
       {
         id: 14, slug: 'glow-laser', type: 'front', title: 'GLOW LASER: Clinic Landing Page',
+        role: "Front-end", context: "Concept project", period: {start: "2026-04",end: "2026-04"},
+        caseStudy: {challenge: "Beauty clinics compete for attention on phones: the page had to create desire and, above all, turn the visit into a WhatsApp conversation.",decisions: ["Two lead-capture tools: a 4-question quiz that suggests a protocol and number of sessions, and an investment calculator in reais. Both end on WhatsApp with the result.","A draggable before-and-after slider (mouse and touch) that updates the clip-path directly, frame by frame, without React re-renders; until the first touch, it demonstrates itself.","A hero video with a plan B: if the mobile browser blocks autoplay, the video starts on the first tap on the screen.","Server Components by default; only the interactive parts (scroll, drag, quiz and calculator) run in the browser."],result: "Every path on the page leads to WhatsApp, and visitors arrive there already knowing the suggested protocol, sessions and estimated investment."},
         stack: ['Next.js 16', 'React', 'TypeScript', 'Tailwind CSS v4'],
         shortDesc: 'Landing page with a diagnosis quiz and an investment calculator that lead to WhatsApp.',
         longDesc: 'Landing page (concept project) for aesthetics and laser hair removal clinics, with an editorial identity and two lead capture tools: a diagnosis quiz and an investment calculator. Every path leads to WhatsApp.\n\nServer Components by default and "use client" only in the interactive parts.',
@@ -761,15 +834,17 @@ export const resumeData = {
       },
       {
         id: 15, slug: 'portfolio-okuyama', type: 'front', title: 'This Portfolio: the Okuyama Mountain',
+        role: "Design, 3D & code", context: "Personal project", period: {start: "2025-12",end: null},
         stack: ['Next.js 16', 'React 19', 'Three.js', 'React Three Fiber', 'GSAP', 'Zustand', 'Lenis', 'Playwright'],
         shortDesc: 'Immersive 3D portfolio: a walk deep into the mountain through the four seasons.',
         longDesc: 'This site. An immersive portfolio where scrolling the page takes you deep into the mountain (奥山, "deep mountain"): the 3D scene goes through the four seasons, from sakura to snow, with a torii, a zen garden and a river of lanterns at the end.\n\nThree.js scene with React Three Fiber and custom shaders, GSAP animations, and unit (Vitest) and e2e (Playwright) tests covering every section.',
         features: ['3D scene with seasons, fog, forest, zen garden and river drawn with custom shaders', 'Projects on an emakimono scroll that unrolls horizontally', 'Contact form that turns into a lantern floating down the river', 'Per-project share images and Person structured data', 'Painted SVG backdrop for browsers without WebGL', 'Unit and e2e tests for every section'],
         repoLink: 'https://github.com/RaphaelOkuyama/portfolio', deployLink: 'https://portfolio-raphael-okuyama.vercel.app',
-        images: [], imageMobile: false, image: null
+        images: imagesIn(PORTFOLIO_SHOTS, 'en'), imageMobile: false, image: null
       },
       { 
         id: 4, slug: 'devflix-frontend', type: 'front', group: 'devflix', part: 'Front-end', title: 'DevFlix Frontend', 
+        role: "Front-end", context: "OneBitCode course", period: {start: "2025-08",end: "2025-09"},
         stack: ['Next.js', 'React', 'TypeScript', 'Sass', 'Bootstrap', 'Axios', 'SWR'], 
         shortDesc: 'Front end of a Netflix-inspired course platform.',
         longDesc: 'Front end of DevFlix, an online course platform with Netflix-style browsing: rows by category, episodes and progress for each lesson. It talks to the DevFlix API with Axios and SWR.',
@@ -778,6 +853,8 @@ export const resumeData = {
       },
       { 
         id: 5, slug: 'devflix-backend', type: 'back', group: 'devflix', part: 'API', title: 'DevFlix API', 
+        role: "Back-end", context: "OneBitCode course", period: {start: "2025-08",end: "2025-09"},
+        endpoints: [{method: "POST",path: "/auth/register"},{method: "POST",path: "/auth/login"},{method: "GET",path: "/courses/featured",auth: true},{method: "GET",path: "/courses/search",auth: true},{method: "GET",path: "/episodes/stream",auth: true},{method: "POST",path: "/episodes/:id/watchTime",auth: true},{method: "POST",path: "/favorites",auth: true},{method: "GET",path: "/users/current/watching",auth: true}],
         stack: ['Node.js', 'Express', 'Sequelize', 'PostgreSQL', 'AdminJS', 'JWT'], 
         shortDesc: 'DevFlix API: courses, episodes, favorites and JWT login.',
         longDesc: 'DevFlix REST API in Express, Sequelize and PostgreSQL. It stores the catalog of courses and episodes, favorites and each student’s progress, with JWT login and an AdminJS admin panel.',
@@ -786,6 +863,7 @@ export const resumeData = {
       },
       { 
         id: 6, slug: 'player-electron', type: 'desktop', title: 'Music Player Desktop', 
+        role: "Desktop", context: "Study project", period: {start: "2025-09",end: "2025-10"},
         stack: ['Electron', 'React', 'Next.js', 'TailwindCSS', 'Node.js', 'JavaScript'], 
         shortDesc: 'Electron desktop music player for local files.',
         longDesc: 'Cross-platform desktop app built with Electron and React. It reads music straight from the computer, builds playlists and controls playback, things a web page cannot do on its own.',
@@ -794,14 +872,17 @@ export const resumeData = {
       },
       { 
         id: 7, slug: 'react-kanban', type: 'front', title: 'React Kanban', 
+        role: "Front-end", context: "Study project", period: {start: "2025-09",end: "2025-09"},
         stack: ['React', 'TypeScript', 'Vite', 'Radix UI', 'Zod', 'json-server'], 
-        shortDesc: 'Kanban board with drag and drop between columns.',
-        longDesc: 'Kanban board in React and TypeScript: tasks are dragged between columns, created and edited in accessible Radix UI dialogs and validated with Zod before reaching the API (json-server).',
-        features: ['Drag and drop tasks between columns', 'Create, edit and delete tasks (json-server)', 'Form validation with Zod', 'Accessible Radix UI components'],
-        repoLink: 'https://github.com/RaphaelOkuyama/react-kanban', deployLink: null, images: [], imageMobile: false, image: null
+        shortDesc: 'Kanban board where tasks move from column to column, with priorities.',
+        longDesc: 'Kanban board in React and TypeScript: tasks are created in an accessible Radix UI dialog, validated with Zod, and move from To do to In progress and Done. The data lives in a mock REST API served by json-server.',
+        features: ['Tasks that move between columns (To do, In progress, Done)', 'Create and delete tasks, with priorities (json-server)', 'Form validation with Zod', 'Accessible Radix UI components'],
+        repoLink: 'https://github.com/RaphaelOkuyama/react-kanban', deployLink: null, images: imagesIn(KANBAN_SHOTS, 'en'), imageMobile: false, image: null
       },
       { 
         id: 8, slug: 'api-leadmagnet', type: 'back', title: 'API Lead Magnet', 
+        role: "Back-end", context: "OneBitCode course", period: {start: "2025-09",end: "2025-09"},
+        endpoints: [{method: "GET",path: "/api/leads"},{method: "POST",path: "/api/leads"},{method: "PUT",path: "/api/leads/:id"},{method: "POST",path: "/api/groups/:groupId/leads"},{method: "POST",path: "/api/campaigns"},{method: "PUT",path: "/api/campaigns/:campaignId/leads/:leadId"},{method: "GET",path: "/api/status"}],
         stack: ['Node.js', 'Express', 'TypeScript', 'Prisma', 'PostgreSQL', 'Zod'], 
         shortDesc: 'REST API to organize leads into groups and campaigns.',
         longDesc: 'REST API in Express and TypeScript that stores leads and organizes them into groups and campaigns. Every request is validated with Zod and the data lives in PostgreSQL through Prisma.',
@@ -810,6 +891,8 @@ export const resumeData = {
       },
       { 
         id: 9, slug: 'api-library', type: 'back', title: 'Library Auth API', 
+        role: "Back-end", context: "OneBitCode course", period: {start: "2025-09",end: "2025-09"},
+        endpoints: [{method: "POST",path: "/auth/register"},{method: "POST",path: "/auth/login"},{method: "GET",path: "/api/books"},{method: "POST",path: "/api/books"},{method: "PUT",path: "/api/books/:id"},{method: "POST",path: "/api/loans",auth: true},{method: "POST",path: "/api/loans/:id/return"}],
         stack: ['Node.js', 'Express', 'JavaScript', 'JWT', 'Bcrypt', 'UUID'], 
         shortDesc: 'Library API with JWT login and hashed passwords.',
         longDesc: 'Simulates a library back end: books, users and loans. Passwords are stored as Bcrypt hashes, never in plain text, and sensitive routes only respond to a valid JWT.',
@@ -818,11 +901,12 @@ export const resumeData = {
       },
       { 
         id: 10, slug: 'star-wars-catalog', type: 'front', title: 'Star Wars Catalog', 
+        role: "Front-end", context: "Study project", period: {start: "2025-08",end: "2025-08"},
         stack: ['Next.js', 'React', 'TypeScript', 'CSS3'], 
         shortDesc: 'Star Wars starship catalog with SWAPI data.',
         longDesc: 'Next.js catalog that fetches starships from the public Star Wars API (SWAPI) and builds a detail page for each one with dynamic routes.',
         features: ['Data from the public SWAPI', 'Asynchronous data loading', 'Category navigation', 'Detail page with a dynamic route'],
-        repoLink: 'https://github.com/RaphaelOkuyama/star-wars-spaceships-catalog', deployLink: 'https://star-wars-spaceships-catalog.vercel.app', images: [], imageMobile: false, image: null
+        repoLink: 'https://github.com/RaphaelOkuyama/star-wars-spaceships-catalog', deployLink: 'https://star-wars-spaceships-catalog.vercel.app', images: imagesIn(STAR_WARS_SHOTS, 'en'), imageMobile: false, image: null
       },
     ],
     contactPage: {

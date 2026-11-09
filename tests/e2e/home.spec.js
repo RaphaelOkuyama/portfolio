@@ -35,10 +35,11 @@ test.describe('Trilho de seções (山 人 技 作 歩 縁)', () => {
   test.describe('no celular', () => {
     test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 
-    test('o trilho some e fica só o selo da seção atual', async ({ page }) => {
+    test('o trilho some e a seção atual vira um selo na navbar', async ({ page }) => {
       await openHome(page);
       await expect(page.locator('.section-rail')).toBeHidden();
-      await expect(page.locator('.section-chip')).toContainText('Início');
+      await page.evaluate(() => document.getElementById('experience').scrollIntoView());
+      await expect(page.locator('nav:has(.nav-brand) .nav-section-chip')).toContainText('歩');
     });
   });
 });
