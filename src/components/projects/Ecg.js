@@ -19,9 +19,41 @@ export function EcgMark() {
   );
 }
 
-// Diagrama: o batimento chega às clínicas, passa pela API (camada 1: cada consulta presa à clínica)
-// e pelo Postgres (camada 2: regras por clínica no banco); CPF e diagnóstico ficam num banco à parte.
-// Desenha quando entra na tela (classe is-drawn); com movimento reduzido já aparece pronto
+// Diagrama do caso: uma faixa por clínica desce do batimento, atravessa as duas camadas (a API e
+// o Postgres) sem nunca cruzar com as outras, cada uma com a sua trava em cada camada; CPF e
+// diagnóstico saem da API para um cofre à parte. HTML (e não um SVG inteiro): o texto mantém o
+// tamanho legível no celular e as caixas crescem com ele. Desenha quando entra na tela (is-drawn);
+// com movimento reduzido já aparece pronto
+const LANES = ['A', 'B', 'C'];
+
+function Lock() {
+  return (
+    <svg className="arch-lock-icon" viewBox="0 0 16 16" aria-hidden="true">
+      <rect x="3" y="7" width="10" height="7" rx="1.6" />
+      <path d="M5.2 7V5.2a2.8 2.8 0 0 1 5.6 0V7" />
+    </svg>
+  );
+}
+
+function Layer({ layer, kind, lock }) {
+  return (
+    <div className={`arch-layer is-${kind}`}>
+      <p className="arch-layer-head">
+        <span className="arch-tag">{layer.tag}</span>
+        <strong>{layer.name}</strong>
+      </p>
+      <p className="arch-layer-desc">{layer.desc}</p>
+      <ul className="arch-locks" aria-hidden="true">
+        {LANES.map((id) => (
+          <li key={id} className={`arch-lock lane-${id.toLowerCase()}`}>
+            <Lock /> {lock} {id}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function EcgDiagram({ labels }) {
   const ref = useRef(null);
   useEffect(() => {
@@ -35,39 +67,39 @@ export function EcgDiagram({ labels }) {
       if (!entry.isIntersecting) return;
       el.classList.add('is-drawn');
       io.disconnect();
-    }, { threshold: 0.35 });
+    }, { threshold: 0.3 });
     io.observe(el);
     return () => io.disconnect();
   }, []);
 
-  const clinics = [0, 1, 2];
   return (
-    <figure ref={ref} className="ecg-diagram">
-      <svg viewBox="0 0 680 330" role="img" aria-label={labels.alt}>
-        <path className="ecg-wash" d={ecgPath(8, 46, 4)} pathLength="1" />
-        <path className="ecg-line" d={ecgPath(8, 46, 4)} pathLength="1" />
-        {clinics.map((i) => (
-          <g key={i} className="ecg-node" style={{ '--d': `${0.9 + i * 0.12}s` }}>
-            <rect x={60 + i * 200} y="96" width="160" height="44" rx="8" />
-            <text x={140 + i * 200} y="124">{labels.clinic} {String.fromCharCode(65 + i)}</text>
-            <path className="ecg-wire" d={`M${140 + i * 200} 140 L${140 + i * 200} 168`} pathLength="1" />
-          </g>
-        ))}
-        <g className="ecg-node is-layer" style={{ '--d': '1.35s' }}>
-          <rect x="60" y="168" width="560" height="44" rx="8" />
-          <text x="340" y="196">{labels.app}</text>
-          <path className="ecg-wire" d="M340 212 L340 240" pathLength="1" />
-        </g>
-        <g className="ecg-node is-layer" style={{ '--d': '1.6s' }}>
-          <rect x="60" y="240" width="380" height="44" rx="8" />
-          <text x="250" y="268">{labels.db}</text>
-        </g>
-        <g className="ecg-node is-vault" style={{ '--d': '1.85s' }}>
-          <path className="ecg-wire is-dashed" d="M560 212 L560 240" pathLength="1" />
-          <rect x="470" y="240" width="150" height="44" rx="8" />
-          <text x="545" y="268">{labels.vault}</text>
-        </g>
-      </svg>
+    <figure ref={ref} className="arch">
+      <div className="arch-board" role="img" aria-label={labels.alt}>
+        <svg className="arch-ecg" viewBox="0 0 620 70" preserveAspectRatio="none" aria-hidden="true">
+          <path className="ecg-wash" d={ecgPath(10, 46, 6)} pathLength="1" vectorEffect="non-scaling-stroke" />
+          <path className="ecg-line" d={ecgPath(10, 46, 6)} pathLength="1" vectorEffect="non-scaling-stroke" />
+        </svg>
+        <div className="arch-grid" aria-hidden="true">
+          {LANES.map((id, i) => (
+            <div key={id} className={`arch-clinic lane-${id.toLowerCase()}`} style={{ '--i': i }}>
+              <span className="arch-pulse" />
+              {labels.clinic} {id}
+            </div>
+          ))}
+          <div className="arch-lanes is-top">{LANES.map((id) => <i key={id} className={`lane-${id.toLowerCase()}`} />)}</div>
+          <Layer layer={labels.api} kind="api" lock={labels.lock} />
+          <div className="arch-lanes is-mid">
+            {LANES.map((id) => <i key={id} className={`lane-${id.toLowerCase()}`} />)}
+            <i className="is-vault" />
+          </div>
+          <Layer layer={labels.db} kind="db" lock={labels.lock} />
+          <div className="arch-vault">
+            <span className="arch-tag">{labels.vault.tag}</span>
+            <strong>{labels.vault.name}</strong>
+            <span className="arch-layer-desc">{labels.vault.desc}</span>
+          </div>
+        </div>
+      </div>
       <figcaption className="ecg-caption">{labels.caption}</figcaption>
     </figure>
   );
