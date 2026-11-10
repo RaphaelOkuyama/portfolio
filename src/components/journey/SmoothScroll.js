@@ -7,7 +7,7 @@ import { gsap, ScrollTrigger } from '../../lib/gsap';
 import { journeyStore, useJourney } from '../../store/journey';
 import { setLenis } from '../../lib/scroll';
 import { feedScrollVelocity } from '../../lib/journey/wind';
-import { SCENE_WAIT_MAX_MS, CINEMATIC_QUERY } from '../../lib/loader';
+import { SCENE_WAIT_MAX_MS } from '../../lib/loader';
 
 function nativeProgress() {
   const max = document.documentElement.scrollHeight - window.innerHeight;
@@ -23,18 +23,17 @@ export default function SmoothScroll() {
   const lite = useJourney((s) => s.lite);
   const native = reducedMotion || lite;
   const loaderDone = useJourney((s) => s.loaderDone);
-  const sceneReady = useJourney((s) => s.sceneReady);
   const pathname = usePathname();
-  // Primeira visita na home: mesmo com o ensō pulado, a página só rola com a cena pronta (rolar
-  // antes levava a câmera por uma montanha ainda compilando). Com teto, para nunca prender a página
-  const [firstVisit, setFirstVisit] = useState(false);
+  // Ensō pulado com a cena compilando: a home só rola com ela pronta (rolar antes levava a câmera
+  // por uma montanha ainda compilando). Com teto, para nunca prender a página
   const [waitOver, setWaitOver] = useState(false);
   useEffect(() => {
-    setFirstVisit(!document.documentElement.hasAttribute('data-visited') && window.matchMedia(CINEMATIC_QUERY).matches);
     const id = setTimeout(() => setWaitOver(true), SCENE_WAIT_MAX_MS);
     return () => clearTimeout(id);
   }, []);
-  const locked = !loaderDone || (firstVisit && pathname === '/' && !sceneReady && !waitOver);
+  // holdScroll: o ensō saiu com a cena (com placa de vídeo) ainda compilando (ver EnsoLoader)
+  const waiting = useJourney((s) => s.holdScroll && !s.sceneReady);
+  const locked = !loaderDone || (pathname === '/' && waiting && !waitOver);
   const lenisRef = useRef(null);
 
   useEffect(() => {

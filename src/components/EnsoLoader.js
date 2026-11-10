@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { gsap, prepareStroke, strokeOffset, useGSAP } from '../lib/gsapCore';
 import { journeyStore, useJourney } from '../store/journey';
-import { loaderProgress, isReturningVisit, markVisited, SCENE_WAIT_MAX_MS, CINEMATIC_QUERY } from '../lib/loader';
+import { loaderProgress, isReturningVisit, markVisited, waitsScene, SCENE_WAIT_MAX_MS, CINEMATIC_QUERY } from '../lib/loader';
 import { ensoShapes } from '../lib/enso';
 import { SHODO_STROKES } from '../lib/shodo';
 import Lang from './Lang';
@@ -76,15 +76,13 @@ function irisPainter(canvas) {
 export default function EnsoLoader() {
   const loaderDone = useJourney((s) => s.loaderDone);
   const introDone = useJourney((s) => s.introDone);
-  const sceneReady = useJourney((s) => s.sceneReady);
+  const waiting = useJourney((s) => s.holdScroll && !s.sceneReady);
   const pathname = usePathname();
   const rootRef = useRef(null);
-  // Primeira visita: depois do ensō, se a cena ainda não estiver pronta (a pessoa pulou), um aviso
-  // discreto explica por que a página ainda não rola (ver SmoothScroll)
-  const [firstVisit, setFirstVisit] = useState(false);
+  // Ensō pulado com a cena compilando: um aviso discreto explica por que a home ainda não rola
+  // (ver SmoothScroll)
   const [waitOver, setWaitOver] = useState(false);
   useEffect(() => {
-    setFirstVisit(!isReturningVisit() && window.matchMedia(CINEMATIC).matches);
     const id = setTimeout(() => setWaitOver(true), SCENE_WAIT_MAX_MS);
     return () => clearTimeout(id);
   }, []);
@@ -141,10 +139,21 @@ export default function EnsoLoader() {
       });
     }
 
+    // O ensō saiu (pulado) com a cena ainda compilando: a home segura a rolagem até ela ficar
+    // pronta (ver SmoothScroll). Só a que já carregava agora: a que começar depois, por um clique,
+    // não prende a navegação que esse clique pediu
+    const release = () => {
+      const now = journeyStore.getState();
+      if (!now.loaderDone && cinematic && window.location.pathname === '/') {
+        journeyStore.setState({ holdScroll: waitsScene(now) && !now.sceneReady });
+      }
+      store.setLoaderDone();
+    };
+
     const finish = () => {
       markVisited();
       stopListening();
-      store.setLoaderDone();
+      release();
       store.setIntroDone();
     };
 
@@ -161,7 +170,7 @@ export default function EnsoLoader() {
         .to(markRef.current, { scale: 2.6, opacity: 0, duration: 0.9, ease: 'power2.in' }, '<')
         .to(rootRef.current.querySelector('.enso-skip'), { opacity: 0, duration: 0.3 }, '<')
         // A página volta a rolar e a hero começa a se mexer com a íris pela metade
-        .add(() => store.setLoaderDone(), '<0.55')
+        .add(release, '<0.55')
         .fromTo(poster, { scale: 1.16, yPercent: -3 }, { scale: 1, yPercent: 0, duration: 2.6, ease: 'power2.out' }, '<-0.4')
         .to(heroLines, { filter: 'blur(0px)', y: 0, duration: 1.25, ease: 'power3.out', stagger: 0.08, clearProps: 'filter,transform' }, '<0.25');
     };
@@ -173,8 +182,11 @@ export default function EnsoLoader() {
         // performance.now() começa na navegação
         waited: performance.now(),
         // Na abertura completa espera a cena 3D compilar: abrir a íris antes travava a tela vazia
-        // no meio. No celular (sem íris) a cena começa depois, no primeiro toque: fecha no traço
-        sceneReady: !cinematic || journeyStore.getState().sceneReady,
+        // no meio. No celular (sem íris) a cena começa depois, no primeiro toque, e sem placa de
+        // vídeo (cena leve, compilada na CPU) a espera seria longa: nesses casos fecha no traço
+        // Só espera a cena que já começou: sem placa de vídeo boa ela é adiada de propósito (ver
+        // SceneCanvas) e o pôster segura a abertura
+        sceneReady: !cinematic || !waitsScene(journeyStore.getState()) || journeyStore.getState().sceneReady,
         ...(reduced ? { minMs: 0 } : {}),
       });
 
@@ -205,7 +217,7 @@ export default function EnsoLoader() {
       } else {
         timeline
           .to(rootRef.current, { opacity: 0, duration: reduced ? 0 : 0.6, ease: 'power2.inOut' })
-          .add(() => store.setLoaderDone());
+          .add(release);
         // No celular o pôster só assenta (a íris fica para telas grandes com mouse)
         if (!reduced && poster.length) timeline.fromTo(poster, { scale: 1.07 }, { scale: 1, duration: 1.8, ease: 'power2.out' }, '<-0.4');
       }
@@ -222,7 +234,7 @@ export default function EnsoLoader() {
 
   if (loaderDone && introDone) {
     // A pessoa pulou o ensō antes de a cena ficar pronta: a home não rola até ela chegar
-    if (firstVisit && pathname === '/' && !sceneReady && !waitOver) {
+    if (pathname === '/' && waiting && !waitOver) {
       return (
         <p className="enso-wait" role="status">
           <span className="enso-wait-dot" aria-hidden="true" />

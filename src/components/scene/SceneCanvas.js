@@ -123,6 +123,7 @@ export default function SceneCanvas() {
       const mode = webglMode();
       const store = journeyStore.getState();
       store.setLite(mode === 'software');
+      journeyStore.setState({ sceneStarted: true });
       // Sem escolha salva: o nível que a placa de vídeo aguenta
       if (mode !== 'none') store.setAutoQuality(autoQuality(gpuRenderer(), { mobile: coarse() }));
       setWebgl(mode !== 'none');

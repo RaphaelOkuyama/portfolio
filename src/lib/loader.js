@@ -8,6 +8,10 @@ export const LOADER_MAX_MS = 8000;
 export const SCENE_WAIT_MAX_MS = 15000;
 // Abertura completa (desktop com mouse): só nela o ensō espera a cena e a home trava a rolagem. No
 // celular a cena começa depois, no primeiro toque (ver SceneCanvas), e o pôster segura a hero
+// Vale esperar a cena: ela já começou a carregar e com placa de vídeo (a leve compila na CPU, e a
+// adiada só começa na primeira interação ou 8s depois)
+export const waitsScene = (state) => state.sceneStarted && !state.lite;
+
 export const CINEMATIC_QUERY = '(pointer: fine) and (min-width: 1024px) and (prefers-reduced-motion: no-preference)';
 
 // Marca de quem já viu o ensō: na volta o loader não aparece (lido também pelo THEME_BOOT_SCRIPT)

@@ -27,6 +27,10 @@ export function createJourneyStore() {
     route: 'journey',
     assetsProgress: 0,
     sceneReady: false,
+    // A cena 3D começou a carregar (com placa de vídeo boa, logo depois do carregamento da página)
+    sceneStarted: false,
+    // A home segura a rolagem até a cena ficar pronta (o ensō foi pulado com ela compilando)
+    holdScroll: false,
     loaderDone: false,
     // Faixa [início, fim] de cada seção em fração do progresso (medida pelo ScrollTrigger)
     sectionRanges: {},
