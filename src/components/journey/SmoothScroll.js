@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Lenis from 'lenis';
 import 'lenis/dist/lenis.css';
@@ -7,6 +7,7 @@ import { gsap, ScrollTrigger } from '../../lib/gsap';
 import { journeyStore, useJourney } from '../../store/journey';
 import { setLenis } from '../../lib/scroll';
 import { feedScrollVelocity } from '../../lib/journey/wind';
+import { SCENE_WAIT_MAX_MS, CINEMATIC_QUERY } from '../../lib/loader';
 
 function nativeProgress() {
   const max = document.documentElement.scrollHeight - window.innerHeight;
@@ -22,7 +23,18 @@ export default function SmoothScroll() {
   const lite = useJourney((s) => s.lite);
   const native = reducedMotion || lite;
   const loaderDone = useJourney((s) => s.loaderDone);
+  const sceneReady = useJourney((s) => s.sceneReady);
   const pathname = usePathname();
+  // Primeira visita na home: mesmo com o ensō pulado, a página só rola com a cena pronta (rolar
+  // antes levava a câmera por uma montanha ainda compilando). Com teto, para nunca prender a página
+  const [firstVisit, setFirstVisit] = useState(false);
+  const [waitOver, setWaitOver] = useState(false);
+  useEffect(() => {
+    setFirstVisit(!document.documentElement.hasAttribute('data-visited') && window.matchMedia(CINEMATIC_QUERY).matches);
+    const id = setTimeout(() => setWaitOver(true), SCENE_WAIT_MAX_MS);
+    return () => clearTimeout(id);
+  }, []);
+  const locked = !loaderDone || (firstVisit && pathname === '/' && !sceneReady && !waitOver);
   const lenisRef = useRef(null);
 
   useEffect(() => {
@@ -77,14 +89,14 @@ export default function SmoothScroll() {
     };
   }, []);
 
-  // Enquanto o ensō carrega, a página não rola por baixo do overlay
+  // Enquanto o ensō carrega (e, na primeira visita à home, até a cena ficar pronta), a página não rola
   useEffect(() => {
-    document.documentElement.classList.toggle('is-loading', !loaderDone);
+    document.documentElement.classList.toggle('is-loading', locked);
     const lenis = lenisRef.current;
     if (!lenis) return;
-    if (loaderDone) lenis.start();
-    else lenis.stop();
-  }, [loaderDone, reducedMotion]);
+    if (locked) lenis.stop();
+    else lenis.start();
+  }, [locked, native]);
 
   // Troca de rota: recalcula os triggers da página nova e vai ao topo,
   // ou à âncora da URL (ex.: /#contato) depois que o pin mediu a página

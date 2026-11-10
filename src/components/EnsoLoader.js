@@ -1,8 +1,9 @@
 'use client';
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { gsap, prepareStroke, strokeOffset, useGSAP } from '../lib/gsapCore';
 import { journeyStore, useJourney } from '../store/journey';
-import { loaderProgress, isReturningVisit, markVisited } from '../lib/loader';
+import { loaderProgress, isReturningVisit, markVisited, SCENE_WAIT_MAX_MS, CINEMATIC_QUERY } from '../lib/loader';
 import { ensoShapes } from '../lib/enso';
 import { SHODO_STROKES } from '../lib/shodo';
 import Lang from './Lang';
@@ -24,7 +25,7 @@ const STROKE_SECONDS = 0.07;
 
 // Abertura completa (primeira visita num desktop): o fundo de tinta cobre a página, o ensō escreve
 // 奥山 e a íris de nanquim abre sobre a montanha. O CSS usa a mesma consulta (globals.css)
-const CINEMATIC = '(pointer: fine) and (min-width: 1024px) and (prefers-reduced-motion: no-preference)';
+const CINEMATIC = CINEMATIC_QUERY;
 // O que sai do desfoque na abertura. Sem opacidade nem recorte: o nome é o LCP e já está pintado
 // (sob o fundo de tinta) desde o primeiro quadro
 const HERO_LINES = '.hero-name-jp, .hero-title, .hero-roles, .hero-summary, .hero-actions, .hero-available, .hero-okuyama';
@@ -75,7 +76,18 @@ function irisPainter(canvas) {
 export default function EnsoLoader() {
   const loaderDone = useJourney((s) => s.loaderDone);
   const introDone = useJourney((s) => s.introDone);
+  const sceneReady = useJourney((s) => s.sceneReady);
+  const pathname = usePathname();
   const rootRef = useRef(null);
+  // Primeira visita: depois do ensō, se a cena ainda não estiver pronta (a pessoa pulou), um aviso
+  // discreto explica por que a página ainda não rola (ver SmoothScroll)
+  const [firstVisit, setFirstVisit] = useState(false);
+  const [waitOver, setWaitOver] = useState(false);
+  useEffect(() => {
+    setFirstVisit(!isReturningVisit() && window.matchMedia(CINEMATIC).matches);
+    const id = setTimeout(() => setWaitOver(true), SCENE_WAIT_MAX_MS);
+    return () => clearTimeout(id);
+  }, []);
   const pathRef = useRef(null);
   const markRef = useRef(null);
   const irisRef = useRef(null);
@@ -97,6 +109,7 @@ export default function EnsoLoader() {
     let finished = false;
     let skipped = false;
     let timeline = null;
+    let breathing = null;
 
     // Clique, tecla ou rolagem pulam: o traço fecha e a abertura corre quatro vezes mais rápido
     const skip = () => {
@@ -159,13 +172,17 @@ export default function EnsoLoader() {
         elapsed: performance.now() - start,
         // performance.now() começa na navegação
         waited: performance.now(),
-        // O cenário (pôster ou desenho) já está atrás do loader: não espera a cena 3D, que começa
-        // depois (ver SceneCanvas). Fecha no tempo do traço
-        sceneReady: true,
+        // Na abertura completa espera a cena 3D compilar: abrir a íris antes travava a tela vazia
+        // no meio. No celular (sem íris) a cena começa depois, no primeiro toque: fecha no traço
+        sceneReady: !cinematic || journeyStore.getState().sceneReady,
         ...(reduced ? { minMs: 0 } : {}),
       });
 
       if (progress < 1) {
+        // Traço a 90%, esperando a cena: o ensō respira devagar, para a tela não parecer parada
+        if (progress >= 0.9 && !breathing && !reduced) {
+          breathing = gsap.to(markRef.current, { scale: 1.045, opacity: 0.82, duration: 1.1, ease: 'sine.inOut', yoyo: true, repeat: -1 });
+        }
         if (progress - shown >= MIN_STEP) {
           shown = progress;
           gsap.to(path, { strokeDashoffset: strokeOffset(path, progress), duration: 0.3, ease: 'power1.out', overwrite: true });
@@ -176,6 +193,8 @@ export default function EnsoLoader() {
       // Fecha o círculo; depois a íris (desktop) ou só o fade do overlay
       finished = true;
       gsap.ticker.remove(tick);
+      breathing?.kill();
+      if (breathing) gsap.set(markRef.current, { scale: 1, opacity: 1 });
       timeline = gsap
         .timeline({ onComplete: finish })
         .to(path, { strokeDashoffset: 0, duration: reduced ? 0 : 0.35, ease: 'power2.out', overwrite: true })
@@ -196,11 +215,23 @@ export default function EnsoLoader() {
     gsap.ticker.add(tick);
     return () => {
       gsap.ticker.remove(tick);
+      breathing?.kill();
       stopListening();
     };
   }, { dependencies: [loaderDone] });
 
-  if (loaderDone && introDone) return null;
+  if (loaderDone && introDone) {
+    // A pessoa pulou o ensō antes de a cena ficar pronta: a home não rola até ela chegar
+    if (firstVisit && pathname === '/' && !sceneReady && !waitOver) {
+      return (
+        <p className="enso-wait" role="status">
+          <span className="enso-wait-dot" aria-hidden="true" />
+          <Lang pt="Preparando a montanha…" en="Preparing the mountain…" />
+        </p>
+      );
+    }
+    return null;
+  }
 
   return (
     <div ref={rootRef} data-loader="enso" aria-hidden="true">

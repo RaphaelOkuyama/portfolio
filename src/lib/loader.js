@@ -1,6 +1,14 @@
 // Progresso do traço do ensō (0–1)
 export const LOADER_MIN_MS = 1200;
-export const LOADER_MAX_MS = 4000;
+// O ensō espera a cena 3D ficar pronta (shaders compilados): abrir antes travava a íris no meio,
+// com a tela vazia, enquanto a GPU compilava. O máximo segura aparelhos lentos
+export const LOADER_MAX_MS = 8000;
+// Primeira visita na home: a página só rola com a cena pronta (o ensō pode sair antes, num clique
+// para pular); passado este tempo, rola de qualquer jeito
+export const SCENE_WAIT_MAX_MS = 15000;
+// Abertura completa (desktop com mouse): só nela o ensō espera a cena e a home trava a rolagem. No
+// celular a cena começa depois, no primeiro toque (ver SceneCanvas), e o pôster segura a hero
+export const CINEMATIC_QUERY = '(pointer: fine) and (min-width: 1024px) and (prefers-reduced-motion: no-preference)';
 
 // Marca de quem já viu o ensō: na volta o loader não aparece (lido também pelo THEME_BOOT_SCRIPT)
 export const VISITED_KEY = 'oku-visited';
