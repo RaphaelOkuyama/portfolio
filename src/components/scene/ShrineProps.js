@@ -1,8 +1,9 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { BufferAttribute, MeshBasicMaterial, Vector3 } from 'three';
+import { AdditiveBlending, BufferAttribute, BufferGeometry, Color, MeshBasicMaterial, ShaderMaterial, Vector3 } from 'three';
 import { useFrame } from '@react-three/fiber';
 import { journeyStore, useJourney } from '../../store/journey';
+import { SCENE_ACCENTS } from '../../lib/palette';
 import { groundHeight } from '../../lib/journey/ground';
 import { useCameraMap, getCameraCurve } from './useCameraMap';
 import { useAccentMaterials } from './useAccentMaterials';
@@ -152,6 +153,68 @@ export function lanternSpots() {
   }));
 }
 
+// Halo da janela acesa: um ponto de luz macio em volta de cada 火袋, somado à cena. Sem ele a
+// lanterna era só um retângulo claro: a luz não parecia sair dela (e o bloom só existe no alto)
+const HALO = { size: 3.4, night: 0.5, day: 0, height: 1.45 };
+const haloVertex = /* glsl */ `
+  uniform float uSize;
+  uniform float uPixels;
+  uniform vec2 uFog;
+  varying float vFade;
+  void main() {
+    vec4 mv = modelViewMatrix * vec4(position, 1.0);
+    gl_Position = projectionMatrix * mv;
+    gl_PointSize = uSize * uPixels / max(-mv.z, 0.5);
+    // Some na névoa junto com a lanterna
+    vFade = 1.0 - smoothstep(uFog.x, uFog.y, -mv.z);
+  }
+`;
+const haloFragment = /* glsl */ `
+  uniform vec3 uColor;
+  uniform float uIntensity;
+  varying float vFade;
+  void main() {
+    float d = length(gl_PointCoord - 0.5) * 2.0;
+    float glow = (exp(-d * d * 9.0) * 0.75 + exp(-d * 2.6) * 0.25) * (1.0 - smoothstep(0.7, 1.0, d));
+    gl_FragColor = vec4(uColor * glow * uIntensity * vFade, 1.0);
+    #include <colorspace_fragment>
+  }
+`;
+function LanternHalos({ spots }) {
+  const geometry = useMemo(() => {
+    const g = new BufferGeometry();
+    const at = spots.flatMap(({ position: [x, y, z] }) => [x, y + HALO.height * STONE_LANTERNS.scale, z]);
+    g.setAttribute('position', new BufferAttribute(new Float32Array(at), 3));
+    return g;
+  }, [spots]);
+  const material = useMemo(() => new ShaderMaterial({
+    vertexShader: haloVertex,
+    fragmentShader: haloFragment,
+    transparent: true,
+    depthWrite: false,
+    blending: AdditiveBlending,
+    uniforms: {
+      uColor: { value: new Color() }, uIntensity: { value: 0 }, uSize: { value: HALO.size }, uPixels: { value: 1 },
+      uFog: { value: [10, 100] },
+    },
+  }), []);
+  useEffect(() => () => { geometry.dispose(); material.dispose(); }, [geometry, material]);
+  const target = useMemo(() => new Color(), []);
+  useFrame((state, delta) => {
+    const { theme } = journeyStore.getState();
+    const u = material.uniforms;
+    const k = 1 - Math.exp(-delta * 4);
+    u.uColor.value.lerp(target.set(SCENE_ACCENTS[theme].lantern), k);
+    const goal = HALO[theme] ?? 0;
+    u.uIntensity.value += (goal - u.uIntensity.value) * k;
+    // Tamanho em unidades da cena: pixels por unidade a 1 de distância
+    u.uPixels.value = state.size.height * state.viewport.dpr * 0.5 * state.camera.projectionMatrix.elements[5];
+    if (state.scene.fog) u.uFog.value = [state.scene.fog.near + 8, state.scene.fog.far * 0.8];
+    if (Math.abs(goal - u.uIntensity.value) > 0.002) state.invalidate();
+  });
+  return <points geometry={geometry} material={material} frustumCulled={false} renderOrder={2} />;
+}
+
 // 石灯籠: lanternas de pedra ladeando a trilha e marcando a ponte; a janela acende à noite
 export function StoneLanterns() {
   const materials = useAccentMaterials({
@@ -160,13 +223,19 @@ export function StoneLanterns() {
   });
   const { stone, light } = stoneLanternGeometry();
   const spots = useMemo(lanternSpots, []);
+  const lite = useJourney((s) => s.lite);
 
-  return spots.map(({ key, position, rotationY }) => (
-    <group key={key} position={position} rotation={[0, rotationY, 0]} scale={STONE_LANTERNS.scale}>
-      <mesh geometry={stone} material={materials.stone} dispose={null} />
-      <mesh geometry={light} material={materials.light} dispose={null} />
-    </group>
-  ));
+  return (
+    <>
+      {spots.map(({ key, position, rotationY }) => (
+        <group key={key} position={position} rotation={[0, rotationY, 0]} scale={STONE_LANTERNS.scale}>
+          <mesh geometry={stone} material={materials.stone} dispose={null} />
+          <mesh geometry={light} material={materials.light} dispose={null} />
+        </group>
+      ))}
+      {lite ? null : <LanternHalos spots={spots} />}
+    </>
+  );
 }
 
 // 参道 e 雁木: o caminho de pedra do começo da montanha até o pagode, e a escadaria que desce da

@@ -13,7 +13,8 @@ import { TSUKUYOMI, tsukuyomi } from '../../lib/journey/tsukuyomi';
 import { MAX_RIPPLES, RIPPLE, anyRipple, rippleAge, ripples } from '../../lib/journey/ripples';
 import RedThread from './RedThread';
 import { warm } from './warmup';
-import { LANTERNS, RIVER } from './config';
+import { LANTERNS, RIVER, TAIKOBASHI } from './config';
+import { celestialWorld } from './Celestial';
 
 // Máximo de reflexos: lanternas fixas + soltas pelo formulário
 export const MAX_REFLECTIONS = LANTERNS.count.high + LANTERNS.maxReleased;
@@ -22,8 +23,10 @@ const vertexShader = /* glsl */ `
   #include <fog_pars_vertex>
   varying vec2 vLocal;
   varying float vDepth;
+  varying vec3 vWorld;
   void main() {
     vLocal = position.xy;
+    vWorld = (modelMatrix * vec4(position, 1.0)).xyz;
     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
     vDepth = -mvPosition.z;
     gl_Position = projectionMatrix * mvPosition;
@@ -44,8 +47,16 @@ const fragmentShader = /* glsl */ `
   uniform vec3 uLanterns[${MAX_REFLECTIONS}]; // x, y no plano, intensidade
   uniform int uCount;
   uniform vec4 uRipples[${MAX_RIPPLES}]; // x, y no plano, idade (s), força (0 = vazio)
+  uniform vec3 uMoon;      // posição da lua (ou do sol) no mundo
+  uniform vec3 uMoonColor;
+  uniform float uGlitter;
+  uniform vec3 uCenter;    // centro do rio no mundo
+  uniform vec3 uBridgeRed;
+  uniform vec3 uBridgeDark;
+  uniform float uBridge;
   varying vec2 vLocal;
   varying float vDepth;
+  varying vec3 vWorld;
   ${NOISE}
 
   void main() {
@@ -60,6 +71,42 @@ const fragmentShader = /* glsl */ `
     // Linhas de brilho das marolas, como nas gravuras de água
     float lines = smoothstep(0.64, 0.72, fbm(vec2(vLocal.x * 0.22, vLocal.y * 3.2 - t * 0.6)));
     col = mix(col, uSky, lines * 0.18 * (1.0 - grazing * 0.5));
+
+    // 太鼓橋 refletida: para cada ponto da água, a altura que a câmera veria espelhada ali, no
+    // plano da ponte; se cair dentro do tabuleiro ou do corrimão, a água pega a cor dele. As
+    // marolas tremem a imagem, mais quanto mais longe da ponte
+    float bridgeY = uCenter.z - (${TAIKOBASHI.z.toFixed(1)});
+    float camY = uCenter.z - cameraPosition.z;
+    float camH = max(cameraPosition.y - uCenter.y, 0.2);
+    float span = bridgeY - camY;
+    float toBridge = bridgeY - vLocal.y;
+    if (uBridge > 0.001 && span > 1.0 && toBridge > 0.0 && toBridge < span - 0.5) {
+      float wobble = (ripple - 0.5) * 1.6 + (fine - 0.5) * 0.9;
+      float h = camH * toBridge / (span - toBridge) + wobble * (0.1 + toBridge * 0.022);
+      float camX = cameraPosition.x - uCenter.x;
+      float bx = camX + (vLocal.x - camX) * span / (span - toBridge) + wobble * 0.35;
+      float halfSpan = ${(TAIKOBASHI.span / 2).toFixed(1)};
+      float arch = ${TAIKOBASHI.rise.toFixed(1)} * (1.0 - (bx / halfSpan) * (bx / halfSpan));
+      float inside = step(abs(bx), halfSpan);
+      float deck = smoothstep(arch - 0.7, arch - 0.4, h) * (1.0 - smoothstep(arch + 0.45, arch + 0.7, h));
+      float rail = smoothstep(arch + 0.45, arch + 0.7, h) * (1.0 - smoothstep(arch + 1.7, arch + 2.0, h));
+      // Colado na câmera a imagem estica demais: some antes disso
+      float fadeOut = 1.0 - smoothstep(0.5, 0.95, toBridge / span);
+      // À noite o tabuleiro escuro some na água escura: ali quem aparece é o vermelho
+      col = mix(col, mix(uBridgeDark, uBridgeRed, 0.3), deck * inside * fadeOut * 0.42 * uBridge);
+      col = mix(col, uBridgeRed, rail * inside * fadeOut * 0.32 * uBridge);
+    }
+    // Sombra da ponte na água, logo embaixo dela
+    float underBridge = (vLocal.y - bridgeY) / 2.4;
+    col *= 1.0 - 0.3 * uBridge * exp(-underBridge * underBridge) * step(abs(vLocal.x), ${(TAIKOBASHI.span / 2).toFixed(1)});
+
+    // 月の道: o caminho da lua na água. O reflexo dela se quebra nas marolas em lascas de luz
+    // que se alinham entre a câmera e a lua (de dia, o mesmo com o sol, mais fraco)
+    vec3 wn = normalize(vec3((ripple - 0.5) * 0.55 + (fine - 0.5) * 0.3, 1.0, (fine - 0.5) * 0.6));
+    vec3 toEye = normalize(cameraPosition - vWorld);
+    float mirror = max(dot(reflect(-toEye, wn), normalize(uMoon - vWorld)), 0.0);
+    float glints = smoothstep(0.52, 0.8, fine);
+    col += uMoonColor * uGlitter * (pow(mirror, 70.0) * (0.5 + 2.0 * glints) + pow(mirror, 9.0) * 0.2);
 
     // Lanternas: poça de luz em volta + rastro vertical tremido na direção da câmera
     vec3 light = vec3(0.0);
@@ -153,6 +200,13 @@ export default function River() {
           uLanterns: reflections.lanterns,
           uCount: reflections.count,
           uRipples: { value: Array.from({ length: MAX_RIPPLES }, () => new Vector4()) },
+          uMoon: { value: celestialWorld },
+          uMoonColor: { value: new Color() },
+          uGlitter: { value: 0 },
+          uCenter: { value: new Vector3() },
+          uBridgeRed: { value: new Color() },
+          uBridgeDark: { value: new Color() },
+          uBridge: { value: 0 },
         },
       }),
     [quality, reflections],
@@ -211,6 +265,13 @@ export default function River() {
     u.uSkyReflection.value += (RIVER.skyReflection[theme] - u.uSkyReflection.value) * k;
     u.uReflection.value += (LANTERNS.reflection[theme] - u.uReflection.value) * k;
     u.uOpacity.value = opacity;
+    u.uCenter.value.set(...center);
+    u.uMoonColor.value.lerp(target.set(SCENE_ACCENTS[theme].celestial), k);
+    u.uGlitter.value += (RIVER.glitter[theme] - u.uGlitter.value) * k;
+    u.uBridgeRed.value.lerp(target.set(SCENE_ACCENTS[theme].torii), k);
+    u.uBridgeDark.value.lerp(target.set(SCENE_ACCENTS[theme].toriiTop), k);
+    // Sem GPU o reflexo da ponte fica de fora (mais contas por pixel na tela toda)
+    u.uBridge.value = journey.lite ? 0 : 1;
     if (!journey.reducedMotion) u.uTime.value += delta;
     // Anéis: do mundo para o plano do rio (x lateral, y = -z do grupo)
     const nowS = performance.now() / 1000;

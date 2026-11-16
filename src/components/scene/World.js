@@ -28,6 +28,7 @@ import KatanaSlash from './KatanaSlash';
 import ShaderWarmup, { LateWarmup } from './ShaderWarmup';
 import SceneLight from './SceneLight';
 import GroundMist from './GroundMist';
+import GroundCover from './GroundCover';
 
 // Grupos montados em sequência (ordem: o que aparece primeiro no hero vem antes)
 const STAGES = [
@@ -35,7 +36,7 @@ const STAGES = [
   [MountainLayers],
   [Ground, Kasumi, GroundMist],
   [Torii, Iwakura, Komainu, Festival],
-  [StonePaths, StoneLanterns],
+  [StonePaths, StoneLanterns, GroundCover],
   [BambooGrove, KodamaHunt, ShishiOdoshi, Bonsai],
   [Pagoda, Taikobashi, Katana, KatanaSlash],
   [Tanabata, Momiji, Snow],

@@ -11,12 +11,12 @@ import { CELESTIAL, FESTIVAL, GROUND, STONE_LANTERNS } from './config';
 // Contorno do luar e poças das lanternas por tema. À noite o contraluz frio da lua e as lanternas
 // acesas; de dia um contorno quente e fraco, lanternas apagadas
 const LOOK = {
-  night: { rim: '#b4c0ff', rimStrength: 1.5, pool: '#ffb85a', poolStrength: 1.35 },
+  night: { rim: '#b4c0ff', rimStrength: 1.5, pool: '#ffb85a', poolStrength: 1.75 },
   day: { rim: '#fff0d2', rimStrength: 0.2, pool: '#ffb85a', poolStrength: 0 },
 };
 // Altura da janela acesa (火袋) acima do chão e o alcance da luz
 const LANTERN_HEIGHT = 1.45 * STONE_LANTERNS.scale;
-const LANTERN_REACH = 6.5;
+const LANTERN_REACH = 7.5;
 
 export function lightPools() {
   const lanterns = lanternSpots().map(({ position: [x, y, z] }) => [x, y + LANTERN_HEIGHT, z, LANTERN_REACH]);

@@ -53,9 +53,11 @@ const fragmentShader = /* glsl */ `
   }
 `;
 
-const NIGHT = { zenith: 0.5, stars: 0.85, clouds: 0.8 };
+const NIGHT = { zenith: 0.5, stars: 0.85, clouds: 0.8, cool: 0 };
 // De dia o alto do céu fica um tom mais fundo que o horizonte (com 0.9 o degradê quase não existia)
-const DAY = { zenith: 0.78, stars: 0, clouds: 1 };
+// e puxa para o azul: sem isso céu, névoa e montanhas ficavam todos no mesmo rosa
+const DAY = { zenith: 0.78, stars: 0, clouds: 1, cool: 0.42 };
+const COOL = '#86abe2';
 
 // Céu pintado: esfera presa à câmera, atrás de tudo. Lê as cores já suavizadas pela Atmosphere
 export default function Sky() {
@@ -84,6 +86,7 @@ export default function Sky() {
     [quality],
   );
   const white = useMemo(() => new Color('#ffffff'), []);
+  const cool = useMemo(() => new Color(COOL), []);
   const mix = useRef(null);
 
   useEffect(() => () => geometry.dispose(), [geometry]);
@@ -104,7 +107,7 @@ export default function Sky() {
 
     const u = material.uniforms;
     u.uHorizon.value.copy(scene.fog.color);
-    u.uZenith.value.copy(background).multiplyScalar(mix.current.zenith);
+    u.uZenith.value.copy(background).multiplyScalar(mix.current.zenith).lerp(cool, mix.current.cool);
     // Nuvens: um tom acima do horizonte (luar à noite, papel de dia)
     u.uCloud.value.copy(scene.fog.color).lerp(white, 0.12 + (1 - mix.current.zenith) * 0.1);
     u.uStars.value = mix.current.stars;

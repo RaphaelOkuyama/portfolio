@@ -262,6 +262,8 @@ export const RIVER = {
   fallbackStart: 0.88,
   // Reflexo do céu cresce com a distância (ângulo rasante)
   skyReflection: { night: 0.55, day: 0.6 },
+  // Brilho do caminho da lua (à noite) e do sol (de dia) na água
+  glitter: { night: 0.6, day: 0.4 },
 };
 
 // 鯉: carpas no rio do contato, nas coordenadas do rio (x lateral, z ao longo; a câmera fica em

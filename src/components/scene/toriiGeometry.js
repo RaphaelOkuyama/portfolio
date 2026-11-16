@@ -25,6 +25,20 @@ export function bakeShade(geometry) {
   return flat;
 }
 
+// Madeira gasta: o vermelho escurece para o pé dos pilares (chuva e terra) e a tinta varia um
+// pouco de trecho em trecho, em vez de um tom chapado do chão ao topo
+function weather(geometry, height) {
+  const pos = geometry.attributes.position;
+  const colors = geometry.attributes.color;
+  for (let i = 0; i < pos.count; i += 1) {
+    const t = Math.min(1, Math.max(0, pos.getY(i) / (height * 0.42)));
+    const worn = 0.74 + 0.26 * t * t * (3 - 2 * t);
+    const patch = 0.96 + 0.08 * Math.sin(pos.getY(i) * 3.1 + pos.getX(i) * 1.7);
+    colors.setXYZ(i, colors.getX(i) * worn * patch, colors.getY(i) * worn * patch, colors.getZ(i) * worn * patch);
+  }
+  return geometry;
+}
+
 const BEVEL = { bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.05, bevelSegments: 1 };
 
 // Caixa com cantos chanfrados, centrada na origem
@@ -84,10 +98,27 @@ export function toriiGeometry(spec) {
   // Nuki: viga de baixo que atravessa os pilares e sobra dos lados
   const nukiH = pillarRadius * 0.95;
   body.push(placed(bevelBox(span + pillarRadius * 3.2, nukiH, pillarRadius * 1.05), 0, nukiY));
+  // Kusabi: as cunhas que travam o nuki, uma de cada lado de cada pilar
+  for (const x of [-half, half]) {
+    for (const side of [-1, 1]) {
+      dark.push(placed(bevelBox(pillarRadius * 0.42, nukiH * 1.5, pillarRadius * 1.35), x + side * pillarRadius * 1.28, nukiY + nukiH * 0.12));
+    }
+  }
 
   // Gakuzuka: montante central entre nuki e shimaki
   const shimakiY = kasagiY - pillarRadius * 1.3;
   body.push(placed(bevelBox(pillarRadius * 1.1, shimakiY - nukiY - nukiH * 0.5, pillarRadius * 0.85), 0, (shimakiY + nukiY) / 2));
+
+  // Daiwa: o anel no topo de cada pilar, onde o shimaki se apoia
+  for (const x of [-half, half]) {
+    dark.push(placed(new CylinderGeometry(pillarRadius * 1.2, pillarRadius * 1.08, pillarRadius * 0.42, segments), x, shimakiY - pillarRadius * 0.62));
+  }
+  // Hengaku: a placa do santuário presa ao gakuzuka, moldura escura dos dois lados do portão
+  const plaqueH = (shimakiY - nukiY - nukiH * 0.5) * 0.86;
+  for (const side of [-1, 1]) {
+    dark.push(placed(bevelBox(pillarRadius * 3.3, plaqueH, pillarRadius * 0.34), 0, (shimakiY + nukiY) / 2, side * pillarRadius * 0.6));
+    body.push(placed(bevelBox(pillarRadius * 2.5, plaqueH * 0.74, pillarRadius * 0.2), 0, (shimakiY + nukiY) / 2, side * pillarRadius * 0.74));
+  }
 
   // Shimaki (vermelho) e kasagi (topo escuro), ambos com as pontas curvadas
   const lift = pillarRadius * 1.1;
@@ -95,7 +126,7 @@ export function toriiGeometry(spec) {
   dark.push(placed(curvedBeam(span + pillarRadius * 7, pillarRadius * 1.3, pillarRadius * 2, lift), 0, kasagiY - pillarRadius * 0.55));
 
   const result = {
-    body: bakeShade(mergeGeometries(body.map((g) => (g.index ? g.toNonIndexed() : g)))),
+    body: weather(bakeShade(mergeGeometries(body.map((g) => (g.index ? g.toNonIndexed() : g)))), pillarHeight),
     dark: bakeShade(mergeGeometries(dark.map((g) => (g.index ? g.toNonIndexed() : g)))),
   };
   body.concat(dark).forEach((g) => g.dispose());

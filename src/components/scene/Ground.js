@@ -3,7 +3,7 @@ import { useEffect, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Color, PlaneGeometry, ShaderMaterial, UniformsLib, UniformsUtils, Vector3, Vector4 } from 'three';
 import { journeyStore, useJourney } from '../../store/journey';
-import { SEASONS } from '../../lib/palette';
+import { SEASONS, SCENE_ACCENTS } from '../../lib/palette';
 import { sampleSeason } from '../../lib/journey/season';
 import { groundHeight } from '../../lib/journey/ground';
 import { NOISE, noiseDefines } from './glsl';
@@ -13,6 +13,7 @@ import { lanternSpots } from './ShrineProps';
 import { besideTorii } from './toriiFrame';
 import { useCameraMap } from './useCameraMap';
 import { detailTexture } from './detailTextures';
+import { PATH_MAP, pathMapTexture } from './pathMap';
 import { autumnWeight, winterWeight } from '../../lib/journey/math';
 
 // Sombras de contato pintadas no chão (x, z, raio, força): cada peça pousa no terreno em vez de
@@ -34,6 +35,9 @@ function contactShadows(toriiT) {
     ...lanternSpots().map(({ position: [x, , z] }) => [x, z, 1.3, 0.5]),
   ].slice(0, MAX_SHADOWS);
 }
+
+// Quanto do tom do musgo entra no chão (à noite ele quase some no escuro, então entra mais)
+const MOSS = { night: 0.7, day: 0.55 };
 
 // Distância em que o chão atinge o tom "longe" (a mesma das camadas de montanha)
 const FAR_DISTANCE = 90;
@@ -64,6 +68,10 @@ const fragmentShader = /* glsl */ `
   uniform sampler2D uLeavesTex;
   uniform sampler2D uSnowTex;
   uniform vec3 uSeasonWeights; // floresta, outono, inverno
+  // Distância ao caminho de pedra (pathMap.js) e o musgo que cobre o chão longe dele
+  uniform sampler2D uPathMap;
+  uniform vec3 uMoss;
+  uniform float uMossAmount;
   varying vec3 vWorld;
   ${NOISE}
   ${SCENE_LIGHT_PARS}
@@ -77,7 +85,20 @@ const fragmentShader = /* glsl */ `
     // Relevo perto da câmera (de longe a repetição apareceria e a névoa cobre mesmo)
     vec2 tuv = vWorld.xz * 0.16;
     float tex = texture2D(uGroundTex, tuv).r * uSeasonWeights.x + texture2D(uLeavesTex, tuv * 1.2).r * uSeasonWeights.y + texture2D(uSnowTex, tuv * 0.8).r * uSeasonWeights.z;
-    ground *= 1.0 + (tex - 0.5) * 0.7 * (1.0 - smoothstep(0.15, 0.55, t));
+    float close = 1.0 - smoothstep(0.15, 0.55, t);
+    ground *= 1.0 + (tex - 0.5) * 0.7 * close;
+    // 参道: em volta das lajes o chão é terra batida com cascalho miúdo (玉砂利), de borda
+    // irregular; colada nas lajes, a sombra da fresta. Longe do caminho, manchas de musgo
+    vec2 puv = (vWorld.xz - vec2(${GROUND.center[0].toFixed(1)}, ${GROUND.center[1].toFixed(1)})) / vec2(${GROUND.size[0].toFixed(1)}, ${GROUND.size[1].toFixed(1)}) + 0.5;
+    float pd = texture2D(uPathMap, puv).r * ${PATH_MAP.reach.toFixed(1)};
+    float ragged = pd + (fbm(vWorld.xz * 0.8 + 5.0) - 0.5) * 1.3;
+    float gravel = 1.0 - smoothstep(1.9, 3.0, ragged);
+    float pebbles = vnoise(vWorld.xz * 7.0) * 0.6 + vnoise(vWorld.xz * 17.0) * 0.4;
+    float moss = smoothstep(0.42, 0.6, fbm(vWorld.xz * 0.21 + 11.0)) * (1.0 - gravel) * (1.0 - uSeasonWeights.z);
+    // No outono o musgo seca para o tom do chão; a mancha continua, mais fraca
+    ground = mix(ground, uMoss * (0.8 + 0.4 * grain), moss * uMossAmount * (1.0 - 0.6 * uSeasonWeights.y));
+    ground = mix(ground, ground * (1.18 + 0.5 * pebbles * close) + uMist * 0.05, gravel * 0.6);
+    ground *= 1.0 - 0.3 * smoothstep(0.95, 1.2, pd) * (1.0 - smoothstep(1.2, 1.75, pd));
     // Sombras de contato das peças (antes da névoa: de longe somem junto com o chão)
     float shade = 1.0;
     for (int i = 0; i < ${MAX_SHADOWS}; i++) {
@@ -90,7 +111,7 @@ const fragmentShader = /* glsl */ `
     ground = mix(ground, uMist, uMistStrength * (0.55 + 0.25 * fbm(vWorld.xz * 0.05)));
     // Poças de luz das lanternas de pedra (depois da névoa: a luz atravessa ela)
     float pool = scenePools(vWorld, vec3(0.0, 1.0, 0.0)) * uPoolStrength;
-    ground += (ground * 2.0 + 0.16) * uPoolColor * pool;
+    ground += (ground * 2.0 + 0.24) * uPoolColor * pool;
 
     vec3 col = ground;
     gl_FragColor = vec4(col, 1.0);
@@ -138,6 +159,8 @@ export default function Ground() {
             uMistStrength: { value: 0 },
             uShadows: { value: Array.from({ length: MAX_SHADOWS }, () => new Vector4(0, 0, 1, 0)) },
             uSeasonWeights: { value: new Vector3(1, 0, 0) },
+            uMoss: { value: new Color() },
+            uMossAmount: { value: 0 },
           },
           sceneLight,
         ]),
@@ -150,6 +173,7 @@ export default function Ground() {
     uGroundTex: detailTexture('ground'),
     uLeavesTex: detailTexture('leaves'),
     uSnowTex: detailTexture('snow'),
+    uPathMap: pathMapTexture(),
   });
 
   // Sombras de contato: dependem de onde o torii está (o mapa da câmera)
@@ -188,6 +212,9 @@ export default function Ground() {
     const autumn = autumnWeight(seasonMix);
     const winter = winterWeight(seasonMix);
     u.uSeasonWeights.value.set(Math.max(0, 1 - autumn - winter), autumn, winter);
+    scratch.target.set(SCENE_ACCENTS[theme].bambooLeaf);
+    u.uMoss.value.lerp(scratch.target, k);
+    u.uMossAmount.value += (MOSS[theme] - u.uMossAmount.value) * k;
 
     if (pending) frame.invalidate();
   });

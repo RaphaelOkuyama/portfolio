@@ -16,7 +16,7 @@ export const celestialWorld = new Vector3(...CELESTIAL.position);
 import { SUNSET, celestialAt, transitionPhase } from '../../lib/journey/skyTransition';
 
 // Intensidade do disco, do halo e das manchas (mares da lua) por tema
-const LOOK = { night: { disc: 1, halo: 0.42, maria: 1 }, day: { disc: 0.6, halo: 0.3, maria: 0 } };
+const LOOK = { night: { disc: 1, halo: 0.42, maria: 1 }, day: { disc: 0.9, halo: 0.5, maria: 0 } };
 
 // Tamanho do quad em raios do disco: sobra espaço para o halo se apagar
 const EXTENT = 7;
