@@ -5623,3 +5623,124 @@ html.dx-frozen :is([data-cursor], [data-cursor-trail], .water-gl, .water-shadow)
   font-size: 0.82rem;
   color: var(--text-primary);
 }
+
+
+/* --- Auditoria nov/2026: legibilidade, páginas internas, toque e teclado --- */
+
+/* Barra: só o desfoque não segurava o texto sobre um print claro (capa da Saeko, papel do ECG).
+   Um véu da cor do fundo por baixo do vidro; no topo da home ele quase não aparece */
+.site-nav { background: color-mix(in srgb, var(--bg-color) 68%, transparent); }
+
+/* Primeiro Tab: pula a barra e vai ao conteúdo. Fora da tela até receber o foco */
+.skip-link {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 200;
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
+  text-decoration: none;
+  translate: 0 -200%;
+}
+.skip-link:focus-visible { translate: 0 0; }
+main:focus { outline: none; }
+
+/* Pôster das páginas internas (a câmera parada): o mesmo quadro que a cena 3D mostra ao entrar */
+[data-theme='night'] .scene-poster[data-poster='frozen'] .scene-poster-frame {
+  background-image: image-set(url('/poster/frozen-night-wide.avif') type('image/avif'), url('/poster/frozen-night-wide.webp') type('image/webp'));
+}
+[data-theme='day'] .scene-poster[data-poster='frozen'] .scene-poster-frame {
+  background-image: image-set(url('/poster/frozen-day-wide.avif') type('image/avif'), url('/poster/frozen-day-wide.webp') type('image/webp'));
+}
+@media (max-aspect-ratio: 1/1) {
+  [data-theme='night'] .scene-poster[data-poster='frozen'] .scene-poster-frame {
+    background-image: image-set(url('/poster/frozen-night-tall.avif') type('image/avif'), url('/poster/frozen-night-tall.webp') type('image/webp'));
+  }
+  [data-theme='day'] .scene-poster[data-poster='frozen'] .scene-poster-frame {
+    background-image: image-set(url('/poster/frozen-day-tall.avif') type('image/avif'), url('/poster/frozen-day-tall.webp') type('image/webp'));
+  }
+}
+
+/* Leitura sobre a cena: o lavado de nanquim cobria só o miolo do texto, e as pontas das linhas
+   cruzavam lanternas e tiras do Tanabata. O miolo opaco agora vai até a borda do bloco */
+.about-copy::before {
+  inset: -10% -10% -12% -14%;
+  background: radial-gradient(ellipse 72% 70% at 48% 48%, color-mix(in srgb, var(--bg-color) 96%, transparent) 0%, color-mix(in srgb, var(--bg-color) 90%, transparent) 62%, transparent 90%);
+}
+.about-text { color: color-mix(in srgb, var(--text-primary) 78%, var(--text-secondary)); }
+.exp-card {
+  background: radial-gradient(ellipse 82% 80% at 44% 50%, color-mix(in srgb, var(--bg-color) 95%, transparent) 0%, color-mix(in srgb, var(--bg-color) 88%, transparent) 66%, transparent 96%);
+}
+.is-education .exp-card {
+  background: radial-gradient(ellipse 82% 80% at 44% 50%, color-mix(in srgb, var(--bg-color) 92%, transparent) 0%, color-mix(in srgb, var(--bg-color) 78%, transparent) 66%, transparent 96%);
+}
+@media (max-width: 767px) {
+  /* Celular: o texto ocupa a largura toda, então o véu é uma faixa de ponta a ponta */
+  .about-copy::before {
+    inset: -28px -20px;
+    background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--bg-color) 92%, transparent) 28px, color-mix(in srgb, var(--bg-color) 92%, transparent) calc(100% - 28px), transparent);
+  }
+}
+
+/* Hero: corpo maior e os números do resumo (42+, 2.000+) em destaque */
+.hero-roles { font-size: clamp(1rem, 1.4vw, 1.2rem); }
+.hero-summary {
+  max-width: 40ch;
+  font-size: clamp(1.06rem, 1.55vw, 1.32rem);
+  line-height: 1.55;
+}
+.hero-figure {
+  font-family: var(--font-display), var(--font-jp), 'Yu Mincho', serif;
+  font-size: 1.14em;
+  font-weight: 800;
+  color: var(--accent);
+  white-space: nowrap;
+}
+[data-theme='day'] .hero-available { color: color-mix(in srgb, var(--text-primary) 80%, var(--text-secondary)); }
+
+/* Emaki: a imagem do projeto maior (só onde a tela tem altura para o rolo fixo continuar cabendo) */
+@media (min-height: 820px) {
+  .emaki-media { height: clamp(150px, 22vh, 210px); }
+}
+
+/* Caso: o numeral gigante só em contorno lia como linhas soltas. Ganha um preenchimento leve */
+.case-kanji {
+  color: color-mix(in srgb, var(--accent) 7%, transparent);
+  -webkit-text-stroke: 1px color-mix(in srgb, var(--accent) 38%, transparent);
+}
+/* Faixa da stack: menor (a stack legível vem logo abaixo, em camadas) */
+.case-marquee { padding: clamp(12px, 1.8vw, 20px) 0; }
+.case-marquee-track span { font-size: clamp(1.6rem, 3.4vw, 3rem); }
+
+/* Tanabata à noite: as tiras em cor cheia brigavam com a paleta noturna */
+[data-theme='night'] .zen-stone:not([data-active='true']) .zen-stone-face { filter: saturate(0.74) brightness(0.9); }
+
+/* Certificados: os bootcamps e a formação em destaque; nos cursos, o botão fica só com o ícone
+   (22 "Ver certificado" iguais em coluna; o nome completo segue no aria-label) */
+.cert-group[data-area='full'] { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
+.cert-group[data-area='full'] .cert-name { font-size: 1.12rem; }
+.cert-group:not([data-area='full']) .cert-view-text { display: none; }
+.cert-group:not([data-area='full']) .cert-view { padding: 8px; }
+
+/* Bastidores: prints da cena em cada parte */
+.making-shot { margin: 0 0 18px; }
+.making-shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.making-shot figcaption { margin-top: 8px; font-size: 0.86rem; color: var(--text-secondary); }
+
+/* Alvos de toque: pelo menos 44px onde o dedo é o ponteiro */
+.mobile-menu-btn { min-width: 44px; min-height: 44px; align-items: center; justify-content: center; }
+.mobile-menu-social { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; }
+@media (pointer: coarse) {
+  .about-contact, .exp-link, .case-prev, .making-back, .contact-again { min-height: 44px; }
+  .cert-view { min-width: 44px; min-height: 44px; }
+  .cert-modules a { min-width: 44px; min-height: 36px; }
+}

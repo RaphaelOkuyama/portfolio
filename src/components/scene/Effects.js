@@ -57,7 +57,7 @@ export default function Effects() {
   return (
     <>
       {rays ? <RaysSource onReady={setSun} /> : null}
-      <EffectComposer multisampling={0}>
+      <EffectComposer multisampling={0} autoClear={false}>
         {rays ? <Bloom mipmapBlur luminanceThreshold={1} luminanceSmoothing={0.2} intensity={1.1} /> : null}
         {rays && sun ? (
           <GodRays sun={sun} samples={48} density={0.94} decay={0.93} weight={0.42} exposure={0.32} clampMax={1} blur />

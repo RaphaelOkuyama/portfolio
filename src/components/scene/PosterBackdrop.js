@@ -4,9 +4,10 @@
 // fundo de CSS só baixa a variação que vale para a tela, e o tema já está no <html> desde o
 // primeiro paint (THEME_BOOT_SCRIPT). O quadro interno (.scene-poster-frame) é o que a abertura
 // aproxima, como a câmera descendo até o torii
-export default function PosterBackdrop() {
+// `variant`: 'hero' (home no topo) ou 'frozen' (páginas internas: a câmera parada num ponto só)
+export default function PosterBackdrop({ variant = 'hero' }) {
   return (
-    <div className="scene-poster" data-poster="">
+    <div className="scene-poster" data-poster={variant}>
       <div className="scene-poster-frame" />
     </div>
   );

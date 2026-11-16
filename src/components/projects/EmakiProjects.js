@@ -286,7 +286,7 @@ export default function EmakiProjects({ projects, labels }) {
                       {project.origin === 'bootcamp' ? <span className="emaki-origin">{labels.bootcampLabel}</span> : null}
                       <p className="emaki-desc">{project.shortDesc}</p>
                       <ul className="emaki-stack">
-                        {project.stack.slice(0, 4).map((tech) => (
+                        {project.stack.slice(0, 3).map((tech) => (
                           <li key={tech}>{tech}</li>
                         ))}
                       </ul>

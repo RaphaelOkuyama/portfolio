@@ -4,11 +4,16 @@ import { normalizeTheme } from '../../src/lib/palette';
 import { VISITED_KEY } from '../../src/lib/loader';
 
 // Executa o script com document/localStorage falsos e devolve o data-theme aplicado
-function boot(stored, { blocked = false, visited = null, lang = null, browser = 'pt-BR' } = {}) {
+function boot(stored, { blocked = false, visited = null, lang = null, browser = 'pt-BR', search = '' } = {}) {
   const attrs = {};
   const documentElement = { setAttribute: (k, v) => { attrs[k] = v; } };
   const document = { documentElement };
+  const saved = {};
   const localStorage = {
+    setItem: (key, value) => {
+      if (blocked) throw new Error('storage bloqueado');
+      saved[key] = value;
+    },
     getItem: (key) => {
       if (blocked) throw new Error('storage bloqueado');
       if (key === VISITED_KEY) return visited;
@@ -17,8 +22,8 @@ function boot(stored, { blocked = false, visited = null, lang = null, browser = 
     },
   };
   const navigator = { languages: [browser], language: browser };
-  new Function('document', 'localStorage', 'navigator', THEME_BOOT_SCRIPT)(document, localStorage, navigator);
-  return { ...attrs, lang: documentElement.lang };
+  new Function('document', 'localStorage', 'navigator', 'location', THEME_BOOT_SCRIPT)(document, localStorage, navigator, { search });
+  return { ...attrs, lang: documentElement.lang, saved };
 }
 
 const run = (stored, options) => boot(stored, options)['data-theme'];
@@ -48,6 +53,18 @@ describe('THEME_BOOT_SCRIPT', () => {
     const attrs = boot(null, options);
     expect(attrs['data-language']).toBe(language);
     expect(attrs.lang).toBe(htmlLang);
+  });
+
+  it.each([
+    [{ browser: 'pt-BR', search: '?lang=en' }, 'en'],
+    [{ browser: 'en-US', lang: 'en', search: '?perf&lang=pt' }, 'pt'],
+    [{ browser: 'pt-BR', search: '?lang=fr' }, 'pt'],
+  ])('idioma pelo endereço: %o → %s', (options, language) => {
+    expect(boot(null, options)['data-language']).toBe(language);
+  });
+
+  it('o idioma do endereço fica salvo', () => {
+    expect(boot(null, { search: '?lang=en' }).saved[LANG_KEY]).toBe('en');
   });
 
   it('storage bloqueado: português', () => {

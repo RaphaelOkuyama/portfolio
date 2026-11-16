@@ -107,7 +107,11 @@ export default function SceneCanvas() {
   useEffect(() => {
     if (window.scrollY > window.innerHeight * 0.6) setScrolledAtLoad(true);
   }, []);
-  const poster = pathname === '/' && !scrolledAtLoad;
+  // Páginas internas: a câmera fica parada num ponto só, e o pôster é o quadro dela. No 404 a cena
+  // fecha a névoa (outra imagem): ali fica o desenho em SVG
+  const lost = useJourney((s) => s.lost);
+  const homePoster = scrolledAtLoad ? null : 'hero';
+  const poster = pathname === '/' ? homePoster : (lost ? null : 'frozen');
   // Depois do fade da cena, o fundo estático sai do DOM (não fica pintando por baixo)
   const [backdropGone, setBackdropGone] = useState(false);
   // Sem GPU: a cena pintada assume quando a primeira camada fica pronta, e o SVG sai
@@ -155,7 +159,7 @@ export default function SceneCanvas() {
   return (
     <div aria-hidden="true" data-scene="webgl" data-lite={lite ? '' : undefined} style={wrapperStyle}>
       {/* Até a cena 3D chegar: o pôster (o mesmo quadro da cena) ou o cenário pintado; some depois do fade */}
-      {backdropGone ? null : poster ? <PosterBackdrop /> : <StaticBackdrop theme={theme} mix={mix} />}
+      {backdropGone ? null : poster ? <PosterBackdrop variant={poster} /> : <StaticBackdrop theme={theme} mix={mix} />}
       {webgl && quality && start ? (
         <SceneErrorBoundary onError={() => setFailed(true)}>
           {/* A cena entra num fade por cima do fundo estático, sem estalo */}

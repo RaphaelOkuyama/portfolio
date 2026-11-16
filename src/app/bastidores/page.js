@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowLeft } from 'lucide-react';
 import Lang from '../../components/Lang';
 
@@ -11,6 +12,7 @@ export const metadata = {
 const SECTIONS = [
   {
     kanji: '山',
+    shot: { file: 'site-1', pt: 'A hero à noite: o torii na entrada da montanha', en: 'The hero at night: the torii at the foot of the mountain' },
     title: { pt: 'O conceito', en: 'The concept' },
     body: {
       pt: [
@@ -25,6 +27,7 @@ const SECTIONS = [
   },
   {
     kanji: '景',
+    shot: { file: 'site-3', pt: 'Os bambus de Tanabata da seção de tecnologias', en: 'The Tanabata bamboos of the stack section' },
     title: { pt: 'A cena', en: 'The scene' },
     body: {
       pt: [
@@ -41,6 +44,7 @@ const SECTIONS = [
   },
   {
     kanji: '速',
+    shot: { file: 'site-4', pt: 'O emakimono dos projetos, que se desenrola com a rolagem', en: 'The projects emakimono, which unrolls as you scroll' },
     title: { pt: 'Performance', en: 'Performance' },
     body: {
       pt: [
@@ -55,6 +59,7 @@ const SECTIONS = [
   },
   {
     kanji: '守',
+    shot: { file: 'site-5', pt: 'O contato à beira do rio de lanternas', en: 'The contact section by the lantern river' },
     title: { pt: 'Para todo mundo', en: 'For everyone' },
     body: {
       pt: [
@@ -97,6 +102,17 @@ export default function Bastidores() {
             <span className="making-section-kanji font-jp" lang="ja" aria-hidden="true">{section.kanji}</span>
             <Lang pt={section.title.pt} en={section.title.en} />
           </h2>
+          {/* Print da própria cena (os mesmos da página do projeto), com legenda nos dois idiomas */}
+          <figure className="making-shot">
+            <Image
+              src={`/projects/portfolio-okuyama/${section.shot.file}.jpg`}
+              alt=""
+              width={1600}
+              height={800}
+              sizes="(max-width: 800px) 92vw, 760px"
+            />
+            <figcaption><Lang pt={section.shot.pt} en={section.shot.en} /></figcaption>
+          </figure>
           <div className="making-body">
             {section.body.pt.map((text, i) => (
               <p key={text.slice(0, 24)}><Lang pt={text} en={section.body.en[i]} /></p>

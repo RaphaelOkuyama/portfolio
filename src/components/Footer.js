@@ -9,11 +9,12 @@ import { createClickCounter, TSURU_EVENT } from '../lib/easterEgg';
 import { cityTime, scrollToTop } from '../lib/scroll';
 import { microseasonFor } from '../lib/microseasons';
 import { useEdgeGuard } from '../lib/edgeGuard';
+import { SOCIAL as SITE_SOCIAL } from '../lib/site';
 
 const SOCIAL = [
-  { label: 'GitHub', href: 'https://github.com/RaphaelOkuyama' },
-  { label: 'LinkedIn', href: 'https://www.linkedin.com/in/raphael-okuyama/' },
-  { label: 'E-mail', href: 'mailto:raphaelokuyama123@gmail.com' },
+  { label: 'GitHub', href: SITE_SOCIAL.github },
+  { label: 'LinkedIn', href: SITE_SOCIAL.linkedin },
+  { label: 'E-mail', href: `mailto:${SITE_SOCIAL.email}` },
 ];
 
 const CLOCKS = [

@@ -10,6 +10,7 @@ import Sensu, { sensuStep } from './Sensu';
 import QualityPicker from './QualityPicker';
 import SoundToggle from './SoundToggle';
 import SectionChip from './journey/SectionChip';
+import { SOCIAL } from '../lib/site';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -77,7 +78,7 @@ export default function Navbar() {
 
   return (
     <div ref={navRef} style={{ display: 'contents' }}>
-      <nav style={{ position: 'fixed', top: 0, width: '100%', zIndex: 50, padding: '20px 0', backdropFilter: 'blur(10px)', borderBottom: '1px solid var(--border)' }}>
+      <nav className="site-nav" style={{ position: 'fixed', top: 0, width: '100%', zIndex: 50, padding: '20px 0', backdropFilter: 'blur(10px)', borderBottom: '1px solid var(--border)' }}>
         <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           
           <Link href="/" className="nav-brand" onClick={() => setIsMobileMenuOpen(false)} style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--text-primary)', zIndex: 51 }}>
@@ -101,10 +102,10 @@ export default function Navbar() {
               ))}
             </div>
             <div style={{ display: 'flex', gap: '15px', paddingLeft: '20px', borderLeft: '1px solid var(--border)' }}>
-              <button onClick={toggleLanguage} style={btnStyle} aria-label={languageLabel}><Globe size={20} /><span style={{fontSize: '0.8rem', fontWeight: 'bold'}}>{language.toUpperCase()}</span></button>
+              <button onClick={toggleLanguage} style={btnStyle} aria-label={languageLabel} title={languageLabel}><Globe size={20} /><span style={{fontSize: '0.8rem', fontWeight: 'bold'}}>{language.toUpperCase()}</span></button>
               <SoundToggle />
               <QualityPicker />
-              <button onClick={toggleTheme} style={btnStyle} aria-label={themeLabel}><span className="theme-icon" style={{ display: 'inline-flex' }}>{theme === 'night' ? <Sun size={20} /> : <Moon size={20} />}</span></button>
+              <button onClick={toggleTheme} style={btnStyle} aria-label={themeLabel} title={themeLabel}><span className="theme-icon" style={{ display: 'inline-flex' }}>{theme === 'night' ? <Sun size={20} /> : <Moon size={20} />}</span></button>
             </div>
           </div>
 
@@ -143,14 +144,14 @@ export default function Navbar() {
             <div className="mobile-menu-extras">
             {/* Ícones Sociais no Mobile (NOVO) */}
             <div style={{ display: 'flex', gap: '25px', marginTop: '10px' }}>
-              <a href="https://github.com/RaphaelOkuyama" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-secondary)' }}>
-                <Github size={28} />
+              <a href={SOCIAL.github} target="_blank" rel="noopener noreferrer" aria-label="GitHub" className="mobile-menu-social" style={{ color: 'var(--text-secondary)' }}>
+                <Github size={28} aria-hidden="true" />
               </a>
-              <a href="https://www.linkedin.com/in/raphael-okuyama/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-secondary)' }}>
-                <Linkedin size={28} />
+              <a href={SOCIAL.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="mobile-menu-social" style={{ color: 'var(--text-secondary)' }}>
+                <Linkedin size={28} aria-hidden="true" />
               </a>
-              <a href="mailto:raphaelokuyama123@gmail.com" style={{ color: 'var(--text-secondary)' }}>
-                <Mail size={28} />
+              <a href={`mailto:${SOCIAL.email}`} aria-label="Email" className="mobile-menu-social" style={{ color: 'var(--text-secondary)' }}>
+                <Mail size={28} aria-hidden="true" />
               </a>
             </div>
 

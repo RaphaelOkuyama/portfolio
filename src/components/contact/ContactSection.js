@@ -11,9 +11,10 @@ import { lanternLabel } from '../../lib/journey/lanterns';
 import { resumeData } from '../../data/resume';
 import Meishi from './Meishi';
 import StationSign from '../journey/StationSign';
+import { SOCIAL } from '../../lib/site';
 
 const EMPTY = { name: '', email: '', message: '' };
-const EMAIL = 'raphaelokuyama123@gmail.com';
+const EMAIL = SOCIAL.email;
 const FIELDS = ['name', 'email', 'message'];
 
 function prefersReducedMotion() {
@@ -269,13 +270,13 @@ export default function ContactSection({ contact }) {
               </button>
             </li>
             <li className="contact-link-row">
-              <a href="https://www.linkedin.com/in/raphael-okuyama/" target="_blank" rel="noopener noreferrer" className="contact-link hover-nudge">
+              <a href={SOCIAL.linkedin} target="_blank" rel="noopener noreferrer" className="contact-link hover-nudge">
                 <Linkedin size={20} aria-hidden="true" />
                 <span><strong>LinkedIn</strong><span>/in/raphael-okuyama</span></span>
               </a>
             </li>
             <li className="contact-link-row">
-              <a href="https://github.com/RaphaelOkuyama" target="_blank" rel="noopener noreferrer" className="contact-link hover-nudge">
+              <a href={SOCIAL.github} target="_blank" rel="noopener noreferrer" className="contact-link hover-nudge">
                 <Github size={20} aria-hidden="true" />
                 <span><strong>GitHub</strong><span>/RaphaelOkuyama</span></span>
               </a>

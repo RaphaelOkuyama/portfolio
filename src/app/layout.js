@@ -18,6 +18,7 @@ import SocialSidebar from '../components/SocialSidebar';
 import SmoothScroll from '../components/journey/SmoothScroll';
 import Suminagashi from '../components/Suminagashi';
 import Senbazuru from '../components/Senbazuru';
+import Lang from '../components/Lang';
 
 // Texto em Zen Kaku Gothic New (desenho japonês que conversa com o mincho dos títulos); títulos em
 // Shippori Mincho. Todas em subconjunto, geradas por scripts/subset-font.mjs (npm run font)
@@ -71,6 +72,8 @@ export const metadata = {
   metadataBase: new URL(SITE_URL),
   title: { default: 'Raphael Okuyama | Desenvolvedor Full-Stack', template: '%s · Raphael Okuyama' },
   description: DESCRIPTION,
+  // O inglês é o mesmo endereço com ?lang=en (lido pelo script do <head>, ver lib/themeBoot)
+  alternates: { languages: { 'pt-BR': '/', en: '/?lang=en', 'x-default': '/' } },
   authors: [{ name: 'Raphael Nobuyuki Haga Okuyama' }],
   openGraph: {
     type: 'website',
@@ -104,6 +107,8 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         <SettingsProvider>
+          {/* Teclado e leitor de tela: o primeiro Tab pula a barra e vai ao conteúdo */}
+          <a href="#conteudo" className="skip-link"><Lang pt="Pular para o conteúdo" en="Skip to content" /></a>
           <JourneySync />
           <SmoothScroll />
           {/* Cada <Suspense> é hidratado à parte (hidratação seletiva do React): o essencial (barra,
@@ -120,7 +125,7 @@ export default function RootLayout({ children }) {
 
           <Suspense fallback={null}><SocialSidebar /></Suspense>
 
-          <main style={{ paddingTop: '80px', minHeight: '100vh' }}>
+          <main id="conteudo" tabIndex={-1} style={{ paddingTop: '80px', minHeight: '100vh' }}>
             {children}
             <Analytics />
           </main>

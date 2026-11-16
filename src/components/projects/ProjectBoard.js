@@ -13,14 +13,17 @@ export default function ProjectBoard({ filters, all, filterLabel, total, childre
   useGSAP(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const cards = gsap.utils.toArray(`[data-lang="${language}"] .pj-card`, rootRef.current)
-      .filter((c) => c.offsetParent !== null);
+      .filter((c) => c.offsetParent !== null)
+      // Os que já estão na tela ficam como vieram do servidor: escondê-los para animar a entrada
+      // deixava a página aberta com os cartões apagados
+      .filter((c) => c.getBoundingClientRect().top > window.innerHeight * 0.92);
     // Só opacidade (não autoAlpha): com visibility: hidden os leitores de tela pulariam os cartões
     // que ainda não entraram na tela
     gsap.set(cards, { opacity: 0, y: 24 });
     ScrollTrigger.batch(cards, {
       start: 'top 92%',
       once: true,
-      onEnter: (batch) => gsap.to(batch, { opacity: 1, y: 0, duration: 0.55, stagger: 0.07, ease: 'power3.out' }),
+      onEnter: (batch) => gsap.to(batch, { opacity: 1, y: 0, duration: 0.45, stagger: 0.05, ease: 'power3.out' }),
     });
     ScrollTrigger.refresh();
   }, { scope: rootRef, dependencies: [active, language], revertOnUpdate: true });

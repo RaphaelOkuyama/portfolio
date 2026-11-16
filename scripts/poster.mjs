@@ -18,11 +18,16 @@ const SIZES = [
   { name: 'tall', width: 640, height: 1203 },
 ];
 const THEMES = ['night', 'day'];
+// Home no topo (hero) e páginas internas (a câmera parada num ponto só, a mesma em todas elas)
+const SHOTS = [
+  { prefix: '', path: '/' },
+  { prefix: 'frozen-', path: '/bastidores' },
+];
 
 mkdirSync(OUT, { recursive: true });
 const browser = await chromium.launch({ args: ['--enable-gpu', '--ignore-gpu-blocklist', '--use-angle=d3d11'] });
 
-for (const theme of THEMES) {
+for (const shot of SHOTS) for (const theme of THEMES) {
   for (const size of SIZES) {
     const context = await browser.newContext({ viewport: { width: size.width, height: size.height }, deviceScaleFactor: 1 });
     await context.addInitScript((t) => {
@@ -33,7 +38,7 @@ for (const theme of THEMES) {
     }, theme);
     const page = await context.newPage();
     page.on('pageerror', (e) => console.log('pageerror', e.message));
-    await page.goto(`${BASE}/?perf&3d`, { waitUntil: 'load' });
+    await page.goto(`${BASE}${shot.path}?perf&3d`, { waitUntil: 'load' });
     // A cena começa sozinha numa GPU boa; espera ela aparecer por cima do pôster
     await page.waitForFunction(() => {
       const layer = document.querySelector('[data-scene="webgl"] > div[style*="opacity"]');
@@ -50,7 +55,7 @@ for (const theme of THEMES) {
     await page.addStyleTag({ content: 'body * { visibility: hidden !important; } [data-scene], [data-scene] * { visibility: visible !important; } [data-scene] .washi { visibility: hidden !important; }' });
     await page.waitForTimeout(1500);
     const png = await page.locator('[data-scene="webgl"] canvas').first().screenshot();
-    const base = `${OUT}/${theme}-${size.name}`;
+    const base = `${OUT}/${shot.prefix}${theme}-${size.name}`;
     await sharp(png).avif({ quality: 52, effort: 6 }).toFile(`${base}.avif`);
     await sharp(png).webp({ quality: 74 }).toFile(`${base}.webp`);
     const { statSync } = await import('node:fs');

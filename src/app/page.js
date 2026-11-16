@@ -13,6 +13,13 @@ const NAME_PARTS = profile.name.split(' ');
 const FAMILY_NAME = NAME_PARTS.at(-1);
 const GIVEN_NAMES = NAME_PARTS.slice(0, -1).join(' ');
 
+// Os números do resumo (42+, 2.000+) em destaque: são a prova, e sumiam no meio da frase
+function withFigures(text) {
+  return text.split(/(\d[\d.,]*\+)/).map((part, i) => (
+    i % 2 ? <strong key={i} className="hero-figure">{part}</strong> : part
+  ));
+}
+
 // Server Component: o hero (LCP) e os ícones saem prontos do servidor, sem hidratação;
 // só o movimento (HeroMotion) e as seções animadas (HomeSections) rodam no cliente
 export default function Home() {
@@ -65,7 +72,7 @@ export default function Home() {
           </p>
 
           <p className="hero-summary">
-            <Lang pt={pt.hero.summary} en={en.hero.summary} />
+            <Lang pt={withFigures(pt.hero.summary)} en={withFigures(en.hero.summary)} />
           </p>
           <div className="hero-actions">
             <Link href="/#projects" className="hero-cta is-primary">
