@@ -52,7 +52,7 @@ const display = localFont({
   fallback: ['Hiragino Mincho ProN', 'Yu Mincho', 'serif'],
 });
 // Kana e kanji (.font-jp e o japonês dos títulos): a mesma Shippori Mincho, só com os caracteres do
-// site (~66 KB por peso). Sem pré-carregar: é enfeite, troca quando chega (o LCP é o nome latino)
+// site, menos os que só aparecem nas microestações do rodapé (ver `season`). Sem pré-carregar: é enfeite, troca quando chega (o LCP é o nome latino)
 const jp = localFont({
   src: [
     { path: '../fonts/shippori-mincho-jp-500.woff2', weight: '500', style: 'normal' },
@@ -63,6 +63,16 @@ const jp = localFont({
   adjustFontFallback: false,
   variable: '--font-jp',
   fallback: ['Hiragino Mincho ProN', 'Yu Mincho', 'YuMincho', 'Noto Serif JP', 'serif'],
+});
+
+// Os kanji que só existem nas 72 microestações do rodapé (scripts/subset-font.mjs): um arquivo à
+// parte, pedido só quando o rodapé mostra a microestação de hoje
+const season = localFont({
+  src: [{ path: '../fonts/shippori-mincho-season-500.woff2', weight: '500', style: 'normal' }],
+  display: 'swap',
+  preload: false,
+  adjustFontFallback: false,
+  variable: '--font-jp-season',
 });
 
 const DESCRIPTION =
@@ -99,7 +109,7 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="pt-BR" className={`${sans.variable} ${display.variable} ${jp.variable}`} suppressHydrationWarning>
+    <html lang="pt-BR" className={`${sans.variable} ${display.variable} ${jp.variable} ${season.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
         {/* Dados estruturados de Pessoa para o Google */}

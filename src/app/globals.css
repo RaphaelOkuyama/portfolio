@@ -3931,6 +3931,8 @@ html.no-gpu .washi {
   color: var(--text-secondary);
 }
 .sf-season-kanji { font-size: 1.35rem; color: var(--text-primary); letter-spacing: 0.08em; }
+/* Os kanji próprios das microestações vêm de um arquivo à parte; os comuns, da fonte japonesa do site */
+.sf-season-kanji.font-jp { font-family: var(--font-jp-season), var(--font-jp), 'Hiragino Mincho ProN', 'Yu Mincho', 'YuMincho', 'Noto Serif JP', serif; }
 .sf-season-text { font-size: 0.9rem; line-height: 1.45; color: var(--text-primary); }
 .sf-season-reading { color: var(--text-secondary); font-style: italic; }
 

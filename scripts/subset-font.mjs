@@ -22,14 +22,23 @@ for (let c = 0xa0; c <= 0x17f; c += 1) latin.add(String.fromCharCode(c));
 const CJK = /[　-〿぀-ゟ゠-ヿ一-鿿＀-￯]/g;
 const strip = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\s\/\/\s.*$/gm, '');
 const japanese = new Set();
+// As 72 microestações (七十二候) do rodapé somam ~140 kanji que só aparecem ali, e só uma delas é
+// mostrada por vez: vão num arquivo à parte, de um peso só, que o rodapé pede depois. Sem isso
+// esses glifos pesavam nos dois arquivos japoneses baixados logo no começo de toda página
+const SEASON_FILE = join('src', 'lib', 'microseasons.js');
+const seasonOnly = new Set();
 const walk = (dir) => {
   for (const name of readdirSync(dir)) {
     const path = join(dir, name);
     if (statSync(path).isDirectory()) walk(path);
-    else if (/\.(js|jsx|mdx?)$/.test(name)) (strip(readFileSync(path, 'utf8')).match(CJK) ?? []).forEach((c) => japanese.add(c));
+    else if (/\.(js|jsx|mdx?)$/.test(name)) {
+      const target = path === SEASON_FILE ? seasonOnly : japanese;
+      (strip(readFileSync(path, 'utf8')).match(CJK) ?? []).forEach((c) => target.add(c));
+    }
   }
 };
 walk('src');
+japanese.forEach((c) => seasonOnly.delete(c));
 
 async function subset(family, weight, chars, file) {
   const text = [...chars].join('');
@@ -45,4 +54,5 @@ async function subset(family, weight, chars, file) {
 mkdirSync(OUT, { recursive: true });
 for (const weight of [600, 800]) await subset('Shippori+Mincho', weight, latin, `shippori-mincho-${weight}.woff2`);
 for (const weight of [500, 800]) await subset('Shippori+Mincho', weight, japanese, `shippori-mincho-jp-${weight}.woff2`);
+await subset('Shippori+Mincho', 500, seasonOnly, 'shippori-mincho-season-500.woff2');
 for (const weight of [400, 500, 700]) await subset('Zen+Kaku+Gothic+New', weight, latin, `zen-kaku-gothic-new-${weight}.woff2`);
