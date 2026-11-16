@@ -54,7 +54,8 @@ const fragmentShader = /* glsl */ `
 `;
 
 const NIGHT = { zenith: 0.5, stars: 0.85, clouds: 0.8 };
-const DAY = { zenith: 0.9, stars: 0, clouds: 1 };
+// De dia o alto do céu fica um tom mais fundo que o horizonte (com 0.9 o degradê quase não existia)
+const DAY = { zenith: 0.78, stars: 0, clouds: 1 };
 
 // Céu pintado: esfera presa à câmera, atrás de tudo. Lê as cores já suavizadas pela Atmosphere
 export default function Sky() {

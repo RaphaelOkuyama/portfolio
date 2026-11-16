@@ -6,40 +6,37 @@ import { ArrowLeft } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
 import { journeyStore } from '../store/journey';
 
-// Tigela (chawan) vista de frente, numa grade de 240×160
-const BOWL_BODY = 'M28 44 C 32 104, 70 132, 120 134 C 170 132, 208 104, 212 44 Z';
-const BOWL_FOOT = 'M94 133 L98 148 L142 148 L146 133 Z';
-// As rachaduras dividem a tigela em três cacos; o ouro corre por elas
+// O "404" é a própria cerâmica: os algarismos em mincho, numa grade de 720×300
+const VIEW = { width: 720, height: 300 };
+// Duas rachaduras, uma em cada canto, cortando as hastes dos algarismos (é nelas que o ouro
+// aparece): a de cima sai da borda esquerda e sobe pelo topo do zero; a de baixo sai da borda
+// direita e desce pela base dele. Dividem a peça em três cacos
 const CRACKS = [
-  [[82, 38], [90, 60], [84, 80], [98, 102], [94, 152]],
-  [[152, 38], [143, 64], [157, 86], [146, 110], [152, 152]],
+  [[0, 118], [110, 152], [178, 96], [262, 142], [330, 0]],
+  [[720, 190], [650, 160], [560, 214], [470, 170], [430, 240], [400, 300]],
 ];
 const pts = (list) => list.map(([x, y]) => `${x},${y}`).join(' ');
 const reversed = (list) => [...list].reverse();
 const FRAGMENTS = [
-  [[0, 0], [82, 0], ...CRACKS[0], [94, 160], [0, 160]],
-  [[82, 0], [152, 0], ...CRACKS[1], [152, 160], [94, 160], ...reversed(CRACKS[0])],
-  [[152, 0], [240, 0], [240, 160], [152, 160], ...reversed(CRACKS[1])],
+  [[0, 0], ...reversed(CRACKS[0])],
+  [...CRACKS[0], [VIEW.width, 0], ...CRACKS[1], [0, VIEW.height]],
+  [...CRACKS[1], [VIEW.width, VIEW.height]],
 ];
 // Cada caco começa afastado e girado; se junta antes de o ouro aparecer
 const SCATTER = [
-  { x: -16, y: 6, rotate: -9 },
-  { x: 0, y: 12, rotate: 3 },
-  { x: 16, y: 4, rotate: 8 },
+  { x: -26, y: -18, rotate: -5 },
+  { x: 0, y: 12, rotate: 1 },
+  { x: 28, y: 20, rotate: 5 },
 ];
 
-function Bowl() {
+function Numerals(props) {
   return (
-    <>
-      <path d={BOWL_BODY} className="kintsugi-glaze" />
-      <path d={BOWL_FOOT} className="kintsugi-glaze is-foot" />
-      <ellipse cx="120" cy="44" rx="92" ry="12" className="kintsugi-inside" />
-    </>
+    <text x={VIEW.width / 2} y="262" textAnchor="middle" className="kintsugi-numerals" {...props}>404</text>
   );
 }
 
 // 金継ぎ (kintsugi): a cerâmica quebrada é consertada com ouro e fica mais bonita do que antes.
-// A cena fecha a névoa (a pessoa se perdeu) e a página quebrada se conserta na frente dela
+// A cena fecha a névoa (a pessoa se perdeu) e o próprio 404, partido em três, se conserta com ouro
 export default function NotFound() {
   const { language } = useSettings();
   const rootRef = useRef(null);
@@ -54,31 +51,31 @@ export default function NotFound() {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduced) return undefined;
 
-    gsap.from('.nf-kanji', { autoAlpha: 0, y: 16, filter: 'blur(8px)', duration: 1.2, ease: 'power2.out' });
-    gsap.from('.nf-fade', { opacity: 0, y: 20, duration: 0.5, stagger: 0.1, delay: 0.3, clearProps: 'transform,opacity' });
+    gsap.from('.nf-fade', { opacity: 0, y: 18, duration: 0.6, stagger: 0.09, delay: 1.5, ease: 'power3.out', clearProps: 'transform,opacity' });
 
     // Os cacos se juntam, e só então o ouro corre pelas rachaduras
-    gsap.timeline({ delay: 0.4 })
+    gsap.timeline({ delay: 0.3 })
       .from('.kintsugi-fragment', {
         x: (i) => SCATTER[i].x,
         y: (i) => SCATTER[i].y,
         rotate: (i) => SCATTER[i].rotate,
-        svgOrigin: '120 90',
-        duration: 1.1,
+        opacity: 0,
+        svgOrigin: `${VIEW.width / 2} ${VIEW.height / 2}`,
+        duration: 1.2,
         ease: 'power3.inOut',
       })
       // O ouro corre pelas rachaduras (tracejado deslocado: núcleo do GSAP, sem o DrawSVG)
       .fromTo('.kintsugi-gold', {
         strokeDashoffset: (i, el) => { prepareStroke(el); return strokeOffset(el, 0); },
-      }, { strokeDashoffset: 0, duration: 1.3, ease: 'power2.inOut', stagger: 0.25 }, '+=0.15')
+      }, { strokeDashoffset: 0, duration: 1.3, ease: 'power2.inOut', stagger: 0.25 }, '+=0.1')
       .to('.kintsugi-svg', { '--gold-glow': 1, duration: 0.6 }, '-=0.3');
 
-    // "404" de fundo segue o mouse em sentido oposto
-    const moveX = gsap.quickTo('.nf-bg', 'x', { duration: 1.2, ease: 'power3.out' });
-    const moveY = gsap.quickTo('.nf-bg', 'y', { duration: 1.2, ease: 'power3.out' });
+    // A peça pende de leve para o lado do mouse, como algo pousado numa prateleira
+    const tiltX = gsap.quickTo('.kintsugi-svg', 'x', { duration: 1.2, ease: 'power3.out' });
+    const tiltY = gsap.quickTo('.kintsugi-svg', 'y', { duration: 1.2, ease: 'power3.out' });
     const handleMouseMove = (e) => {
-      moveX(((e.clientX / window.innerWidth) * 2 - 1) * -30);
-      moveY(((e.clientY / window.innerHeight) * 2 - 1) * -30);
+      tiltX(((e.clientX / window.innerWidth) * 2 - 1) * 10);
+      tiltY(((e.clientY / window.innerHeight) * 2 - 1) * 6);
     };
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
@@ -101,44 +98,52 @@ export default function NotFound() {
 
   return (
     <div ref={rootRef} className="nf-root">
-      <div className="nf-bg" aria-hidden="true">404</div>
-
-      <p className="nf-kanji font-jp" aria-hidden="true">金継ぎ</p>
-
-      <svg className="kintsugi-svg" viewBox="0 0 240 160" aria-hidden="true" data-kintsugi="">
+      <svg
+        className="kintsugi-svg"
+        viewBox={`0 0 ${VIEW.width} ${VIEW.height}`}
+        aria-hidden="true"
+        data-kintsugi=""
+      >
         <defs>
+          {/* Esmalte claro, mais escuro na base, como uma peça vista de frente */}
+          <linearGradient id="kintsugi-glaze" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" className="kintsugi-glaze-top" />
+            <stop offset="1" className="kintsugi-glaze-foot" />
+          </linearGradient>
           {FRAGMENTS.map((poly, i) => (
             <clipPath key={i} id={`kintsugi-piece-${i}`}>
               <polygon points={pts(poly)} />
             </clipPath>
           ))}
-          <clipPath id="kintsugi-bowl">
-            <path d={BOWL_BODY} />
-            <path d={BOWL_FOOT} />
-            <ellipse cx="120" cy="44" rx="92" ry="12" />
+          <clipPath id="kintsugi-shape">
+            <Numerals />
           </clipPath>
         </defs>
         {FRAGMENTS.map((_, i) => (
           <g key={i} className="kintsugi-fragment">
             <g clipPath={`url(#kintsugi-piece-${i})`}>
-              <Bowl />
+              <Numerals fill="url(#kintsugi-glaze)" />
             </g>
           </g>
         ))}
-        <g clipPath="url(#kintsugi-bowl)">
+        <g clipPath="url(#kintsugi-shape)">
           {CRACKS.map((crack, i) => (
             <polyline key={i} className="kintsugi-gold" points={pts(crack)} />
           ))}
         </g>
       </svg>
 
-      <h1 className="nf-fade nf-title">{t.subtitle}</h1>
-      <p className="nf-fade nf-desc">{t.desc}</p>
-
-      <div className="nf-fade">
-        <Link href="/" className="glow-btn nf-back">
-          <ArrowLeft size={20} aria-hidden="true" /> {t.btn}
-        </Link>
+      <div className="nf-body">
+        <p className="nf-kanji font-jp" lang="ja" aria-hidden="true">金継ぎ</p>
+        <div className="nf-copy">
+          <h1 className="nf-fade nf-title">{t.subtitle}</h1>
+          <p className="nf-fade nf-desc">{t.desc}</p>
+          <div className="nf-fade">
+            <Link href="/" className="glow-btn nf-back">
+              <ArrowLeft size={20} aria-hidden="true" /> {t.btn}
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );

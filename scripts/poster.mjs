@@ -45,14 +45,14 @@ for (const shot of SHOTS) for (const theme of THEMES) {
       return layer && getComputedStyle(layer).opacity === '1' && window.__r3f;
     }, null, { timeout: 60_000 });
     // Sem pétalas, folhas e neve (no site elas fogem do texto; numa foto ficariam por cima dele),
-    // sem o papel washi (ele já fica por cima do pôster no site) e sem a página
+    // sem o papel washi e o véu das páginas internas (já ficam por cima do pôster no site) e sem a página
     // (a cena reescreve `visible` a cada quadro: as partículas saem pela camada, que ninguém mexe)
     await page.evaluate(() => {
       window.__r3f.scene.traverse((o) => {
         if (o.material?.uniforms?.uShape) o.layers.set(31);
       });
     });
-    await page.addStyleTag({ content: 'body * { visibility: hidden !important; } [data-scene], [data-scene] * { visibility: visible !important; } [data-scene] .washi { visibility: hidden !important; }' });
+    await page.addStyleTag({ content: 'body * { visibility: hidden !important; } [data-scene], [data-scene] * { visibility: visible !important; } [data-scene] .washi { visibility: hidden !important; } [data-scene]::after { display: none !important; }' });
     await page.waitForTimeout(1500);
     const png = await page.locator('[data-scene="webgl"] canvas').first().screenshot();
     const base = `${OUT}/${shot.prefix}${theme}-${size.name}`;

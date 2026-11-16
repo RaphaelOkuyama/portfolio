@@ -457,6 +457,14 @@ export function pagodaGeometry() {
 // com nós de verdade: o gomo incha de leve logo abaixo do nó, o nó é um anel claro e cada gomo
 // tem o próprio tom (mais escuro embaixo, mais claro no meio)
 const STALK_NODES = 11;
+// O bambu de verdade não é um poste: o terço de cima verga com o peso das folhas. `BAMBOO_BEND` é
+// quanto a ponta sai do prumo (em unidades do caule, antes da escala da instância) e `bambooArch`
+// a fração desse desvio na altura t (0 no chão, 1 na ponta): reto até 45% e depois em curva
+export const BAMBOO_BEND = 0.85;
+export const bambooArch = (t) => {
+  const k = Math.max(0, (t - 0.45) / 0.55);
+  return k * k;
+};
 export function bambooStalkGeometry() {
   return cached('bamboo', () => {
     const parts = [];
@@ -470,7 +478,13 @@ export function bambooStalkGeometry() {
       // Nó: anel um pouco mais largo e claro (amarelado), fino
       if (i > 0) parts.push(placed(paint(new CylinderGeometry(radius(t0) * 1.14, radius(t0) * 1.14, 0.005, 8), [1.22, 1.2, 1.0]), { y: t0 }));
     }
-    return assemble(parts);
+    const stalk = assemble(parts);
+    // Verga para +x (cada instância gira em volta do próprio eixo: ver BambooGrove)
+    const pos = stalk.attributes.position;
+    for (let i = 0; i < pos.count; i += 1) pos.setX(i, pos.getX(i) + BAMBOO_BEND * bambooArch(pos.getY(i)));
+    pos.needsUpdate = true;
+    stalk.computeVertexNormals();
+    return stalk;
   });
 }
 
@@ -512,10 +526,10 @@ export function bambooLeavesGeometry() {
         parts.push(bambooLeaf(origin, yaw, droop, size * (0.75 + rand() * 0.4), size * 0.17, tone()));
       }
     };
-    const branches = 11;
+    const branches = 14;
     for (let i = 0; i < branches; i += 1) {
       const t = i / (branches - 1);
-      const y = -3.6 + t * 3.3;
+      const y = -4.3 + t * 4.05;
       const dir = i * 2.39996 + rand() * 0.4;
       // Galhos de baixo mais compridos (a copa se abre como um cone de ponta-cabeça bem largo)
       const length = 1.2 - t * 0.7 + rand() * 0.25;
@@ -525,14 +539,24 @@ export function bambooLeavesGeometry() {
       parts.push(paint(twig, [1.0, 0.95, 0.8]));
       // Leques: um no meio do galho e outro na ponta
       const mid = new Vector3(0, y, 0).lerp(end, 0.55);
-      fan(mid, dir + 0.5, 4, 0.72);
-      fan(end, dir, 6, 0.82);
+      fan(mid, dir + 0.5, 5, 0.74);
+      fan(end, dir, 7, 0.86);
     }
     // Penacho no topo: folhas mais curtas, quase em pé, abertas para todos os lados
     for (let k = 0; k < 7; k += 1) {
       parts.push(bambooLeaf(new Vector3(0, 0, 0), (k / 7) * Math.PI * 2 + rand() * 0.3, -0.6 + rand() * 0.5, 0.45, 0.07, tone()));
     }
-    return assemble(parts);
+    const crown = assemble(parts);
+    // A copa desce pelo caule arqueado: cada altura recua o mesmo tanto que o caule ali (a origem é
+    // a ponta, já no fim do arco). Medidas da instância em BambooGrove: caule ×1,7 de largura e
+    // altura média de 9,25; copa ×1,25
+    const pos = crown.attributes.position;
+    for (let i = 0; i < pos.count; i += 1) {
+      const t = 1 + (pos.getY(i) * 1.25) / 9.25;
+      pos.setX(i, pos.getX(i) + (BAMBOO_BEND * 1.7 * (bambooArch(t) - 1)) / 1.25);
+    }
+    pos.needsUpdate = true;
+    return crown;
   });
 }
 

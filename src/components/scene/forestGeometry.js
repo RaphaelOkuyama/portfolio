@@ -36,10 +36,11 @@ function tier(radius, height, sides, light) {
     if (r < 1e-4) continue;
     // Ângulo do vértice no anel: pares viram ponta de galho, ímpares reentrância
     const k = Math.round(((Math.atan2(z, x) + Math.PI * 2) % (Math.PI * 2)) / (Math.PI * 2 / sides));
-    const s = k % 2 === 0 ? 1.08 : 0.74;
+    const s = k % 2 === 0 ? 1.1 : 0.7;
     pos.setX(i, x * s);
     pos.setZ(i, z * s);
-    pos.setY(i, y - (k % 2 === 0 ? 0.05 : 0));
+    // As pontas dos galhos caem mais, e não todas por igual
+    pos.setY(i, y - (k % 2 === 0 ? 0.06 + (k % 4 === 0 ? 0.035 : 0) : 0));
   }
   g.computeVertexNormals();
   return shade(g, (y) => {
@@ -53,12 +54,18 @@ function tier(radius, height, sides, light) {
 function sugi() {
   const parts = [];
   parts.push(placed(shade(new CylinderGeometry(0.03, 0.05, 0.42, 5), () => [0.62, 0.5, 0.42]), { y: 0.21 }));
-  const tiers = 5;
+  // Seis saias que não se empilham no mesmo eixo nem diminuem por igual: cada uma sai um pouco do
+  // prumo e algumas são mais largas que a de baixo, como um cedro velho (cones iguais e alinhados
+  // liam como árvore de brinquedo)
+  const tiers = 6;
+  const wobble = [1, 0.9, 1.06, 0.92, 1.02, 0.95];
   for (let i = 0; i < tiers; i += 1) {
-    const r = 0.44 * (1 - i * 0.15);
-    const h = 0.44 - i * 0.03;
-    const bottom = 0.22 + i * 0.23;
-    parts.push(placed(tier(r, h, 10, 0.86 + i * 0.05), { y: bottom + h / 2, rotY: i * 0.55 }));
+    const r = 0.45 * (1 - i * 0.128) * wobble[i];
+    const h = 0.42 - i * 0.024;
+    const bottom = 0.2 + i * 0.196;
+    parts.push(placed(tier(r, h, 10, 0.84 + i * 0.05), {
+      x: Math.sin(i * 2.1) * 0.026, z: Math.cos(i * 1.7) * 0.022, y: bottom + h / 2, rotY: i * 0.55,
+    }));
   }
   // Ponta fina
   parts.push(placed(tier(0.09, 0.28, 6, 1.12), { y: 1.42 }));

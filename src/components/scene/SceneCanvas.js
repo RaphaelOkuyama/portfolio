@@ -148,7 +148,7 @@ export default function SceneCanvas() {
   // Sem WebGL acelerado: a cena pintada e animada. Se o chunk 3D falhou, só o fundo estático
   if (webgl === false || failed) {
     return (
-      <div aria-hidden="true" data-scene="fallback" style={wrapperStyle}>
+      <div aria-hidden="true" data-scene="fallback" data-route={pathname === '/' ? 'journey' : 'frozen'} style={wrapperStyle}>
         {paintedReady && !failed ? null : <StaticBackdrop theme={theme} mix={mix} />}
         {failed ? null : <PaintedScene onReady={() => setPaintedReady(true)} />}
         <div className="washi" />
@@ -157,7 +157,7 @@ export default function SceneCanvas() {
   }
 
   return (
-    <div aria-hidden="true" data-scene="webgl" data-lite={lite ? '' : undefined} style={wrapperStyle}>
+    <div aria-hidden="true" data-scene="webgl" data-route={pathname === '/' ? 'journey' : 'frozen'} data-lite={lite ? '' : undefined} style={wrapperStyle}>
       {/* Até a cena 3D chegar: o pôster (o mesmo quadro da cena) ou o cenário pintado; some depois do fade */}
       {backdropGone ? null : poster ? <PosterBackdrop variant={poster} /> : <StaticBackdrop theme={theme} mix={mix} />}
       {webgl && quality && start ? (

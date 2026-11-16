@@ -6,7 +6,7 @@ import { journeyStore, useJourney } from '../../store/journey';
 import { mulberry32 } from '../../lib/journey/ridge';
 import { groundHeight } from '../../lib/journey/ground';
 import { useAccentMaterials } from './useAccentMaterials';
-import { bambooLeavesGeometry, bambooStalkGeometry } from './shrineGeometry';
+import { BAMBOO_BEND, bambooLeavesGeometry, bambooStalkGeometry } from './shrineGeometry';
 import { BAMBOO, GROUND } from './config';
 import { wind } from '../../lib/journey/wind';
 
@@ -22,6 +22,8 @@ function stalks(count) {
       height: BAMBOO.height[0] + rand() * (BAMBOO.height[1] - BAMBOO.height[0]),
       phase: rand() * Math.PI * 2,
       lean: (rand() - 0.5) * 0.08,
+      // Para que lado o caule verga: cada um para um lado, como numa moita de verdade
+      yaw: rand() * Math.PI * 2,
     };
   }));
 }
@@ -29,6 +31,8 @@ function stalks(count) {
 const up = new Vector3(0, 1, 0);
 const tilt = new Quaternion();
 const gustTilt = new Quaternion();
+const yawTurn = new Quaternion();
+const STALK_WIDTH = 1.7;
 const GUST_AXIS = new Vector3(0, 0, 1);
 const axis = new Vector3();
 const matrix = new Matrix4();
@@ -55,10 +59,12 @@ export function BambooGrove() {
       tilt.setFromAxisAngle(axis, angle);
       gustTilt.setFromAxisAngle(GUST_AXIS, -wind.gust * 0.1);
       tilt.premultiply(gustTilt);
-      matrix.compose(s.base, tilt, scale.set(1.7, s.height, 1.7));
+      // O giro em volta do próprio eixo vem antes da inclinação: decide para onde o arco aponta
+      tilt.multiply(yawTurn.setFromAxisAngle(up, s.yaw));
+      matrix.compose(s.base, tilt, scale.set(STALK_WIDTH, s.height, STALK_WIDTH));
       stalkRef.current.setMatrixAt(i, matrix);
       // Ponta do caule inclinado: o tufo de folhas vai junto
-      tip.copy(up).multiplyScalar(s.height).applyQuaternion(tilt).add(s.base);
+      tip.set(BAMBOO_BEND * STALK_WIDTH, s.height, 0).applyQuaternion(tilt).add(s.base);
       // A copa já vem no tamanho da cena (galhos e folhas descendo pelo terço de cima do caule)
       matrix.compose(tip, tilt, scale.set(1.25, 1.25, 1.25));
       leafRef.current.setMatrixAt(i, matrix);

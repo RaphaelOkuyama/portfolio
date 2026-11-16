@@ -94,15 +94,22 @@ test.describe('Fundo pintado sem WebGL', () => {
   });
 
   test('antes da cena começar, o fundo em SVG tem névoa, cedros e o rio', async ({ page }) => {
-    // Na home o primeiro quadro é o pôster da cena; nas outras páginas, o cenário pintado em SVG
-    // (a cena só tenta começar na primeira interação, e lá a câmera fica em outro ponto da montanha)
-    await page.goto('/certificates');
+    // Na home e nas páginas internas o primeiro quadro é o pôster da cena; no 404 a cena fecha a
+    // névoa (outra imagem), e ali fica o cenário pintado em SVG até a cena começar
+    await page.goto('/caminho-perdido');
     await expect(loader(page)).toHaveCount(0, { timeout: 10_000 });
     const backdrop = page.locator('[data-scene] .static-backdrop');
     await expect(backdrop.locator('.backdrop-mist')).toHaveCount(2);
     await expect(backdrop.locator('[data-trees="near"]')).toHaveAttribute('d', /M/);
     await expect(backdrop.locator('[data-trees="mid"]')).toHaveAttribute('d', /M/);
     await expect(backdrop.locator('[data-river]')).toHaveAttribute('d', /Z$/);
+  });
+
+  test('páginas internas abrem com o pôster da câmera parada', async ({ page }) => {
+    await page.goto('/certificates');
+    await expect(loader(page)).toHaveCount(0, { timeout: 10_000 });
+    await expect(page.locator('[data-scene] .scene-poster')).toHaveAttribute('data-poster', 'frozen');
+    expect(await page.locator('.scene-poster-frame').evaluate((el) => getComputedStyle(el).backgroundImage)).toMatch(/poster\/frozen-night/);
   });
 
   test('a montanha pintada e animada assume, acompanha o tema e a estação', async ({ page }) => {

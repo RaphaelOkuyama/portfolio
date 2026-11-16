@@ -23,8 +23,9 @@ function bambooAvoid(layer) {
     .map(({ x }) => [Math.min(...x) - 3 - layer.x, Math.max(...x) + 3 - layer.x]);
 }
 
-// Distância em que a camada atinge o tom "longe"
-const FAR_DISTANCE = 60;
+// Distância em que a camada atinge o tom "longe": mais funda que antes (60), para as camadas
+// vistas do começo do caminho não chegarem todas juntas ao mesmo tom
+const FAR_DISTANCE = 90;
 
 function buildGeometry(layer, points) {
   const shape = new Shape();

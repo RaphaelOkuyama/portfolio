@@ -12,8 +12,10 @@ export const CAMERA_PATH = [
   [0, 1.4, -72],
 ];
 
-// Névoa: começa perto, fecha antes das camadas mais distantes
-export const FOG_RANGE = [10, 70];
+// Névoa: começa perto, fecha antes das camadas mais distantes. Com [10, 70] ela fechava cedo
+// demais: do começo do caminho todas as cordilheiras viravam uma faixa só da cor da névoa. Mais
+// funda, cada camada guarda o próprio tom (a perspectiva aérea das gravuras)
+export const FOG_RANGE = [14, 100];
 
 // Camadas de montanha espalhadas ao longo do caminho, com vale central para a câmera passar.
 // Param antes do rio (margem de perto em z = -52): uma 7ª camada em z = -62 cortava a água

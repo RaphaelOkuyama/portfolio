@@ -36,7 +36,7 @@ function contactShadows(toriiT) {
 }
 
 // Distância em que o chão atinge o tom "longe" (a mesma das camadas de montanha)
-const FAR_DISTANCE = 60;
+const FAR_DISTANCE = 90;
 
 const vertexShader = /* glsl */ `
   #include <fog_pars_vertex>

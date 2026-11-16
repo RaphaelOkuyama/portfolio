@@ -5746,3 +5746,265 @@ main:focus { outline: none; }
   .cert-view { min-width: 44px; min-height: 44px; }
   .cert-modules a { min-width: 44px; min-height: 36px; }
 }
+
+
+/* ============================================================
+   Redesenho nov/2026: "tinta sobre a noite, papel sobre a tinta"
+   Duas matérias só: texto direto sobre a cena escurecida (sem caixa) ou folha de washi clara,
+   como o emakimono da home. Saem os cartões escuros de canto redondo e as etiquetas em pílula.
+   ============================================================ */
+
+/* Páginas internas: a cena recua atrás de um véu da cor do fundo (mais fechado embaixo, onde o
+   chão da estação brigava com o texto). No topo o céu e a montanha continuam aparecendo */
+[data-scene][data-route='frozen']::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--bg-color) 26%, transparent) 0%,
+    color-mix(in srgb, var(--bg-color) 64%, transparent) 38%,
+    color-mix(in srgb, var(--bg-color) 90%, transparent) 100%);
+}
+
+/* Folha de washi também à noite (as mesmas cores do rolo da home, redefinidas só dentro da folha) */
+[data-theme='night'] :is(.pj-card, .zen-panels, .cert-group) {
+  --paper: #e6dece;
+  --ink: #1f1d1a;
+  --text-primary: #211e1a;
+  --text-secondary: #57514a;
+  --border: #cfc4ad;
+  --card-bg: #efe8d8;
+  --bg-color: #f1ebdc;
+  --accent: #a8322a;
+  --on-accent: #ffffff;
+  --hanko: #b0352b;
+}
+:is(.pj-card, .zen-panel, .cert-group) {
+  border-radius: 3px;
+  border-color: var(--border);
+  background:
+    repeating-linear-gradient(95deg, transparent 0 22px, color-mix(in srgb, var(--ink) 3%, transparent) 22px 23px),
+    var(--paper);
+  color: var(--text-primary);
+}
+[data-theme='night'] :is(.pj-card, .zen-panel, .cert-group) {
+  box-shadow: inset 0 0 60px rgb(120 96 60 / 0.16), 0 24px 44px -28px rgb(0 0 0 / 0.7);
+}
+/* Os carimbos voltam ao vermelho de selo sobre o papel claro */
+[data-theme='night'] :is(.pj-card, .zen-panels, .cert-group) :is(.cert-hanko, .pj-kanji) { --hanko: #b0352b; }
+
+/* Filtros: abas de texto com um traço de selo embaixo, no lugar das pílulas */
+.pj-filters, .cert-filters { gap: 6px 26px; margin-bottom: 34px; }
+.pj-filters button, .cert-filters button {
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 0;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: none;
+  font-family: var(--font-display), var(--font-jp), serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+.pj-filters button:hover, .cert-filters button:hover { color: var(--text-primary); }
+.pj-filters button[aria-pressed='true'], .cert-filters button[aria-pressed='true'] {
+  border-bottom-color: var(--hanko);
+  background: none;
+  color: var(--text-primary);
+}
+[data-theme='night'] :is(.pj-filters, .cert-filters) button[aria-pressed='true'] { border-bottom-color: #e8665a; }
+.pj-filter-count, .cert-filter-count {
+  font-family: var(--font-sans), sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  translate: 0 -0.5em;
+  opacity: 0.75;
+}
+
+/* --- 作 /projects: cada projeto numa folha, com o numeral em selo como no rolo da home --- */
+.pj-grid { gap: 26px; }
+.pj-card { padding: 30px 30px 26px; }
+.pj-card:has(.pj-stretch:hover),
+.pj-card:has(.pj-stretch:focus-visible) { translate: 0 -5px; border-color: var(--hanko); }
+.pj-kanji {
+  top: 22px;
+  right: 26px;
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--hanko);
+  -webkit-text-stroke: 0;
+  opacity: 1;
+}
+.is-featured .pj-kanji { top: 26px; font-size: 3rem; }
+.pj-status, .pj-status.is-live, .pj-status.is-pair {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  font-size: 0.8rem;
+  color: var(--hanko);
+}
+.pj-status:not(.is-live):not(.is-pair) { color: var(--text-secondary); }
+.pj-status::before { content: ''; display: inline-block; width: 6px; height: 6px; margin-right: 7px; border-radius: 50%; background: currentColor; translate: 0 -1px; }
+.pj-thumb { border-radius: 2px; border-color: color-mix(in srgb, var(--ink) 18%, transparent); }
+.pj-title { font-size: 1.5rem; }
+.pj-tags { gap: 4px 16px; }
+.pj-tags li, .emaki-stack li, .exp-tags li {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.emaki-stack, .exp-tags { gap: 4px 16px; }
+.pj-external a, .pj-part-link {
+  border-radius: 2px;
+  background: transparent;
+}
+.pj-stats dd { font-size: 2.4rem; }
+@media (max-width: 800px) {
+  /* Celular: o numeral cabe na linha do status, acima da imagem */
+  .pj-kanji, .is-featured .pj-kanji { top: 16px; right: 20px; font-size: 1.7rem; }
+}
+@media (min-width: 801px) {
+  .pj-card.is-featured .pj-kanji { left: auto; right: 30px; }
+  .pj-card.is-featured { padding: 40px 42px 34px; }
+}
+
+/* --- 証 Certificados: cada área numa folha, como um livro de registros --- */
+.cert-group { padding: 26px 30px 14px; margin-bottom: 26px; }
+.cert-group[data-area='full'] { border-color: var(--border); }
+.cert-group-title { font-size: 1.5rem; margin-bottom: 12px; }
+.cert-group-count {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  font-size: 0.8rem;
+  color: var(--hanko);
+  translate: 0 -0.5em;
+}
+.cert-icon { border-radius: 2px; background: transparent; border-color: color-mix(in srgb, var(--ink) 22%, transparent); }
+.cert-item { border-bottom-style: solid; border-bottom-color: color-mix(in srgb, var(--ink) 10%, transparent); }
+.cert-view {
+  padding: 2px 0;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 40%, transparent);
+  border-radius: 0;
+}
+.cert-group:not([data-area='full']) .cert-view { padding: 6px; border-bottom: 0; color: var(--text-secondary); }
+.cert-modules a { border-radius: 2px; }
+.cert-summary { font-size: 1.05rem; }
+
+/* --- 技 Stack: as ferramentas numa folha; o kanji da área em tinta cheia --- */
+.zen-panels { border-radius: 3px; }
+.zen-panel { border: 0; padding: 32px 34px 24px; }
+.zen-panel .zen-panel-kanji, .zen-panel-kanji {
+  color: var(--hanko);
+  -webkit-text-stroke: 0;
+}
+.zen-tool-icon { border-radius: 2px; background: transparent; }
+.zen-tool { border-bottom-style: solid; }
+
+/* --- 歩 Experiência: um lavado só atrás da linha do tempo inteira, de borda esfumada (as caixas
+   por cargo deixavam retângulos visíveis sobre a cena) --- */
+.exp-timeline { isolation: isolate; }
+.exp-timeline::before {
+  content: '';
+  position: absolute;
+  inset: -40px -90px -40px -50px;
+  z-index: -1;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--bg-color) 90%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 9%, #000 62%, transparent), linear-gradient(180deg, transparent, #000 5%, #000 95%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 9%, #000 62%, transparent), linear-gradient(180deg, transparent, #000 5%, #000 95%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+.exp-card, .is-education .exp-card { background: none; padding: 14px 0 12px 8px; }
+/* Sem a fibra de papel por cargo: ela terminava numa borda reta sobre a cena */
+.exp-card::after { content: none; }
+.exp-list { gap: 46px; }
+.exp-badges { gap: 4px 14px; }
+.exp-badge, .exp-badge.is-parallel {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  font-size: 0.82rem;
+}
+.exp-badge.is-parallel { font-style: italic; }
+.exp-company { font-size: 1.85rem; }
+.exp-value { font-size: 1.6rem; }
+.exp-hanko { border-radius: 3px; }
+
+/* --- 人 Sobre: o lavado atrás do texto com borda esfumada, sem retângulo aparente --- */
+@media (min-width: 768px) {
+  .about-copy::before {
+    inset: -8% -10% -10% -12%;
+    background: color-mix(in srgb, var(--bg-color) 90%, transparent);
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 80%, transparent), linear-gradient(180deg, transparent, #000 12%, #000 88%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 14%, #000 80%, transparent), linear-gradient(180deg, transparent, #000 12%, #000 88%, transparent);
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
+  }
+}
+
+/* --- 金継ぎ 404: o próprio "404" é a cerâmica, partida em três e consertada com ouro --- */
+.nf-root {
+  min-height: calc(100svh - 80px);
+  width: min(100% - 40px, 1080px);
+  margin-inline: auto;
+  padding: 24px 0 60px;
+  align-items: stretch;
+  justify-content: center;
+  text-align: left;
+  overflow: visible;
+}
+.kintsugi-svg {
+  width: 100%;
+  max-width: 920px;
+  margin: 0 0 clamp(8px, 2vh, 24px) -1.5%;
+}
+.kintsugi-numerals {
+  font-family: var(--font-display), var(--font-jp), 'Yu Mincho', serif;
+  font-size: 330px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.kintsugi-glaze-top { stop-color: color-mix(in srgb, var(--text-primary) 96%, var(--bg-color)); }
+.kintsugi-glaze-foot { stop-color: color-mix(in srgb, var(--text-primary) 74%, var(--bg-color)); }
+.kintsugi-gold { stroke-width: 5; stroke: #e0ae45; }
+.nf-body {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: clamp(18px, 3vw, 40px);
+  align-items: start;
+}
+.nf-kanji {
+  writing-mode: vertical-rl;
+  font-size: clamp(1.5rem, 2.6vw, 2.2rem);
+  letter-spacing: 0.32em;
+  color: #e0ae45;
+  padding-top: 0.2em;
+  border-right: 1px solid color-mix(in srgb, #e0ae45 45%, transparent);
+  padding-right: clamp(14px, 2vw, 26px);
+}
+[data-theme='day'] .nf-kanji { color: #a8791c; border-right-color: color-mix(in srgb, #a8791c 45%, transparent); }
+.nf-title { font-size: clamp(1.9rem, 3.6vw, 3rem); margin: 0 0 14px; line-height: 1.1; }
+.nf-desc { max-width: 46ch; margin: 0 0 28px; font-size: 1.12rem; line-height: 1.65; color: color-mix(in srgb, var(--text-primary) 78%, var(--text-secondary)); }
+.nf-back {
+  padding: 4px 0 6px;
+  border: 0;
+  border-bottom: 2px solid #e0ae45;
+  border-radius: 0;
+  background: none;
+  color: var(--text-primary);
+  font-family: var(--font-display), var(--font-jp), serif;
+  font-size: 1.2rem;
+}
+.nf-back:hover { scale: 1; box-shadow: none; color: #e0ae45; }
+[data-theme='day'] .nf-back:hover { color: #a8791c; }
+@media (max-width: 560px) {
+  .nf-root { justify-content: flex-start; padding-top: 12vh; }
+}
