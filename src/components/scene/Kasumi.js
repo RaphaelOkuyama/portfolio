@@ -5,14 +5,21 @@ import { Color, PlaneGeometry, ShaderMaterial, UniformsLib, UniformsUtils } from
 import { journeyStore, useJourney } from '../../store/journey';
 import { kasumiBands } from '../../lib/journey/landscape';
 import { NOISE, noiseDefines } from './glsl';
-import { KASUMI, MOUNTAIN_LAYERS } from './config';
+import { CAMERA_PATH, GROUND, KASUMI, MOUNTAIN_LAYERS, RIVER } from './config';
+import { profileHeight } from '../../lib/journey/ground';
+
+// Altura do que a faixa encontra embaixo dela no meio do vale: o chão ou, depois da margem, a água
+const WATER_Y = CAMERA_PATH[CAMERA_PATH.length - 1][1] - RIVER.drop;
+const floorAt = (z) => Math.max(profileHeight(z, GROUND.profile), z < -50 ? WATER_Y : -Infinity);
 
 const vertexShader = /* glsl */ `
   varying vec2 vUv;
   varying float vDepth;
+  varying vec3 vWorld;
   #include <fog_pars_vertex>
   void main() {
     vUv = uv;
+    vWorld = (modelMatrix * vec4(position, 1.0)).xyz;
     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
     vDepth = -mvPosition.z;
     gl_Position = projectionMatrix * mvPosition;
@@ -28,8 +35,10 @@ const fragmentShader = /* glsl */ `
   uniform float uAspect;
   uniform float uTime;
   uniform vec2 uFadeNear;
+  uniform float uFloor;
   varying vec2 vUv;
   varying float vDepth;
+  varying vec3 vWorld;
   #include <fog_pars_fragment>
   ${NOISE}
 
@@ -44,6 +53,12 @@ const fragmentShader = /* glsl */ `
     // Quebra a faixa em trechos ao longo do horizonte
     float segments = smoothstep(0.32, 0.62, fbm(vec2(x * 0.045 + drift * 0.5 + uSeed * 3.0, 1.0)));
     float sides = smoothstep(0.0, 0.12, vUv.x) * smoothstep(1.0, 0.88, vUv.x);
+    // A faixa é um plano em pé: onde ele entrava no chão (ou na água do rio) ficava um corte reto
+    // de lado a lado, névoa em cima e nada embaixo. Agora ela se desfaz antes de tocar o chão, que
+    // sobe em concha para os lados como em lib/journey/ground
+    float side = max(0.0, abs(vWorld.x) - ${GROUND.flatHalf.toFixed(1)});
+    float floorY = uFloor + min(${GROUND.bowl.toFixed(3)} * side * side, ${GROUND.bowlMax.toFixed(1)});
+    sides *= smoothstep(floorY + 0.15, floorY + 3.2, vWorld.y) * smoothstep(1.0, 0.82, vUv.y);
     float near = smoothstep(uFadeNear.x, uFadeNear.y, vDepth);
     gl_FragColor = vec4(uColor, body * segments * sides * near * uOpacity);
     #include <colorspace_fragment>
@@ -79,6 +94,7 @@ export default function Kasumi() {
                 uSeed: { value: band.seed },
                 uSpeed: { value: band.speed },
                 uAspect: { value: KASUMI.width / band.height },
+                uFloor: { value: floorAt(band.z) },
               }]),
               // Cor, opacidade e tempo: os mesmos objetos em todas as faixas
               uColor: shared.color,
