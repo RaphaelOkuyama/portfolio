@@ -6159,7 +6159,7 @@ main:focus { outline: none; }
 .gacha-veil {
   position: fixed;
   inset: 0;
-  z-index: 9900;
+  z-index: 9992;
   display: grid;
   place-items: center;
   padding: 16px;
@@ -6170,22 +6170,27 @@ main:focus { outline: none; }
 .gacha {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 220px) minmax(0, 260px);
+  grid-template-columns: minmax(0, 270px) minmax(0, 320px);
   align-items: center;
-  gap: 22px;
+  gap: 26px;
   max-width: 100%;
-  padding: 26px 28px 24px;
+  max-height: 100%;
+  padding: 28px 30px 26px;
+  overflow-y: auto;
   border: 1px solid var(--border);
-  border-radius: 14px;
-  background: var(--bg-color);
+  border-radius: 16px;
+  background:
+    radial-gradient(120% 80% at 20% 0%, rgba(200, 50, 42, 0.16), transparent 60%),
+    var(--bg-color);
   color: var(--text-primary);
   box-shadow: 0 30px 70px -30px rgba(0, 0, 0, 0.8);
 }
-.gacha-machine { width: 100%; height: auto; display: block; }
+.gacha-machine { width: 100%; height: auto; display: block; overflow: visible; }
 .gacha-close {
   position: absolute;
   top: 8px;
   right: 10px;
+  z-index: 1;
   width: 36px;
   height: 36px;
   border: 0;
@@ -6195,64 +6200,226 @@ main:focus { outline: none; }
   line-height: 1;
 }
 .gacha-close:hover, .gacha-close:focus-visible { color: var(--text-primary); }
-.gacha-side { display: grid; gap: 16px; align-content: center; min-height: 200px; }
+.gacha-side { display: grid; gap: 16px; align-content: center; }
+.gacha-stage { display: grid; align-content: center; min-height: 196px; }
 .gacha-hint { margin: 0; line-height: 1.6; color: var(--text-secondary); }
-.gacha-prize { padding-left: 14px; border-left: 3px solid var(--capsule); animation: gacha-prize 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.2); }
+.gacha-prize {
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--capsule) 55%, transparent);
+  border-left: 4px solid var(--capsule);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--capsule) 9%, transparent);
+  animation: gacha-prize 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+.gacha-prize[data-rarity='SSR'] { box-shadow: 0 0 28px -6px var(--capsule); }
 @keyframes gacha-prize { from { opacity: 0; transform: translateY(10px) scale(0.96); } }
-.gacha-kind { margin: 0 0 6px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-secondary); }
+.gacha-rarity { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 0.82rem; letter-spacing: 0.1em; color: var(--capsule); }
+.gacha-stars { letter-spacing: 0.12em; }
+.gacha-new { margin-left: auto; padding: 2px 8px; border-radius: 999px; background: #b3261f; color: #fff; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.gacha-kind { margin: 0 0 4px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-secondary); }
 .gacha-prize-title { margin: 0 0 6px; font-family: var(--font-display, inherit); font-size: 1.3rem; line-height: 1.25; }
 .gacha-prize[data-kind='fact'] .gacha-prize-title { font-size: 2.2rem; }
 .gacha-prize-text { margin: 0 0 10px; font-size: 0.92rem; line-height: 1.55; color: var(--text-secondary); }
 .gacha-go { color: var(--accent); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .gacha-turn {
   justify-self: start;
-  min-height: 44px;
-  padding: 10px 22px;
+  min-width: 160px;
+  min-height: 46px;
+  padding: 10px 24px;
   border: 0;
-  border-radius: 8px;
+  border-radius: 10px;
   background: #b3261f;
   color: #fff;
   font: inherit;
   font-weight: 700;
+  box-shadow: 0 4px 0 #7c1814;
+  transition: transform 0.08s, box-shadow 0.08s;
 }
 .gacha-turn:hover, .gacha-turn:focus-visible { background: #c8322a; }
+.gacha-turn:active { transform: translateY(3px); box-shadow: 0 1px 0 #7c1814; }
 .gacha-turn:disabled { opacity: 0.6; }
-@media (max-width: 600px) {
-  .gacha { grid-template-columns: 1fr; gap: 12px; padding: 22px 18px 18px; }
-  .gacha-machine { width: 150px; margin: 0 auto; }
-  .gacha-side { min-height: 150px; }
+.gacha-collection { padding-top: 12px; border-top: 1px solid var(--border); }
+.gacha-collection-title { display: flex; justify-content: space-between; gap: 12px; margin: 0 0 8px; font-size: 0.8rem; color: var(--text-secondary); }
+.gacha-collection-title b { font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.gacha-dots { display: flex; flex-wrap: wrap; gap: 5px; }
+.gacha-dot { width: 13px; height: 13px; border: 1.5px solid color-mix(in srgb, var(--capsule) 60%, transparent); border-radius: 50%; }
+.gacha-dot[data-on] { border-color: var(--capsule); background: var(--capsule); }
+.gacha-dot[data-last] { box-shadow: 0 0 0 2px var(--bg-color), 0 0 0 3.5px var(--capsule); }
+@media (max-width: 640px) {
+  .gacha { grid-template-columns: 1fr; gap: 10px; padding: 22px 18px 18px; }
+  .gacha-machine { width: 170px; margin: 0 auto; }
+  .gacha-stage { min-height: 150px; }
+  .gacha-turn { justify-self: stretch; }
 }
 
-/* --- 花火: festival secreto (taiko e fogos por cima da página) --- */
+/* --- 花火大会: o festival de fogos. Com a cena 3D, a página some e os fogos sobem atrás da ponte
+   (html.festival-mode); sem ela, são pintados por cima da página escurecida --- */
+html.festival-mode body > :not([data-scene]):not(.hanabi):not(.retro-scan),
+html.festival-mode nav, html.festival-mode header, html.festival-mode main, html.festival-mode footer { opacity: 0 !important; pointer-events: none !important; }
+html.festival-mode body > [data-scene]::after { opacity: 0 !important; }
+html.festival-mode { overflow: hidden; }
 .hanabi {
   position: fixed;
   inset: 0;
-  z-index: 9950;
-  background: rgba(3, 5, 14, 0.62);
+  z-index: 9992;
   color: #f3eee3;
   touch-action: none;
   user-select: none;
-  animation: gacha-in 0.4s ease-out;
+  cursor: crosshair;
+  animation: gacha-in 0.6s ease-out;
 }
-.hanabi.is-finale { background: rgba(3, 5, 14, 0.78); transition: background 0.8s; }
+.hanabi[data-mode='page'] { background: rgba(3, 5, 14, 0.84); }
+.hanabi[data-mode='scene'] { background: linear-gradient(180deg, rgba(3, 5, 14, 0.5) 0, transparent 22%, transparent 74%, rgba(3, 5, 14, 0.6) 100%); }
+.hanabi button { cursor: pointer; }
 .hanabi-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-.hanabi-title { position: absolute; top: 22px; left: 26px; margin: 0; font-size: 2.6rem; line-height: 1; color: #f3eee3; opacity: 0.9; }
-.hanabi-combo { position: absolute; top: 26px; left: 50%; margin: 0; transform: translateX(-50%); font-size: 2.4rem; font-weight: 800; font-variant-numeric: tabular-nums; color: #ffd27a; }
-.hanabi-keys { position: absolute; left: 0; right: 0; bottom: 14px; display: flex; justify-content: center; flex-wrap: wrap; gap: 6px 22px; margin: 0; font-size: 0.82rem; color: rgba(243, 238, 227, 0.8); }
-.hanabi kbd { display: inline-block; min-width: 1.6em; margin-right: 4px; padding: 1px 6px; border: 1px solid rgba(243, 238, 227, 0.5); border-radius: 4px; font: inherit; font-size: 0.78rem; text-align: center; }
+.hanabi-title { position: absolute; top: 22px; left: 26px; margin: 0; font-size: 2.2rem; line-height: 1; letter-spacing: 0.12em; color: #f3eee3; opacity: 0.92; text-shadow: 0 2px 18px rgba(0, 0, 0, 0.7); }
+.hanabi-act {
+  position: absolute;
+  left: 26px;
+  bottom: 54px;
+  display: grid;
+  gap: 4px;
+  max-width: min(440px, calc(100% - 52px));
+  margin: 0;
+  padding-left: 14px;
+  border-left: 3px solid #c8322a;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.9);
+  animation: hanabi-act 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes hanabi-act { from { opacity: 0; translate: 0 14px; } }
+.hanabi-act-jp { font-size: 2.3rem; line-height: 1.1; color: #ffd27a; }
+.hanabi-act-name { font-size: 1.02rem; font-weight: 700; letter-spacing: 0.04em; }
+.hanabi-act-text { font-size: 0.88rem; line-height: 1.5; color: rgba(243, 238, 227, 0.86); }
+.hanabi-keys { position: absolute; left: 0; right: 0; bottom: 16px; display: flex; justify-content: center; margin: 0; padding: 0 16px; font-size: 0.8rem; text-align: center; color: rgba(243, 238, 227, 0.72); text-shadow: 0 1px 8px rgba(0, 0, 0, 0.9); }
+.hanabi kbd, .taiko kbd { display: inline-block; min-width: 1.6em; margin-right: 4px; padding: 1px 6px; border: 1px solid rgba(243, 238, 227, 0.5); border-radius: 4px; font: inherit; font-size: 0.78rem; text-align: center; }
 .hanabi-close { position: absolute; top: 20px; right: 22px; min-height: 40px; padding: 6px 12px; border: 1px solid rgba(243, 238, 227, 0.35); border-radius: 8px; background: rgba(3, 5, 14, 0.5); color: #f3eee3; font: inherit; font-size: 0.85rem; }
 .hanabi-close:hover, .hanabi-close:focus-visible { border-color: #f3eee3; }
 .hanabi-close kbd { margin: 0 0 0 6px; }
-.hanabi-result { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: grid; justify-items: center; gap: 6px; padding: 28px 40px; border: 1px solid rgba(243, 238, 227, 0.3); border-radius: 14px; background: rgba(6, 8, 18, 0.86); text-align: center; animation: gacha-prize 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2); }
-.hanabi-rank { margin: 0; font-size: 5rem; line-height: 1; color: #e8665a; }
-.hanabi-score { margin: 0; font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; }
-.hanabi-detail { margin: 0 0 12px; font-size: 0.9rem; color: rgba(243, 238, 227, 0.75); }
-.hanabi-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
-.hanabi-actions button { min-height: 44px; padding: 8px 18px; border: 1px solid rgba(243, 238, 227, 0.4); border-radius: 8px; background: transparent; color: #f3eee3; font: inherit; }
-.hanabi-actions button:first-child { border-color: #c8322a; background: #b3261f; font-weight: 700; }
-.hanabi-actions button:hover, .hanabi-actions button:focus-visible { border-color: #f3eee3; }
+.hanabi-result { position: absolute; left: 50%; bottom: 9vh; translate: -50% 0; display: grid; justify-items: center; gap: 6px; width: min(440px, calc(100% - 32px)); padding: 22px 28px; border: 1px solid rgba(243, 238, 227, 0.3); border-radius: 14px; background: rgba(6, 8, 18, 0.8); text-align: center; cursor: default; animation: gacha-prize 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.hanabi-rank { margin: 0; font-size: 3.4rem; line-height: 1; color: #ffd27a; }
+.hanabi-score { margin: 0; font-size: 1.3rem; font-weight: 700; }
+.hanabi-detail { margin: 0 0 10px; font-size: 0.9rem; line-height: 1.5; color: rgba(243, 238, 227, 0.8); }
+.hanabi-actions, .taiko-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.hanabi-actions button, .taiko-actions button { min-height: 44px; padding: 8px 18px; border: 1px solid rgba(243, 238, 227, 0.4); border-radius: 8px; background: transparent; color: #f3eee3; font: inherit; }
+.hanabi-actions button:first-child, .taiko-actions button:first-child { border-color: #c8322a; background: #b3261f; font-weight: 700; }
+.hanabi-actions button:hover, .hanabi-actions button:focus-visible, .taiko-actions button:hover, .taiko-actions button:focus-visible { border-color: #f3eee3; }
 @media (pointer: fine) { .hanabi-keys-touch { display: none; } }
-@media (max-width: 600px) { .hanabi-title { font-size: 1.8rem; top: 18px; left: 16px; } .hanabi-combo { top: 64px; } }
+@media (pointer: coarse) { .hanabi-keys-mouse { display: none; } }
+@media (max-width: 600px) {
+  .hanabi-title { font-size: 1.5rem; top: 24px; left: 16px; }
+  .hanabi-act { left: 16px; bottom: 60px; max-width: calc(100% - 32px); }
+  .hanabi-act-jp { font-size: 1.7rem; }
+}
+
+/* --- 太鼓: o jogo de ritmo do festival (tela própria, por cima de tudo) --- */
+.taiko {
+  position: fixed;
+  inset: 0;
+  z-index: 9992;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 70% at 50% 0%, rgba(200, 50, 42, 0.22), transparent 60%),
+    radial-gradient(90% 60% at 50% 110%, rgba(63, 127, 196, 0.2), transparent 60%),
+    repeating-radial-gradient(circle at 50% 135%, rgba(243, 238, 227, 0.035) 0 2px, transparent 2px 46px),
+    #080a16;
+  color: #f3eee3;
+  touch-action: none;
+  user-select: none;
+  animation: gacha-in 0.35s ease-out;
+}
+.taiko-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.taiko-title { position: absolute; top: 18px; left: 24px; margin: 0; font-size: 2.2rem; line-height: 1; color: #f3eee3; }
+.taiko-top { position: absolute; top: 16px; right: 20px; z-index: 2; display: flex; gap: 8px; }
+.taiko-btn { min-height: 40px; padding: 6px 12px; border: 1px solid rgba(243, 238, 227, 0.35); border-radius: 8px; background: rgba(3, 5, 14, 0.6); color: #f3eee3; font: inherit; font-size: 0.85rem; }
+.taiko-btn:hover, .taiko-btn:focus-visible { border-color: #f3eee3; }
+.taiko-btn kbd { margin: 0 0 0 6px; }
+.taiko-hud {
+  position: absolute;
+  top: 132px;
+  left: 50%;
+  display: grid;
+  grid-template-columns: auto minmax(120px, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  width: min(760px, calc(100% - 32px));
+  translate: -50% 0;
+}
+.taiko-level { margin: 0; font-size: 0.9rem; font-weight: 700; white-space: nowrap; }
+.taiko-level .font-jp { margin-right: 6px; color: #ffd27a; }
+.taiko-soul { --soul: 0; position: relative; height: 16px; border: 2px solid rgba(243, 238, 227, 0.7); border-radius: 999px; background: rgba(3, 5, 14, 0.7); }
+.taiko-soul-fill { position: absolute; inset: 0; border-radius: 999px; background: linear-gradient(90deg, #e2472f, #ffb347); transform-origin: left; transform: scaleX(var(--soul)); transition: transform 0.18s ease-out; }
+.taiko-soul[data-clear] .taiko-soul-fill { background: linear-gradient(90deg, #ffb347, #ffe9a8); box-shadow: 0 0 14px rgba(255, 210, 122, 0.8); }
+.taiko-soul-mark { position: absolute; top: -5px; bottom: -5px; width: 2px; background: #f3eee3; }
+.taiko-soul-kanji { position: absolute; right: -8px; top: 50%; display: grid; place-items: center; width: 30px; height: 30px; border: 2px solid rgba(243, 238, 227, 0.7); border-radius: 50%; background: #14141a; font-size: 0.95rem; translate: 50% -50%; }
+.taiko-soul[data-clear] .taiko-soul-kanji { border-color: #ffd27a; background: #b3261f; color: #ffe9a8; }
+.taiko-score { margin: 0 0 0 18px; font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; white-space: nowrap; color: rgba(243, 238, 227, 0.7); }
+.taiko-score b { display: block; font-size: 1.7rem; letter-spacing: 0.04em; line-height: 1; font-variant-numeric: tabular-nums; color: #f3eee3; }
+.taiko-keys { position: absolute; left: 0; right: 0; bottom: 64px; display: flex; justify-content: center; gap: 22px; margin: 0; font-size: 0.82rem; color: rgba(243, 238, 227, 0.8); }
+@media (pointer: coarse) { .taiko-keys { display: none; } }
+.taiko-card {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  display: grid;
+  gap: 14px;
+  width: min(620px, calc(100% - 24px));
+  max-height: calc(100% - 84px);
+  padding: 26px 30px 24px;
+  overflow-y: auto;
+  border: 1px solid rgba(243, 238, 227, 0.28);
+  border-radius: 14px;
+  background: rgba(10, 12, 24, 0.94);
+  box-shadow: 0 30px 80px -30px #000;
+  translate: -50% -46%;
+  touch-action: pan-y;
+  animation: gacha-prize 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.1);
+}
+.taiko-card-title { margin: 0; font-family: var(--font-display, inherit); font-size: 1.7rem; line-height: 1.2; }
+.taiko-card-title .font-jp { color: #e8665a; }
+.taiko-lead { margin: 0; line-height: 1.6; color: rgba(243, 238, 227, 0.86); }
+.taiko-how, .taiko-rules { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.taiko-how li { display: grid; grid-template-columns: 40px 1fr; align-items: center; gap: 12px; font-size: 0.92rem; line-height: 1.45; }
+.taiko-how b { margin-right: 4px; }
+.taiko-how-keys { margin-left: 10px; white-space: nowrap; }
+.taiko-how-touch { display: none; margin-left: 8px; color: #ffd27a; }
+@media (pointer: coarse) { .taiko-how-keys { display: none; } .taiko-how-touch { display: inline; } }
+.taiko-rules { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.taiko-rules li { display: grid; justify-items: center; gap: 2px; padding: 10px 6px; border: 1px solid rgba(243, 238, 227, 0.16); border-radius: 10px; font-size: 0.8rem; text-align: center; color: rgba(243, 238, 227, 0.78); }
+.taiko-rules .font-jp { font-size: 1.6rem; line-height: 1.1; color: #ffd27a; }
+.taiko-rules li:nth-child(2) .font-jp { color: #f3eee3; }
+.taiko-rules li:nth-child(3) .font-jp { color: #8ea2c8; }
+.taiko-rules b { font-size: 0.9rem; color: #f3eee3; }
+.taiko-combo-rule { margin: 0; font-size: 0.86rem; line-height: 1.55; color: rgba(243, 238, 227, 0.78); }
+.taiko-levels { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.taiko-level-option { display: grid; justify-items: center; gap: 2px; min-height: 44px; padding: 10px 6px; border: 1px solid rgba(243, 238, 227, 0.3); border-radius: 10px; background: transparent; color: #f3eee3; font: inherit; }
+.taiko-level-option .font-jp { font-size: 0.82rem; color: rgba(243, 238, 227, 0.7); }
+.taiko-level-option:hover, .taiko-level-option:focus-visible { border-color: #f3eee3; }
+.taiko-level-option[aria-checked='true'] { border-color: #ffd27a; background: rgba(255, 210, 122, 0.12); }
+.taiko-level-best { font-size: 0.72rem; font-variant-numeric: tabular-nums; color: rgba(243, 238, 227, 0.65); }
+.taiko-start { justify-self: center; min-width: 200px; min-height: 50px; padding: 10px 28px; border: 0; border-radius: 10px; background: #b3261f; color: #fff; font: inherit; font-size: 1.05rem; font-weight: 700; letter-spacing: 0.04em; }
+.taiko-start:hover, .taiko-start:focus-visible { background: #cf372e; }
+.taiko-result { justify-items: center; gap: 6px; text-align: center; }
+.taiko-verdict { margin: 0; font-size: 0.95rem; font-weight: 700; letter-spacing: 0.06em; color: #8ea2c8; }
+.taiko-verdict[data-clear] { color: #ffd27a; }
+.taiko-rank { margin: 0; font-size: 5rem; line-height: 1; color: #e8665a; }
+.taiko-final { margin: 0; font-size: 2.3rem; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.taiko-record { margin: 0 0 6px; font-size: 0.86rem; color: #ffd27a; }
+.taiko-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; width: 100%; margin: 0 0 12px; }
+.taiko-stats div { padding: 8px 4px; border: 1px solid rgba(243, 238, 227, 0.16); border-radius: 10px; }
+.taiko-stats dt { font-size: 0.72rem; color: rgba(243, 238, 227, 0.7); }
+.taiko-stats dd { margin: 2px 0 0; font-size: 1.3rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+@media (max-width: 600px) {
+  .taiko-title { font-size: 1.6rem; top: 22px; left: 16px; }
+  .taiko-top { right: 12px; }
+  .taiko-hud { top: 126px; grid-template-columns: 1fr auto; gap: 10px 14px; }
+  .taiko-level { grid-column: 1 / -1; }
+  .taiko-score { margin-left: 22px; }
+  .taiko-card { padding: 20px 18px 18px; gap: 12px; }
+  .taiko-card-title { font-size: 1.35rem; }
+  .taiko-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .taiko-rank { font-size: 3.8rem; }
+}
 
 /* --- 遊: menu de extras (reusa o painel dos gráficos) --- */
 .play-pop { width: 290px; }
@@ -6336,6 +6503,19 @@ html.retro *, html.retro *::before, html.retro *::after { border-radius: 0 !impo
   letter-spacing: 0.08em;
   pointer-events: none;
 }
+.retro-music {
+  margin: -4px -8px -4px 0;
+  padding: 4px 10px;
+  border: 0;
+  border-left: 2px solid rgba(255, 255, 255, 0.35);
+  background: transparent;
+  color: #7ee0a0;
+  font: inherit;
+  letter-spacing: inherit;
+  pointer-events: auto;
+}
+.retro-music[aria-pressed='false'] { color: #9aa0b0; }
+.retro-music:hover, .retro-music:focus-visible { background: #fff; color: #000; }
 .retro-hud-blink { color: #ffd27a; animation: retro-blink 1s steps(1) infinite; }
 @keyframes retro-blink { 50% { opacity: 0; } }
 @media (max-width: 600px) { .retro-hud { top: 76px; font-size: 11px; gap: 10px; } }
@@ -6380,6 +6560,6 @@ html.photo-mode { overflow: hidden; }
 @media (pointer: coarse) { .photo-hint { display: none; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .gacha-veil, .gacha-prize, .hanabi, .hanabi-result, .photo-flash, .retro-hud-blink, .pet[data-mood='sleep'] .pet-bubble::after { animation: none; }
+  .gacha-veil, .gacha-prize, .hanabi, .hanabi-result, .hanabi-act, .taiko, .taiko-card, .photo-flash, .retro-hud-blink, .pet[data-mood='sleep'] .pet-bubble::after { animation: none; }
   .photo-flash { opacity: 0; }
 }

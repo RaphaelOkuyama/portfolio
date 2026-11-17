@@ -6,10 +6,12 @@ import { stepDown } from '../lib/journey/quality';
 
 // Progresso que a cena deve usar: o real na jornada, o ponto fixo fora dela
 export function effectiveProgress(state) {
+  // 花火: durante o festival a cena inteira vai para o fim do caminho (o rio e a ponte)
+  if (state.festival) return 1;
   return state.route === 'frozen' ? FROZEN_PROGRESS : state.progress;
 }
 
-const mixFor = (progress, route) => seasonMixFromProgress(effectiveProgress({ progress, route }));
+const mixFor = (progress, route, festival = false) => seasonMixFromProgress(effectiveProgress({ progress, route, festival }));
 
 export function createJourneyStore() {
   return createStore((set, get) => ({
@@ -35,7 +37,11 @@ export function createJourneyStore() {
     sceneHold: false,
     // 遊: extras do menu (ver lib/play). Modo Famicom, modo foto e os bichinhos escolhidos
     retro: false,
+    // Música do modo Famicom (dá para desligar e ficar só com os pixels)
+    retroMusic: true,
     photo: false,
+    // 花火: o festival está aberto com a cena 3D (a câmera vai para a beira do rio, ver lib/festival)
+    festival: false,
     pets: [],
     loaderDone: false,
     // Faixa [início, fim] de cada seção em fração do progresso (medida pelo ScrollTrigger)
@@ -59,8 +65,9 @@ export function createJourneyStore() {
 
     setProgress: (p) => {
       const progress = clamp01(p);
-      set({ progress, seasonMix: mixFor(progress, get().route) });
+      set({ progress, seasonMix: mixFor(progress, get().route, get().festival) });
     },
+    setFestival: (festival) => set({ festival, seasonMix: mixFor(get().progress, get().route, festival) }),
     setSection: (section, p) => set({ section, sectionProgress: clamp01(p) }),
     setTheme: (theme) => set({ theme }),
     // Primeira leitura (escolha salva ou o mínimo); depois só a pessoa ou a queda de FPS mudam
@@ -77,7 +84,7 @@ export function createJourneyStore() {
     // FPS caiu: desce um degrau só nesta visita (a escolha salva não muda)
     downgradeQuality: () => set({ quality: stepDown(get().quality) }),
     setReducedMotion: (reducedMotion) => set({ reducedMotion }),
-    setRoute: (route) => set({ route, seasonMix: mixFor(get().progress, route) }),
+    setRoute: (route) => set({ route, seasonMix: mixFor(get().progress, route, get().festival) }),
     setAssetsProgress: (n) => set({ assetsProgress: Math.min(100, Math.max(0, n)) }),
     setSceneReady: () => set({ sceneReady: true }),
     setLoaderDone: () => set({ loaderDone: true }),

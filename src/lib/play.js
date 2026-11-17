@@ -7,16 +7,42 @@ let tune = null;
 
 // ファミコン: liga a tela de poucos pixels e a música (o clique que liga é o gesto que o
 // navegador exige para tocar som)
-export async function setRetro(on) {
-  journeyStore.setState({ retro: on });
-  document.documentElement.classList.toggle('retro', on);
-  tune?.stop();
-  tune = null;
-  if (on) {
-    const { createChiptune } = await import('./retro');
-    // Desligou enquanto o código da música baixava
-    if (journeyStore.getState().retro) tune = createChiptune();
+const MUSIC_KEY = 'retro-music';
+
+async function syncTune() {
+  const wanted = () => journeyStore.getState().retro && journeyStore.getState().retroMusic;
+  if (!wanted()) {
+    tune?.stop();
+    tune = null;
+    return;
   }
+  if (tune) return;
+  const { createChiptune } = await import('./retro');
+  // Desligou enquanto o código da música baixava (ou outra chamada já ligou)
+  if (wanted() && !tune) tune = createChiptune();
+}
+
+export async function setRetro(on) {
+  let music = true;
+  try {
+    music = window.localStorage.getItem(MUSIC_KEY) !== 'off';
+  } catch {
+    music = true;
+  }
+  journeyStore.setState({ retro: on, retroMusic: music });
+  document.documentElement.classList.toggle('retro', on);
+  await syncTune();
+}
+
+// A música do Famicom liga e desliga à parte (a escolha fica salva): os pixels continuam
+export async function setRetroMusic(on) {
+  journeyStore.setState({ retroMusic: on });
+  try {
+    window.localStorage.setItem(MUSIC_KEY, on ? 'on' : 'off');
+  } catch {
+    // Storage bloqueado: a escolha só não persiste
+  }
+  await syncTune();
 }
 
 // 写真: câmera livre do modo foto, somada ao ponto da trilha em que a pessoa está (ver

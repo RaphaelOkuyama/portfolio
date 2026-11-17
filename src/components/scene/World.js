@@ -29,6 +29,7 @@ import ShaderWarmup, { LateWarmup } from './ShaderWarmup';
 import SceneLight from './SceneLight';
 import GroundMist from './GroundMist';
 import GroundCover from './GroundCover';
+import Fireworks from './Fireworks';
 
 // Grupos montados em sequência (ordem: o que aparece primeiro no hero vem antes)
 const STAGES = [
@@ -40,13 +41,13 @@ const STAGES = [
   [BambooGrove, KodamaHunt, ShishiOdoshi, Bonsai],
   [Pagoda, Taikobashi, Katana, KatanaSlash],
   [Tanabata, Momiji, Snow],
-  [River, Petals],
+  [River, Petals, Fireworks],
 ];
 
 // Cena leve (sem GPU): fica o cenário. Saem as partículas e o que vive sozinho (pássaros, cometa,
 // kodama, golpe da katana, pétalas, folhas, neve) e a névoa em camadas (transparente sobre a tela
 // toda: pintar a mesma área várias vezes é o que mais pesa sem GPU)
-const ANIMATED = new Set([Comet, Birds, KodamaHunt, KatanaSlash, Momiji, Snow, Petals, Kasumi, GroundMist]);
+const ANIMATED = new Set([Comet, Birds, KodamaHunt, KatanaSlash, Momiji, Snow, Petals, Kasumi, GroundMist, Fireworks]);
 
 // memo: montar o grupo seguinte não re-renderiza os anteriores
 const Stage = memo(function Stage({ index, lite }) {
@@ -69,6 +70,7 @@ export default function World({ onReady }) {
           state.activeStone !== prev.activeStone ||
           state.lanternReleases !== prev.lanternReleases ||
           state.lost !== prev.lost ||
+          state.festival !== prev.festival ||
           state.sectionRanges !== prev.sectionRanges ||
           (state.route === 'journey' && state.progress !== prev.progress);
         if (changed) invalidate();

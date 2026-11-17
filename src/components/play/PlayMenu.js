@@ -4,13 +4,14 @@ import { Gamepad2 } from 'lucide-react';
 import { useJourney } from '../../store/journey';
 import { useSettings } from '../../context/SettingsContext';
 import { PETS } from '../../lib/pets';
-import { canPhoto, setPhoto, setRetro, switchPet } from '../../lib/play';
+import { canPhoto, setPhoto, setRetro, setRetroMusic, switchPet } from '../../lib/play';
 import PetSprite from './PetSprite';
 
 const TEXT = {
   pt: {
     title: 'Extras', open: 'Extras: modo Famicom, modo foto e bichinhos',
     retro: ['Modo Famicom', 'A cena em pixels, com música chiptune'],
+    music: ['Música do Famicom', 'Tocando. Clique para ficar só com os pixels', 'Desligada. Clique para tocar'],
     photo: ['Modo foto', 'Esconde a página e solta a câmera da cena'],
     photoOff: 'Disponível na página inicial, com a cena 3D carregada.',
     pets: 'Bichinhos', petsHint: 'Escolha quantos quiser. Andam com a rolagem e dormem à noite.',
@@ -18,6 +19,7 @@ const TEXT = {
   en: {
     title: 'Extras', open: 'Extras: Famicom mode, photo mode and pets',
     retro: ['Famicom mode', 'The scene in pixels, with chiptune music'],
+    music: ['Famicom music', 'Playing. Click to keep only the pixels', 'Off. Click to play'],
     photo: ['Photo mode', 'Hides the page and frees the scene camera'],
     photoOff: 'Available on the home page, once the 3D scene has loaded.',
     pets: 'Pets', petsHint: 'Pick as many as you like. They walk as you scroll and sleep at night.',
@@ -26,6 +28,7 @@ const TEXT = {
 
 function Body({ t, language, onAction }) {
   const retro = useJourney((s) => s.retro);
+  const music = useJourney((s) => s.retroMusic);
   const pets = useJourney((s) => s.pets);
   // Só dá para saber na hora de abrir: depende da rota e de a cena já ter chegado
   const [photoOk, setPhotoOk] = useState(false);
@@ -37,6 +40,12 @@ function Body({ t, language, onAction }) {
           <span className="quality-option-name"><span className="font-jp" lang="ja" aria-hidden="true">遊 </span>{t.retro[0]}</span>
           <span className="quality-option-hint">{t.retro[1]}</span>
         </button>
+        {retro ? (
+          <button type="button" className="quality-option" aria-pressed={music} data-play="retro-music" onClick={() => setRetroMusic(!music)}>
+            <span className="quality-option-name"><span className="font-jp" lang="ja" aria-hidden="true">音 </span>{t.music[0]}</span>
+            <span className="quality-option-hint">{music ? t.music[1] : t.music[2]}</span>
+          </button>
+        ) : null}
         <button type="button" className="quality-option" data-play="photo" disabled={!photoOk} onClick={() => { if (setPhoto(true)) onAction(); }}>
           <span className="quality-option-name"><span className="font-jp" lang="ja" aria-hidden="true">写 </span>{t.photo[0]}</span>
           <span className="quality-option-hint">{photoOk ? t.photo[1] : t.photoOff}</span>

@@ -2,6 +2,7 @@
 import dynamic from 'next/dynamic';
 import { useJourney } from '../../store/journey';
 import { useSettings } from '../../context/SettingsContext';
+import { setRetroMusic } from '../../lib/play';
 import Pets from './Pets';
 
 // O modo foto só baixa quando alguém liga
@@ -14,16 +15,30 @@ const STAGES = ['hero', 'about', 'stack', 'projects', 'experience', 'contato'];
 function RetroHud() {
   const section = useJourney((s) => s.section);
   const score = useJourney((s) => Math.round(s.progress * 100) * 100);
+  const music = useJourney((s) => s.retroMusic);
   const { language } = useSettings();
+  const en = language === 'en';
   const stage = Math.max(0, STAGES.indexOf(section)) + 1;
   return (
     <>
       <div className="retro-scan" aria-hidden="true" />
-      <p className="retro-hud" data-retro-hud="" aria-hidden="true">
-        <span>{language === 'en' ? 'STAGE' : 'FASE'} 1-{stage}</span>
-        <span>{language === 'en' ? 'SCORE' : 'PONTOS'} {String(score).padStart(6, '0')}</span>
-        <span className="retro-hud-blink">1P</span>
-      </p>
+      <div className="retro-hud" data-retro-hud="">
+        <span aria-hidden="true">{en ? 'STAGE' : 'FASE'} 1-{stage}</span>
+        <span aria-hidden="true">{en ? 'SCORE' : 'PONTOS'} {String(score).padStart(6, '0')}</span>
+        <span className="retro-hud-blink" aria-hidden="true">1P</span>
+        {/* A música desliga aqui mesmo, sem abrir o menu */}
+        <button
+          type="button"
+          className="retro-music"
+          data-retro-music=""
+          aria-pressed={music}
+          aria-label={en ? 'Famicom music' : 'Música do Famicom'}
+          title={en ? (music ? 'Turn the music off' : 'Turn the music on') : (music ? 'Desligar a música' : 'Ligar a música')}
+          onClick={() => setRetroMusic(!music)}
+        >
+          ♪ {music ? 'ON' : 'OFF'}
+        </button>
+      </div>
     </>
   );
 }

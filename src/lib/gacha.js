@@ -23,17 +23,53 @@ const FACTS = {
   ],
 };
 
-// Tudo o que pode sair: projetos (metade das cápsulas), certificados e fatos
-export function gachaPool({ projects = [], certificates = [] }, lang = 'pt') {
+// Raridade, como nos gacha dos jogos: N (fatos), R (certificados e projetos de estudo), SR (os
+// projetos da vitrine) e SSR (o projeto em produção). Estrelas e cor de cada uma
+export const RARITY = {
+  N: { stars: 1, color: '#9aa7bd' },
+  R: { stars: 2, color: '#4f9bd9' },
+  SR: { stars: 3, color: '#b06bff' },
+  SSR: { stars: 4, color: '#ffc94d' },
+};
+
+// Tudo o que pode sair: projetos (metade das cápsulas), certificados e fatos. `showcase`: os
+// slugs dos projetos da vitrine (viram SR)
+export function gachaPool({ projects = [], certificates = [] }, lang = 'pt', showcase = []) {
   const pool = [];
   projects.forEach((p) => pool.push({
     kind: 'project', id: `p-${p.slug}`, title: p.title, text: p.shortDesc ?? '', href: `/projects/${p.slug}`,
+    rarity: p.featured ? 'SSR' : showcase.includes(p.slug) ? 'SR' : 'R',
   }));
   certificates.forEach((c) => pool.push({
-    kind: 'certificate', id: `c-${c.id}`, title: c.name, text: `${c.institution} · ${c.hours} h`, href: '/certificates',
+    kind: 'certificate', id: `c-${c.id}`, title: c.name, text: `${c.institution} · ${c.hours} h`, href: '/certificates', rarity: 'R',
   }));
-  (FACTS[lang] ?? FACTS.pt).forEach(([title, text], i) => pool.push({ kind: 'fact', id: `f-${i}`, title, text, href: null }));
+  (FACTS[lang] ?? FACTS.pt).forEach(([title, text], i) => pool.push({ kind: 'fact', id: `f-${i}`, title, text, href: null, rarity: 'N' }));
   return pool;
+}
+
+// 図鑑: a coleção, isto é, os prêmios que já saíram (ids), guardada no navegador
+export const GACHA_KEY = 'gacha-collection';
+
+export function readCollection(storage, pool) {
+  try {
+    const raw = JSON.parse(storage.getItem(GACHA_KEY) ?? '[]');
+    const known = new Set(pool.map((item) => item.id));
+    return Array.isArray(raw) ? [...new Set(raw.filter((id) => known.has(id)))] : [];
+  } catch {
+    return [];
+  }
+}
+
+// Junta um prêmio à coleção. Devolve { collection, fresh } (fresh: ainda não tinha saído)
+export function collect(storage, collection, id) {
+  if (collection.includes(id)) return { collection, fresh: false };
+  const next = [...collection, id];
+  try {
+    storage.setItem(GACHA_KEY, JSON.stringify(next));
+  } catch {
+    // Storage bloqueado: a coleção só não persiste
+  }
+  return { collection: next, fresh: true };
 }
 
 const WEIGHTS = [['project', 0.5], ['certificate', 0.25], ['fact', 0.25]];

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { DOMAIN, typedSecret } from '../lib/domain';
 import { HANABI } from '../lib/hanabi';
+import { TAIKO } from '../lib/taiko';
 
 // Segredos pesados carregados só quando alguém os chama: aqui ficam apenas os gatilhos (alguns
 // ouvintes de evento). O código da bola d'água e do Vazio Infinito baixa no primeiro uso
@@ -13,6 +14,7 @@ const KoiNotice = dynamic(() => import('./KoiNotice'), { ssr: false });
 const KodamaNotice = dynamic(() => import('./KodamaNotice'), { ssr: false });
 const CrowHint = dynamic(() => import('./CrowHint'), { ssr: false });
 const Hanabi = dynamic(() => import('./hanabi/Hanabi'), { ssr: false });
+const Taiko = dynamic(() => import('./taiko/Taiko'), { ssr: false });
 
 const HOLD_SELECTOR = '[data-station="stack"] .section-kanji';
 const editable = (el) => Boolean(el?.closest?.('input, textarea, select, [contenteditable="true"]'));
@@ -35,11 +37,15 @@ export default function EasterEggs() {
   // 花火: o festival de taiko e fogos (outra palavra secreta)
   const [hanabi, setHanabi] = useState(false);
   const endHanabi = useCallback(() => setHanabi(false), []);
+  // 太鼓: o jogo de ritmo (palavras "taiko" e "matsuri")
+  const [taiko, setTaiko] = useState(false);
+  const endTaiko = useCallback(() => setTaiko(false), []);
 
   useEffect(() => {
     const last = { x: -200, y: -200 };
     let buffer = '';
     let festival = '';
+    let drum = '';
     let holdTimer = 0;
     let holding = null;
     let heldSince = 0;
@@ -58,9 +64,18 @@ export default function EasterEggs() {
     // 領域展開: palavra secreta (fora de campos) ou segurar o kanji 技
     const onKey = (e) => {
       if (editable(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
+      // 花火 abre o festival de fogos; 太鼓 (ou 祭り) abre o jogo. Um de cada vez
       const f = typedSecret(festival, e.key, HANABI.words);
       festival = f.hit ? '' : f.buffer;
-      if (f.hit) setHanabi(true);
+      const g = typedSecret(drum, e.key, TAIKO.words);
+      drum = g.hit ? '' : g.buffer;
+      if (f.hit) {
+        setTaiko(false);
+        setHanabi(true);
+      } else if (g.hit) {
+        setHanabi(false);
+        setTaiko(true);
+      }
       const r = typedSecret(buffer, e.key);
       buffer = r.buffer;
       if (!r.hit && startsSecret(buffer)) warmDomain();
@@ -122,6 +137,7 @@ export default function EasterEggs() {
       {domain ? <DomainExpansion origin={domain} onDone={close} /> : null}
       {flash ? <BlackFlash key={flash.key} x={flash.x} y={flash.y} onDone={endFlash} /> : null}
       {hanabi ? <Hanabi onDone={endHanabi} /> : null}
+      {taiko ? <Taiko onDone={endTaiko} /> : null}
       <KoiNotice />
       <KodamaNotice />
       <CrowHint />

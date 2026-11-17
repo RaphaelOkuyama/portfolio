@@ -15,9 +15,12 @@ import RedThread from './RedThread';
 import { warm } from './warmup';
 import { LANTERNS, RIVER, TAIKOBASHI } from './config';
 import { celestialWorld } from './Celestial';
+import { festival } from '../../lib/festival';
 
 // Máximo de reflexos: lanternas fixas + soltas pelo formulário
 export const MAX_REFLECTIONS = LANTERNS.count.high + LANTERNS.maxReleased;
+// Clarões de fogos refletidos ao mesmo tempo (os mais novos)
+const MAX_HANABI = 4;
 
 const vertexShader = /* glsl */ `
   #include <fog_pars_vertex>
@@ -54,6 +57,8 @@ const fragmentShader = /* glsl */ `
   uniform vec3 uBridgeRed;
   uniform vec3 uBridgeDark;
   uniform float uBridge;
+  uniform vec4 uHanabi[${MAX_HANABI}];      // x no plano, altura sobre a água, z no mundo, força
+  uniform vec3 uHanabiColor[${MAX_HANABI}];
   varying vec2 vLocal;
   varying float vDepth;
   varying vec3 vWorld;
@@ -78,6 +83,7 @@ const fragmentShader = /* glsl */ `
     float bridgeY = uCenter.z - (${TAIKOBASHI.z.toFixed(1)});
     float camY = uCenter.z - cameraPosition.z;
     float camH = max(cameraPosition.y - uCenter.y, 0.2);
+    float camX0 = cameraPosition.x - uCenter.x;
     float span = bridgeY - camY;
     float toBridge = bridgeY - vLocal.y;
     if (uBridge > 0.001 && span > 1.0 && toBridge > 0.0 && toBridge < span - 0.5) {
@@ -107,6 +113,25 @@ const fragmentShader = /* glsl */ `
     float mirror = max(dot(reflect(-toEye, wn), normalize(uMoon - vWorld)), 0.0);
     float glints = smoothstep(0.52, 0.8, fine);
     col += uMoonColor * uGlitter * (pow(mirror, 70.0) * (0.5 + 2.0 * glints) + pow(mirror, 9.0) * 0.2);
+
+    // 花火 refletidos: cada clarão no céu desce como uma coluna de luz tremida na água, mais
+    // forte no ponto em que o espelho mostraria o estouro
+    for (int i = 0; i < ${MAX_HANABI}; i++) {
+      vec4 b = uHanabi[i];
+      if (b.w <= 0.0) continue;
+      float burstY = uCenter.z - b.z;
+      float hSpan = burstY - camY;
+      float toBurst = burstY - vLocal.y;
+      if (hSpan < 1.0 || toBurst < 0.0 || toBurst > hSpan - 0.5) continue;
+      float shake = (ripple - 0.5) * 2.4 + (fine - 0.5) * 1.6;
+      float h = camH * toBurst / (hSpan - toBurst);
+      float px = camX0 + (vLocal.x - camX0) * hSpan / (hSpan - toBurst) + shake * (1.0 + toBurst * 0.03);
+      float dx = px - b.x;
+      float column = exp(-dx * dx / 60.0);
+      float image = exp(-(h - b.y) * (h - b.y) / 90.0);
+      float sparkle = 0.45 + 1.3 * smoothstep(0.42, 0.75, fine);
+      col += uHanabiColor[i] * b.w * column * (0.3 + 0.8 * image) * sparkle;
+    }
 
     // Lanternas: poça de luz em volta + rastro vertical tremido na direção da câmera
     vec3 light = vec3(0.0);
@@ -207,6 +232,8 @@ export default function River() {
           uBridgeRed: { value: new Color() },
           uBridgeDark: { value: new Color() },
           uBridge: { value: 0 },
+          uHanabi: { value: Array.from({ length: MAX_HANABI }, () => new Vector4()) },
+          uHanabiColor: { value: Array.from({ length: MAX_HANABI }, () => new Vector3()) },
         },
       }),
     [quality, reflections],
@@ -280,6 +307,17 @@ export default function River() {
       u.uRipples.value[i].set(r.x - center[0], -(r.z - center[2]), age ?? 0, age === null ? 0 : r.strength);
     });
     if (anyRipple(nowS)) state.invalidate();
+    // 花火: os clarões mais novos viram luz na água (acendem de uma vez e apagam devagar)
+    for (let i = 0; i < MAX_HANABI; i += 1) {
+      const g = festival.glows[festival.glows.length - 1 - i];
+      if (!g) {
+        u.uHanabi.value[i].w = 0;
+        continue;
+      }
+      const age = (festival.clock - g.born) / g.life;
+      u.uHanabi.value[i].set(g.x - center[0], g.y, g.z, g.power * Math.max(0, 1 - age) ** 1.5 * 1.1);
+      u.uHanabiColor.value[i].set(g.color[0], g.color[1], g.color[2]);
+    }
   });
 
   return (

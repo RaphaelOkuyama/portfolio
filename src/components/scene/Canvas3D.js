@@ -36,6 +36,8 @@ export default function Canvas3D() {
   // foto a cena desenha sempre, para a câmera livre responder na hora
   const retro = useJourney((s) => s.retro);
   const photo = useJourney((s) => s.photo);
+  // 花火: durante o festival a cena desenha sempre (os fogos não podem engasgar)
+  const festival = useJourney((s) => s.festival);
   const [liteDpr, setLiteDpr] = useState(LITE_DPR.start);
   const [hidden, setHidden] = useState(false);
   const [warmedUp, setWarmedUp] = useState(false);
@@ -74,7 +76,7 @@ export default function Canvas3D() {
   const idle = useSceneIdle();
   const halfRate = idle && route !== 'frozen';
   // Cena leve: frameloop "never", quem desenha é o LiteLoop
-  const frameloop = lite || hidden || covered || compiledKey !== contextKey ? 'never' : photo ? 'always' : route === 'frozen' || halfRate ? 'demand' : 'always';
+  const frameloop = lite || hidden || covered || compiledKey !== contextKey ? 'never' : photo || festival ? 'always' : route === 'frozen' || halfRate ? 'demand' : 'always';
 
   return (
     <Canvas
