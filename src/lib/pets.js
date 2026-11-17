@@ -1,160 +1,87 @@
-// 育: os bichinhos em pixel que moram no canto da tela, todos do imaginário japonês. Cada um é um
-// desenho de 12x12 em texto: uma letra por pixel, com a paleta do bicho. 'e' são os olhos (viram
-// um traço quando ele dorme) e '.' é vazio
+// Iniciais de Kanto, Hoenn e Kalos. O id salvo é a forma atual; a família identifica o inicial.
+import SIZES from './pokemon-sizes.js';
+import SHINY_SIZES from './pokemon-shiny-sizes.js';
 
-export const PET_SIZE = 12;
-
-export const PETS = [
-  {
-    id: 'shiba', kanji: '柴', name: { pt: 'Shiba', en: 'Shiba' },
-    palette: { o: '#d98a3d', w: '#fbf3e4', k: '#2a1c14', e: '#2a1c14', p: '#e8736a' },
-    rows: [
-      '.oo......oo.',
-      '.ooo....ooo.',
-      '.oooooooooo.',
-      'oooooooooooo',
-      'ooeoowwooeoo',
-      'oowwwwwwwwoo',
-      'owwwwkkwwwwo',
-      '.wwwwppwwww.',
-      '..wwwwwwww..',
-      '.oowwwwwwoo.',
-      '.oo.wwww.oo.',
-      '.ww......ww.',
-    ],
-  },
-  {
-    id: 'neko', kanji: '猫', name: { pt: 'Maneki-neko', en: 'Maneki-neko' },
-    palette: { w: '#fbf7ee', k: '#2a2a2e', e: '#2a2a2e', r: '#c8322a', y: '#e8b63c', p: '#f2a3a0' },
-    rows: [
-      '.ww....ww.ww',
-      '.wpw..wpw.ww',
-      '.wwwwwwww.ww',
-      'wwwwwwwwwwww',
-      'wwewwwwewww.',
-      'wwwwwkwwwww.',
-      'wpwwwwwwwpw.',
-      '.rrrrrrrrr..',
-      '.wwwwywwww..',
-      '.wwwyyywww..',
-      '.wwwwywwww..',
-      '.ww.....ww..',
-    ],
-  },
-  {
-    id: 'tanuki', kanji: '狸', name: { pt: 'Tanuki', en: 'Tanuki' },
-    palette: { b: '#8a6a4a', d: '#3d2c20', w: '#f0e4cf', e: '#f0e4cf', g: '#5c8a4a', k: '#1f1712' },
-    rows: [
-      '....ggg.....',
-      '.bb.gg..bb..',
-      '.bbbbbbbbb..',
-      'bbbbbbbbbbb.',
-      'bddbbbbbddb.',
-      'bdedbbbdedb.',
-      'bbddwkwddbb.',
-      '.bbwwwwwbb..',
-      '.bbwwwwwbbdd',
-      '.bwwwwwwwbdd',
-      '.bbwwwwwbbd.',
-      '.dd.....dd..',
-    ],
-  },
-  {
-    id: 'kappa', kanji: '河', name: { pt: 'Kappa', en: 'Kappa' },
-    palette: { g: '#5fa56a', d: '#356b45', w: '#dff3f6', e: '#1c2a20', y: '#e8b63c', s: '#7a5a34' },
-    rows: [
-      '...dwwwwd...',
-      '..ddwwwwdd..',
-      '.dggggggggd.',
-      '.gggggggggg.',
-      '.ggegggggeg.',
-      '.gggyyyyggg.',
-      '..ggyyyygg..',
-      '.sggggggggs.',
-      'ssgggggggss.',
-      'ssgggggggss.',
-      '.sgg....ggs.',
-      '..yy....yy..',
-    ],
-  },
-  {
-    id: 'daruma', kanji: '達', name: { pt: 'Daruma', en: 'Daruma' },
-    palette: { r: '#c8322a', d: '#8f1d18', w: '#fbf3e4', e: '#1b1b1b', k: '#1b1b1b', y: '#e8b63c' },
-    rows: [
-      '...rrrrrr...',
-      '..rrrrrrrr..',
-      '.rrwwwwwwrr.',
-      '.rwkkwwkkwr.',
-      'rrwewwwwewrr',
-      'rrwwwwwwwwrr',
-      'rrwwkkkkwwrr',
-      'rrrwwwwwwrrr',
-      'rrryyrryyrrr',
-      '.rrryyyyrrr.',
-      '.drrrrrrrrd.',
-      '..dddddddd..',
-    ],
-  },
-  {
-    id: 'onigiri', kanji: '握', name: { pt: 'Onigiri', en: 'Onigiri' },
-    palette: { w: '#fbf7ee', s: '#d9d2c2', n: '#1f2a22', e: '#1f2a22', p: '#f2a3a0', k: '#1f2a22' },
-    rows: [
-      '.....ww.....',
-      '....wwww....',
-      '...wwwwww...',
-      '..wwwwwwww..',
-      '..wewwwwew..',
-      '.wwwwwwwwww.',
-      '.wpwwkkwwpw.',
-      'wwwwwwwwwwww',
-      'wwwnnnnnnwww',
-      'swwnnnnnnwws',
-      '.ssnnnnnnss.',
-      '..ssssssss..',
-    ],
-  },
+// Os três tipos dos iniciais, com o nome japonês e a cor do cartão no menu
+export const PET_TYPES = {
+  grass: { jp: 'くさ', name: { pt: 'Planta', en: 'Grass' }, color: '#5bb26a' },
+  fire: { jp: 'ほのお', name: { pt: 'Fogo', en: 'Fire' }, color: '#ec6a3c' },
+  water: { jp: 'みず', name: { pt: 'Água', en: 'Water' }, color: '#4b93e6' },
+};
+export const GENERATIONS = [
+  { id: 1, region: 'Kanto' }, { id: 3, region: 'Hoenn' }, { id: 6, region: 'Kalos' },
 ];
-
-export const PET_IDS = PETS.map((p) => p.id);
+const FAMILIES = [
+  [1, 'grass', 1, ['Bulbasaur', 'Ivysaur', 'Venusaur']],
+  [1, 'fire', 4, ['Charmander', 'Charmeleon', 'Charizard']],
+  [1, 'water', 7, ['Squirtle', 'Wartortle', 'Blastoise']],
+  [3, 'grass', 252, ['Treecko', 'Grovyle', 'Sceptile']],
+  [3, 'fire', 255, ['Torchic', 'Combusken', 'Blaziken']],
+  [3, 'water', 258, ['Mudkip', 'Marshtomp', 'Swampert']],
+  [6, 'grass', 650, ['Chespin', 'Quilladin', 'Chesnaught']],
+  [6, 'fire', 653, ['Fennekin', 'Braixen', 'Delphox']],
+  [6, 'water', 656, ['Froakie', 'Frogadier', 'Greninja']],
+];
+export const PETS = FAMILIES.flatMap(([generation, type, dex, names]) => names.map((name, stage) => ({
+  id: name.toLowerCase(), name: { pt: name, en: name }, dex: dex + stage,
+  generation, type, stage, starter: names[0].toLowerCase(),
+  sprite: `/images/pokemon/${dex + stage}.png`,
+  shinySprite: `/images/pokemon/shiny/${dex + stage}.png`,
+  // Tamanho do sprite já sem a margem (px): cada forma maior que a anterior, como no jogo
+  size: SIZES[dex + stage] ?? [64, 64],
+  shinySize: SHINY_SIZES[dex + stage] ?? SIZES[dex + stage] ?? [64, 64],
+})));
+export const PET_STARTERS = PETS.filter((pet) => pet.stage === 0);
+export const PET_IDS = PETS.map((pet) => pet.id);
 export const PETS_KEY = 'oku-pets';
-export const MAX_PETS = PETS.length;
+export const PET_SHINY_KEY = 'oku-pet-shiny';
+export const MAX_PETS = 1;
+export const petById = (id) => PETS.find((pet) => pet.id === id);
+export const petFamily = (id) => PETS.filter((pet) => pet.starter === petById(id)?.starter);
 
-// Escolha salva: só ids conhecidos, sem repetir
 export function readPets(storage) {
   try {
     const raw = JSON.parse(storage.getItem(PETS_KEY) ?? '[]');
-    return Array.isArray(raw) ? [...new Set(raw.filter((id) => PET_IDS.includes(id)))] : [];
+    return Array.isArray(raw) ? raw.filter((id) => PET_IDS.includes(id)).slice(0, MAX_PETS) : [];
   } catch {
     return [];
   }
 }
-
 export function savePets(storage, ids) {
   try {
-    storage.setItem(PETS_KEY, JSON.stringify(ids));
+    storage.setItem(PETS_KEY, JSON.stringify(ids.filter((id) => PET_IDS.includes(id)).slice(0, MAX_PETS)));
   } catch {
-    // Storage bloqueado: a escolha só vale nesta visita
+    // Storage bloqueado: a escolha só vale nesta visita.
   }
 }
+// Shiny: cada inicial escolhido tem 1 chance em SHINY_ODDS de vir com as cores raras, e as formas
+// evoluídas herdam. Nos jogos atuais é 1 em 4.096 (1 em 8.192 até a 5ª geração), raro demais para
+// uma visita ao portfólio; aqui é 1 em 20, isto é, 5% por escolha
+export const SHINY_ODDS = 20;
+export const SHINY_RATE = 1 / SHINY_ODDS;
+export const rollShiny = (rand = Math.random) => rand() < SHINY_RATE;
+// Chance de ver ao menos um shiny em `tries` escolhas: 1 - (1 - 5%)^tries
+export const shinyChanceIn = (tries) => 1 - (1 - SHINY_RATE) ** tries;
+// Escolhas até a chance de ter visto um passar de `goal` (metade, por padrão): 14 para 50%
+export const triesFor = (goal = 0.5) => Math.ceil(Math.log(1 - goal) / Math.log(1 - SHINY_RATE));
 
-export const togglePet = (ids, id) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]);
-
-// Pixels do bicho como [x, y, cor, meio]. Dormindo, cada olho vira o pelo em volta com um traço
-// na metade de baixo do pixel (a pálpebra fechada); `meio` marca esse traço
-export function petPixels(pet, { asleep = false } = {}) {
-  const out = [];
-  pet.rows.forEach((row, y) => {
-    [...row].forEach((c, x) => {
-      if (c === '.') return;
-      if (c === 'e' && asleep) {
-        const left = row[x - 1];
-        const around = left && left !== 'e' && left !== '.' ? left : row[x + 1];
-        out.push([x, y, pet.palette[around] ?? pet.palette.e, false]);
-        out.push([x, y, pet.palette.k ?? pet.palette.e, true]);
-        return;
-      }
-      out.push([x, y, pet.palette[c], false]);
-    });
-  });
-  return out;
+export function readPetShiny(storage) {
+  try { return storage.getItem(PET_SHINY_KEY) === 'on'; } catch { return false; }
+}
+export function savePetShiny(storage, shiny) {
+  try { storage.setItem(PET_SHINY_KEY, shiny ? 'on' : 'off'); } catch { /* Vale nesta visita. */ }
+}
+// Clicar no inicial da família atual retira o companheiro.
+export function togglePet(ids, id) {
+  if (!PET_STARTERS.some((pet) => pet.id === id)) return ids;
+  return petById(ids[0])?.starter === id ? [] : [id];
+}
+// Nunca regride. Festival e modo foto movem a câmera, mas não contam como caminhada.
+export function evolvedPet(id, { section, progress, route = 'journey', festival = false, photo = false, projectsOpen = false }) {
+  const pet = petById(id);
+  if (!pet || festival || photo) return pet;
+  const stage = projectsOpen ? 1 : route !== 'journey' ? 0
+    : section === 'contato' || progress >= 0.99 ? 2
+      : section === 'projects' || section === 'experience' ? 1 : 0;
+  return petFamily(id)[Math.max(pet.stage, stage)];
 }

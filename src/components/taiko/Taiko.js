@@ -177,12 +177,14 @@ export default function Taiko({ onDone }) {
   // Esc fecha em qualquer tela; a rolagem da página fica parada por baixo
   useEffect(() => {
     const root = rootRef.current;
+    window.dispatchEvent(new CustomEvent('oku:pet-festival', { detail: { mode: 'taiko' } }));
     const onKey = (e) => { if (e.key === 'Escape') onDone(); };
     const block = (e) => { if (!e.target.closest?.('.taiko-card')) e.preventDefault(); };
     window.addEventListener('keydown', onKey);
     root.addEventListener('wheel', block, { passive: false });
     root.addEventListener('touchmove', block, { passive: false });
     return () => {
+      window.dispatchEvent(new CustomEvent('oku:pet-festival', { detail: { mode: null } }));
       window.removeEventListener('keydown', onKey);
       root.removeEventListener('wheel', block);
       root.removeEventListener('touchmove', block);
@@ -235,6 +237,8 @@ export default function Taiko({ onDone }) {
     let done = false;
     let raf = 0;
     let last = performance.now() / 1000;
+    // O companheiro dança em cada tempo, já na contagem antes da primeira nota
+    let petBeat = null;
 
     // Pista no meio da tela; o tambor à esquerda, o alvo logo depois dele
     const layout = () => {
@@ -451,6 +455,11 @@ export default function Taiko({ onDone }) {
       const dt = Math.min(1 / 30, real - last);
       last = real;
       const now = clock() - start;
+      const nextPetBeat = Math.floor(now / beat);
+      if (nextPetBeat !== petBeat) {
+        petBeat = nextPetBeat;
+        window.dispatchEvent(new CustomEvent('oku:pet-festival', { detail: { mode: 'taiko', pulse: true } }));
+      }
       ctx.clearRect(0, 0, w, h);
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';

@@ -4505,20 +4505,79 @@ html:not(:lang(en)) [data-lang="en"] { display: none !important; }
   z-index: 49;
   overflow: hidden;
 }
+/* Tudo cabe numa tela de celular sem rolar: links em grade 2×2, redes e ajustes numa linha, e
+   gráficos e extras com o título ao lado dos botões. Rolagem só sobra como rede de segurança em
+   telas muito baixas */
 .mobile-menu-content {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 30px;
-  padding-top: 100px;
+  gap: clamp(10px, 2.2dvh, 18px);
+  box-sizing: border-box;
+  max-height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: clamp(84px, 11dvh, 100px) 16px max(16px, env(safe-area-inset-bottom));
 }
-.mobile-menu-links,
+.mobile-menu-links {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px 28px;
+  justify-items: center;
+}
+.mobile-menu-link { display: inline-flex; align-items: center; min-height: 44px; font-size: 1.3rem; font-weight: 700; }
 .mobile-menu-extras {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 30px;
+  align-items: stretch;
+  gap: clamp(10px, 2dvh, 16px);
+  width: min(100%, 420px);
+}
+/* Redes em cima, idioma, tema e som embaixo, as duas linhas centradas */
+.mobile-menu-quick { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.mobile-menu-socials { display: flex; align-items: center; gap: 18px; }
+.mobile-menu-settings { display: flex; align-items: center; gap: 10px; }
+.mobile-menu-settings > button { min-width: 44px; min-height: 44px; justify-content: center; }
+/* Gráficos e extras: o título à esquerda, os botões ao lado, sem as explicações */
+.mobile-menu .quality.is-inline { display: grid; grid-template-columns: 92px minmax(0, 1fr); align-items: center; column-gap: 10px; row-gap: 8px; }
+.mobile-menu .quality.is-inline > .quality-title { margin: 0; text-align: left; font-size: 0.78rem; }
+.mobile-menu .quality.is-inline > :not(.quality-title):not(.quality-options):not(.play-generations) { grid-column: 1 / -1; }
+.mobile-menu .quality.is-inline .quality-options { grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); grid-template-columns: none; gap: 6px; }
+.mobile-menu .quality.is-inline .quality-option { padding: 8px 4px; min-height: 40px; }
+.mobile-menu .quality.is-inline .quality-option-name { font-size: 0.82rem; }
+.mobile-menu .quality.is-inline .quality-option-hint, .mobile-menu .quality.is-inline .quality-auto, .mobile-menu .quality.is-inline .quality-locked { display: none; }
+/* Pokémon: a geração ao lado do título, os iniciais e a evolução compactos */
+.mobile-menu .play .play-pets-title { grid-column: 1; margin: 0; }
+.mobile-menu .play .play-generations { grid-column: 2; margin: 0; }
+.mobile-menu .play .play-generations button { min-height: 36px; padding: 4px 2px; font-size: 0.66rem; gap: 0; }
+.mobile-menu .play .play-pet-intro { display: none; }
+.mobile-menu .play .play-pet { padding: 4px 4px 5px; }
+.mobile-menu .play .play-pet .play-pet-art { height: 50px; }
+.mobile-menu .play .play-pet .pet-sprite { max-height: 50px; width: auto !important; }
+.mobile-menu .play .play-evolution { margin-top: 0; padding-top: 6px; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 8px; }
+.mobile-menu .play .play-evolution > p { font-size: 0.68rem; }
+.mobile-menu .play .play-evolution-chain { margin: 0; }
+.mobile-menu .play .play-evolution-chain li { padding: 2px 0; font-size: 0.58rem; }
+.mobile-menu .play .play-evolution-chain li > span:last-child { display: none; }
+.mobile-menu .play .play-evolution-chain .play-pet-art { height: 34px; }
+.mobile-menu .play .play-evolution-chain .pet-sprite { max-height: 34px; width: auto !important; }
+.mobile-menu .play .play-evolution-chain li + li::before { top: 10px; }
+.mobile-menu .play .play-pet-credit { margin: 0; font-size: 0.58rem; text-align: center; }
+/* Telas baixas (375×667 e parecidas): tudo um pouco mais junto para ainda caber sem rolar */
+@media (max-height: 760px) and (orientation: portrait) {
+  .mobile-menu-content { gap: 8px; padding-top: 80px; }
+  .mobile-menu-extras { gap: 8px; }
+  .mobile-menu-link { min-height: 36px; font-size: 1.15rem; }
+  .mobile-menu-quick { gap: 0; }
+  .mobile-menu-socials > a, .mobile-menu-settings > button, .mobile-menu-settings .sound-toggle { min-height: 38px; }
+  .mobile-menu .quality.is-inline { row-gap: 6px; }
+  .mobile-menu .quality.is-inline .quality-option { min-height: 36px; padding: 6px 4px; }
+  .mobile-menu .play .play-generations button { min-height: 32px; }
+  .mobile-menu .play .play-pet .play-pet-art { height: 40px; }
+  .mobile-menu .play .play-pet .pet-sprite { max-height: 40px; }
+  .mobile-menu .play .play-evolution-chain .play-pet-art { height: 28px; }
+  .mobile-menu .play .play-evolution-chain .pet-sprite { max-height: 28px; }
 }
 /* Celular deitado (ou tablet com o menu do leque em tela baixa): a coluna de links + botões (~540px)
    não cabia e idioma, tema, som e gráficos ficavam cortados embaixo. Os dois grupos ficam lado a
@@ -6254,7 +6313,7 @@ main:focus { outline: none; }
 
 /* --- 花火大会: o festival de fogos. Com a cena 3D, a página some e os fogos sobem atrás da ponte
    (html.festival-mode); sem ela, são pintados por cima da página escurecida --- */
-html.festival-mode body > :not([data-scene]):not(.hanabi):not(.retro-scan),
+html.festival-mode body > :not([data-scene]):not(.hanabi):not(.retro-scan):not(.pets[data-festival]),
 html.festival-mode nav, html.festival-mode header, html.festival-mode main, html.festival-mode footer { opacity: 0 !important; pointer-events: none !important; }
 html.festival-mode body > [data-scene]::after { opacity: 0 !important; }
 html.festival-mode { overflow: hidden; }
@@ -6425,9 +6484,33 @@ html.festival-mode { overflow: hidden; }
 }
 
 /* --- 遊: menu de extras (reusa o painel dos gráficos) --- */
-.play-pop { width: 290px; }
+.play-pop { width: min(350px, calc(100vw - 32px)); max-height: calc(100dvh - 100px); overflow-y: auto; overscroll-behavior: contain; }
 .play .quality-option[aria-pressed='true'] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
 .play-pets-title { margin-top: 14px; }
+.play-pet-intro { margin: 0 0 12px; }
+/* ✦ Shiny: a chance (sorteio a cada inicial escolhido) e a etiqueta de quem saiu shiny */
+.play-shiny-odds { margin: 8px 0 0; font-size: 0.72rem; line-height: 1.45; color: color-mix(in srgb, #ffd27a 70%, var(--text-secondary)); }
+.play-shiny-short { display: none; }
+.mobile-menu .play-shiny-long { display: none; }
+.mobile-menu .play-shiny-short { display: inline; }
+.mobile-menu .play .play-shiny-odds { margin: 0; font-size: 0.68rem; text-align: center; }
+.play-shiny-tag { margin-left: 6px; padding: 1px 6px; border-radius: 999px; background: linear-gradient(90deg, #ffe9a8, #ffc4e1, #b9e8ff); color: #1b1630; font-size: 0.62rem; font-weight: 700; }
+.play-generations { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; margin-bottom: 8px; }
+.play-generations button { display: grid; gap: 3px; min-height: 44px; padding: 7px 3px; border: 1px solid var(--border); border-radius: 7px; background: transparent; color: var(--text-secondary); font: inherit; font-size: 0.7rem; }
+.play-generations button[aria-pressed='true'] { color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.play-generations button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.play-evolution { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
+.play-evolution > p { margin: 0; font-size: 0.75rem; color: var(--text-secondary); }
+.play-evolution strong { color: var(--text-primary); }
+.play-evolution-chain { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 0; margin: 8px 0 0; list-style: none; }
+.play-evolution-chain li { position: relative; display: grid; justify-items: center; align-content: start; gap: 3px; padding: 4px 0; border-radius: 7px; color: var(--text-secondary); font-size: 0.62rem; text-align: center; }
+.play-evolution-chain li + li::before { content: '›'; position: absolute; left: -5px; top: 23px; font-size: 1rem; }
+.play-evolution-chain li[data-reached='false'] .pet-sprite { opacity: 0.4; filter: grayscale(1); }
+.play-evolution-chain li[data-reached='false'] .pet-sprite[data-shiny] { opacity: 0.65; filter: none; }
+.play-evolution-chain li[aria-current] { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--text-primary); }
+.play-pet-credit { margin: 10px 0 0; font-size: 0.62rem; line-height: 1.5; color: var(--text-secondary); }
+.play-pet-credit a { color: inherit; text-decoration: underline; }
+/* O seletor também precisa ser alcançável em telas pequenas, com o leque aberto. */
 .play-pets { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
 .play-pet {
   display: grid;
@@ -6443,9 +6526,22 @@ html.festival-mode { overflow: hidden; }
   line-height: 1.2;
   text-align: center;
 }
-.play-pet:hover, .play-pet:focus-visible { border-color: var(--accent); }
-.play-pet[aria-pressed='true'] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
-.pet-sprite { display: block; image-rendering: pixelated; }
+:root { --type-grass: #5bb26a; --type-fire: #ec6a3c; --type-water: #4b93e6; }
+.play-pet[data-type='grass'], .play-evolution[data-type='grass'] { --type: var(--type-grass); }
+.play-pet[data-type='fire'], .play-evolution[data-type='fire'] { --type: var(--type-fire); }
+.play-pet[data-type='water'], .play-evolution[data-type='water'] { --type: var(--type-water); }
+.play-pet { position: relative; overflow: hidden; gap: 2px; padding: 6px 4px 7px; border-color: color-mix(in srgb, var(--type) 35%, var(--border)); background: linear-gradient(180deg, color-mix(in srgb, var(--type) 16%, transparent), transparent 70%); transition: border-color 0.2s, background 0.2s, transform 0.2s; }
+.play-pet-type { align-self: start; font-size: 0.58rem; letter-spacing: 0.04em; color: color-mix(in srgb, var(--type) 70%, var(--text-primary)); }
+.play-pet-art { display: grid; place-items: end center; height: 68px; }
+.play-pet-art .pet-sprite { transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.play-pet-name { font-weight: 700; }
+.play-pet:hover, .play-pet:focus-visible { border-color: var(--type); }
+.play-pet:hover .play-pet-art .pet-sprite, .play-pet:focus-visible .play-pet-art .pet-sprite { transform: translateY(-3px) scale(1.06); }
+.play-pet[aria-pressed='true'] { border-color: var(--type); background: linear-gradient(180deg, color-mix(in srgb, var(--type) 34%, transparent), color-mix(in srgb, var(--type) 8%, transparent)); box-shadow: 0 0 0 1px var(--type) inset, 0 6px 18px -8px var(--type); }
+.play-pet[aria-pressed='true']::after { content: '\2713'; position: absolute; top: 4px; right: 6px; font-size: 0.7rem; font-weight: 700; color: var(--type); }
+.play-evolution-chain .play-pet-art { height: 54px; }
+.pet-sprite { display: block; object-fit: contain; image-rendering: pixelated; user-select: none; }
+.pet-sprite[data-asleep] { filter: saturate(0.7) brightness(0.72); }
 
 /* --- 育: os bichinhos, na barra do topo (no vão entre o nome e o menu) ou sentados na borda dela --- */
 .nav-pets { flex: 1 1 0; min-width: 0; align-self: stretch; display: flex; align-items: center; margin: 0 16px; }
@@ -6467,8 +6563,19 @@ html.festival-mode { overflow: hidden; }
 }
 /* Com o menu do celular aberto, eles saem da frente */
 body:has(.mobile-menu-btn[aria-expanded='true']) .pets[data-place='perch'] { visibility: hidden; }
-.pets .pet-sprite { width: 28px !important; height: 28px !important; }
-.pet { position: relative; padding: 0; border: 0; background: transparent; pointer-events: auto; filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.35)); }
+.pet { position: relative; display: grid; place-items: end center; min-width: 44px; min-height: 44px; padding: 0; border: 0; background: transparent; pointer-events: auto; filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.35)); }
+/* Nos extras: no hanabi assiste do canto de baixo, virado para os fogos; no taiko dança no vão
+   embaixo da pista, no meio da tela */
+.pets[data-place='festival'] { position: fixed; z-index: 9994; pointer-events: none; }
+.pets[data-festival='hanabi'] { right: max(28px, env(safe-area-inset-right)); bottom: 64px; scale: -1 1; }
+.pets[data-festival='hanabi'] .pet-bubble { scale: -1 1; }
+.pets[data-festival='taiko'] { left: 50%; bottom: 96px; translate: -50% 0; }
+.pets[data-place='festival'] .pet { pointer-events: none; }
+.pets[data-evolving] .pet::before { content: ''; position: absolute; inset: -8px; border-radius: 50%; background: radial-gradient(circle, #fff6bf99, #ffd27a33 45%, transparent 70%); animation: pet-evolve 1.4s ease-out both; pointer-events: none; }
+.pets[data-evolving] .pet-sprite { animation: pet-evolve-sprite 1.4s ease-out; }
+@keyframes pet-evolve { 0% { opacity: 0; scale: 0.6; } 30% { opacity: 1; scale: 1.3; } 100% { opacity: 0; scale: 1.8; } }
+@keyframes pet-evolve-sprite { 0%, 25% { filter: brightness(3) drop-shadow(0 0 6px #fff6bf); } 100% { filter: none; } }
+@media (prefers-reduced-motion: reduce) { .pets[data-evolving] .pet::before, .pets[data-evolving] .pet-sprite { animation: none; } }
 .pet:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .pet-bubble {
   position: absolute;
@@ -6483,6 +6590,40 @@ body:has(.mobile-menu-btn[aria-expanded='true']) .pets[data-place='perch'] { vis
 }
 .pet[data-mood='sleep'] .pet-bubble::after { content: 'z'; animation: pet-z 1.8s steps(3) infinite; }
 .pet[data-mood='love'] .pet-bubble::after { content: '\2665'; color: #e8665a; }
+.pet[data-mood='cheer'] .pet-bubble::after { content: '✦'; color: #ffd27a; }
+.pet[data-mood='dance'] .pet-bubble::after { content: '♪'; color: #ffd27a; }
+/* --- 進化: a evolução no próprio bichinho (raios e brilho pequenos em volta dele, um balão embaixo) --- */
+.evo { --evo-color: var(--type-fire); position: relative; display: inline-grid; place-items: end center; }
+.evo-stage { position: relative; display: grid; place-items: end center; }
+.evo-form { grid-area: 1 / 1; display: grid; place-items: end center; transform-origin: 50% 100%; }
+.evo-form .pet-sprite { grid-area: 1 / 1; image-rendering: pixelated; }
+.evo-white { filter: brightness(0) invert(1) drop-shadow(0 0 4px #fff6d0); }
+.evo-rays { position: absolute; left: 50%; top: 55%; width: 92px; height: 92px; margin: -46px 0 0 -46px; opacity: 0; visibility: hidden; scale: 0.6; border-radius: 50%; background: repeating-conic-gradient(from 0deg, rgba(255, 246, 208, 0.5) 0deg 8deg, transparent 8deg 22deg); -webkit-mask: radial-gradient(circle, #000 14%, transparent 66%); mask: radial-gradient(circle, #000 14%, transparent 66%); animation: evo-spin 6s linear infinite; pointer-events: none; }
+.evo-glow { position: absolute; left: 50%; top: 55%; width: 70px; height: 70px; margin: -35px 0 0 -35px; opacity: 0; visibility: hidden; border-radius: 50%; background: radial-gradient(circle, #fff 0 18%, color-mix(in srgb, var(--evo-color) 45%, #fff6d0) 40%, transparent 70%); pointer-events: none; }
+.evo-sparks { position: absolute; left: 50%; top: 55%; width: 96px; height: 96px; margin: -48px 0 0 -48px; opacity: 0; visibility: hidden; border-radius: 50%; background: radial-gradient(circle, #fff 0 1.5px, transparent 2px) 0 0 / 16px 16px, radial-gradient(circle, color-mix(in srgb, var(--evo-color) 60%, #fff) 0 1.5px, transparent 2px) 8px 8px / 16px 16px; -webkit-mask: radial-gradient(circle, transparent 30%, #000 34%, #000 58%, transparent 68%); mask: radial-gradient(circle, transparent 30%, #000 34%, #000 58%, transparent 68%); pointer-events: none; }
+/* O balão: logo embaixo do bichinho (na barra, centrado; sentado na borda, encostado à direita) */
+.evo-bubble { position: absolute; top: calc(100% + 10px); left: 50%; translate: -50% 0; display: grid; width: max-content; max-width: calc(100vw - 24px); padding: 7px 11px; border: 1px solid color-mix(in srgb, var(--evo-color) 60%, rgba(243, 238, 227, 0.5)); border-radius: 8px; background: rgba(12, 16, 40, 0.94); box-shadow: 0 8px 22px -10px #000; color: #f3eee3; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.74rem; font-weight: 700; line-height: 1.35; text-align: left; white-space: nowrap; opacity: 0; visibility: hidden; pointer-events: none; }
+.evo-bubble::before { content: ''; position: absolute; bottom: 100%; left: 50%; margin-left: -6px; border: 6px solid transparent; border-bottom-color: color-mix(in srgb, var(--evo-color) 60%, rgba(243, 238, 227, 0.5)); }
+.pets[data-place='perch'] .evo-bubble { left: auto; right: -6px; translate: none; }
+.pets[data-place='perch'] .evo-bubble::before { left: auto; right: 18px; }
+.pets[data-festival='hanabi'] .evo-bubble { scale: -1 1; }
+.evo-line { grid-area: 1 / 1; }
+.evo-line-1 { animation: evo-type 1s steps(22) both; }
+.evo-line-2 { color: color-mix(in srgb, var(--evo-color) 40%, #ffe9b0); }
+/* O sorteio deu shiny: estrelinhas em volta e o balão por alguns segundos */
+.pet-shiny-burst { position: absolute; left: 50%; top: 50%; width: 84px; height: 84px; margin: -42px 0 0 -42px; border-radius: 50%; pointer-events: none; background: radial-gradient(circle, #fff 0 1.5px, transparent 2.5px) 0 0 / 14px 14px, radial-gradient(circle, #ffe7a3 0 1.5px, transparent 2.5px) 7px 7px / 14px 14px; -webkit-mask: radial-gradient(circle, transparent 26%, #000 32%, #000 56%, transparent 66%); mask: radial-gradient(circle, transparent 26%, #000 32%, #000 56%, transparent 66%); animation: pet-shiny-burst 1.4s ease-out 2 both; }
+.pet-note { opacity: 1; visibility: visible; animation: pet-note 3.6s ease both; color: #ffe9b0; }
+@keyframes pet-shiny-burst { 0% { opacity: 0; scale: 0.4; rotate: 0deg; } 30% { opacity: 1; } 100% { opacity: 0; scale: 1.5; rotate: 40deg; } }
+@keyframes pet-note { 0% { opacity: 0; translate: -50% -4px; } 10%, 85% { opacity: 1; translate: -50% 0; } 100% { opacity: 0; translate: -50% -4px; } }
+.pets[data-place='perch'] .pet-note { animation-name: pet-note-perch; }
+@keyframes pet-note-perch { 0% { opacity: 0; } 10%, 85% { opacity: 1; } 100% { opacity: 0; } }
+/* Shiny no dia a dia: uma estrelinha pisca de vez em quando ao lado dele */
+.pet[data-shiny]::after { content: '✦'; position: absolute; top: 2px; left: 0; font-size: 10px; color: #ffe7a3; text-shadow: 0 0 4px #fff6d0; opacity: 0; animation: pet-shiny-twinkle 4.5s ease-in-out infinite; pointer-events: none; }
+@keyframes pet-shiny-twinkle { 0%, 70%, 100% { opacity: 0; scale: 0.5; } 78% { opacity: 1; scale: 1.1; } 86% { opacity: 0; scale: 0.6; } }
+@media (prefers-reduced-motion: reduce) { .pet-shiny-burst { animation: none; opacity: 0; } .pet-note { animation: none; } .pet[data-shiny]::after { animation: none; opacity: 0.8; } }
+@keyframes evo-spin { to { rotate: 360deg; } }
+@keyframes evo-type { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@media (prefers-reduced-motion: reduce) { .evo-rays, .evo-line-1 { animation: none; } }
 @keyframes pet-z { 0% { content: 'z'; } 33% { content: 'zZ'; } 66% { content: 'zZz'; } }
 html.dx-frozen .pets { visibility: hidden; }
 

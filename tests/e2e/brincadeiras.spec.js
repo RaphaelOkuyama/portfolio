@@ -9,32 +9,147 @@ async function openHome(page) {
 }
 const extras = (page) => page.getByRole('button', { name: /^Extras/ });
 
-test('bichinhos: dá para escolher mais de um e a escolha volta na próxima visita', async ({ page }) => {
+test('Pokémon shiny: sai no sorteio ao escolher, sem botão para ligar, e a evolução herda', async ({ page }) => {
   const errors = collectConsoleErrors(page);
   await openHome(page);
   await extras(page).click();
-  await page.locator('[data-pet-option="shiba"]').click();
-  await page.locator('[data-pet-option="kappa"]').click();
-  await expect(page.locator('[data-pet-option="shiba"]')).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('.pets .pet')).toHaveCount(2);
-  // Tirar um deixa o outro
-  await page.locator('[data-pet-option="shiba"]').click();
-  await expect(page.locator('.pets .pet')).toHaveCount(1);
-  await expect(page.locator('.pets .pet')).toHaveAttribute('data-pet', 'kappa');
+  // Não existe mais o botão de escolher shiny; a chance aparece no menu
+  await expect(page.locator('[data-play="pet-shiny"]')).toHaveCount(0);
+  await expect(page.locator('[data-shiny-odds]')).toContainText('1 em 20');
+  // Sorteio que não dá shiny
+  await page.evaluate(() => { window.__rand = Math.random; Math.random = () => 0.9; });
+  await page.locator('[data-pet-option="charmander"]').click();
+  await expect(page.locator('.pets .pet-sprite')).toHaveAttribute('src', '/images/pokemon/4.png');
+  await expect(page.locator('[data-pet-shiny]')).toHaveCount(0);
+  // Outro inicial, sorteio que dá shiny: brilho e balão no bichinho
+  await page.locator('[data-pet-generation="3"]').click();
+  await page.evaluate(() => { Math.random = () => 0.01; });
+  await page.locator('[data-pet-option="torchic"]').click();
+  await page.evaluate(() => { Math.random = window.__rand; });
+  await expect(page.locator('.pets .pet-sprite')).toHaveAttribute('src', '/images/pokemon/shiny/255.png');
+  await expect(page.locator('.pets .pet-note')).toContainText('shiny');
+  await expect(page.locator('[data-pet-shiny]')).toBeVisible();
+  // Só o escolhido aparece shiny no menu
+  await expect(page.locator('[data-pet-option] img[data-shiny]')).toHaveCount(1);
+  await page.keyboard.press('Escape');
+  await page.locator('#projects').scrollIntoViewIfNeeded();
+  await expect(page.locator('.pets .pet')).toHaveAttribute('data-pet', 'combusken', { timeout: 15_000 });
+  // A animação no próprio bichinho já usa as duas formas shiny (cor e silhueta de cada uma)
+  await expect(page.locator('[data-evolution="combusken"] img[data-shiny]')).toHaveCount(4);
+  await expect(page.locator('.pets .pet > .pet-sprite')).toHaveAttribute('src', '/images/pokemon/shiny/256.png', { timeout: 15_000 });
   await page.reload();
-  await expect(page.locator('.pets .pet')).toHaveCount(1, { timeout: 10_000 });
+  await expect(page.locator('.pets .pet-sprite')).toHaveAttribute('src', '/images/pokemon/shiny/256.png', { timeout: 10_000 });
   expect(errors).toEqual([]);
 });
 
-test('bichinhos: dormem no tema da noite e acordam com um carinho', async ({ page }) => {
+test('Pokémon: escolhe um inicial entre as três gerações e salva a escolha', async ({ page }) => {
+  const errors = collectConsoleErrors(page);
   await openHome(page);
   await extras(page).click();
-  await page.locator('[data-pet-option="daruma"]').click();
+  await page.locator('[data-pet-option="charmander"]').click();
+  await expect(page.locator('[data-pet-option="charmander"]')).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('[data-pet-generation="3"]').click();
+  await expect(page.locator('[data-pet-option]')).toHaveCount(3);
+  await page.locator('[data-pet-option="mudkip"]').click();
+  await page.locator('[data-pet-generation="6"]').click();
+  await page.locator('[data-pet-option="froakie"]').click();
+  await expect(page.locator('.pets .pet')).toHaveCount(1);
+  await expect(page.locator('.pets .pet')).toHaveAttribute('data-pet', 'froakie');
+  await page.screenshot({ path: 'docs/antes-depois/pokemon/menu-desktop.jpg', type: 'jpeg', quality: 85 });
+  await page.reload();
+  await expect(page.locator('.pets .pet')).toHaveCount(1, { timeout: 10_000 });
+  await expect(page.locator('.pets .pet')).toHaveAttribute('data-pet', 'froakie');
+  expect(errors).toEqual([]);
+});
+
+test('Pokémon: dorme no tema da noite e acorda com um carinho', async ({ page }) => {
+  await openHome(page);
+  await extras(page).click();
+  await page.locator('[data-pet-option="squirtle"]').click();
   await page.keyboard.press('Escape');
   const pet = page.locator('.pets .pet');
   await expect(pet).toHaveAttribute('data-mood', 'sleep', { timeout: 8_000 });
   await pet.click();
   await expect(pet).toHaveAttribute('data-mood', 'love');
+});
+
+test('Pokémon: evolui nos Projetos e no Contato, salva a forma e não regride', async ({ page }) => {
+  const errors = collectConsoleErrors(page);
+  await openHome(page);
+  await extras(page).click();
+  await page.locator('[data-pet-option="charmander"]').click();
+  await page.keyboard.press('Escape');
+  const pet = page.locator('.pets .pet');
+  await expect(pet).toHaveAttribute('data-pet', 'charmander');
+  await page.locator('#projects').scrollIntoViewIfNeeded();
+  await expect(pet).toHaveAttribute('data-pet', 'charmeleon', { timeout: 15_000 });
+  await expect(page.getByText('Charmander evoluiu para Charmeleon!', { exact: true })).toBeVisible({ timeout: 8_000 });
+  await page.locator('#contato').scrollIntoViewIfNeeded();
+  await expect(pet).toHaveAttribute('data-pet', 'charizard', { timeout: 15_000 });
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('oku-pets')))).toEqual(['charizard']);
+  await page.reload();
+  await expect(pet).toHaveAttribute('data-pet', 'charizard', { timeout: 15_000 });
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await extras(page).click();
+  await expect(page.locator('[data-pet-option="charmander"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('[data-pet-evolution] li[aria-current="step"]')).toContainText('Charizard');
+  await page.locator('[data-pet-option="charmander"]').click();
+  await expect(pet).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test('Pokémon: participa dos estouros reais do hanabi e do ritmo do taiko', async ({ page }) => {
+  await openHome(page);
+  await extras(page).click();
+  await page.locator('[data-pet-generation="3"]').click();
+  await page.locator('[data-pet-option="treecko"]').click();
+  await page.keyboard.press('Escape');
+  await page.keyboard.type('hanabi');
+  const pets = page.locator('.pets');
+  await expect(pets).toHaveAttribute('data-festival', 'hanabi');
+  await expect(pets).toBeVisible();
+  await expect(pets.locator('.pet')).toHaveAttribute('data-mood', 'cheer', { timeout: 15_000 });
+  await page.keyboard.press('Escape');
+  await expect(pets).not.toHaveAttribute('data-festival', 'hanabi');
+  // O voo automático até o rio não conta como evolução.
+  await expect(pets.locator('.pet')).toHaveAttribute('data-pet', 'treecko');
+  await page.keyboard.type('taiko');
+  await page.locator('[data-taiko-intro]').getByRole('button', { name: 'Começar' }).click();
+  await expect(pets).toHaveAttribute('data-festival', 'taiko');
+  await expect(pets.locator('.pet')).toHaveAttribute('data-mood', 'dance', { timeout: 5_000 });
+  await page.keyboard.press('Escape');
+  await expect(pets).not.toHaveAttribute('data-festival', 'taiko');
+  await expect(pets.locator('.pet')).toBeVisible();
+});
+
+test('Pokémon: abrir o catálogo de Projetos também concede a primeira evolução', async ({ page }) => {
+  await openHome(page);
+  await extras(page).click();
+  await page.locator('[data-pet-generation="6"]').click();
+  await page.locator('[data-pet-option="fennekin"]').click();
+  await page.keyboard.press('Escape');
+  await page.locator('.desktop-menu a[href="/projects"]').click();
+  await expect(page).toHaveURL(/\/projects$/);
+  await expect(page.locator('.pets .pet')).toHaveAttribute('data-pet', 'braixen', { timeout: 10_000 });
+});
+
+test('Pokémon: menu acessível no celular e sprites das três gerações carregados', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await openHome(page);
+  await page.locator('.mobile-menu-btn').click();
+  for (const [generation, id] of [[1, 'bulbasaur'], [3, 'torchic'], [6, 'froakie']]) {
+    await page.locator(`[data-pet-generation="${generation}"]`).click();
+    await page.locator(`[data-pet-option="${id}"]`).click();
+    await expect(page.locator(`[data-pet-option="${id}"]`)).toHaveAttribute('aria-pressed', 'true');
+    await expect.poll(() => page.locator('.play img').evaluateAll((images) => images.every((image) => image.complete && image.naturalWidth > 0))).toBe(true);
+  }
+  await expect(page.locator('[data-pet-evolution] li')).toHaveCount(3);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.screenshot({ path: 'docs/antes-depois/pokemon/menu-mobile.jpg', type: 'jpeg', quality: 85 });
+  await page.locator('.mobile-menu-btn').click();
+  await expect(page.locator('.pets .pet')).toBeVisible();
+  await expect(page.locator('.pets .pet')).toHaveAttribute('data-pet', 'froakie');
 });
 
 test('modo Famicom: liga a tela de pixels com o placar e desliga', async ({ page }) => {

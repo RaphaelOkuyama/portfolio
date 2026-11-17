@@ -3,7 +3,8 @@ import { GACHA_KEY, collect, gachaDraw, gachaPool, readCollection } from '../../
 import { HANABI, HANABI_ACTS, hanabiProgram } from '../../src/lib/hanabi';
 import { TAIKO, TAIKO_LEVELS, hitScore, judgeHit, levelChart, readBest, saveBest, soulStep, taikoChart, taikoRank } from '../../src/lib/taiko';
 import { effectiveProgress } from '../../src/store/journey';
-import { PETS, PET_SIZE, petPixels, readPets, togglePet, PETS_KEY } from '../../src/lib/pets';
+import { PETS, PET_STARTERS, petFamily, evolvedPet, readPets, savePets, togglePet, PETS_KEY, PET_SHINY_KEY, readPetShiny, savePetShiny, SHINY_ODDS, SHINY_RATE, rollShiny, shinyChanceIn, triesFor } from '../../src/lib/pets';
+import { readFileSync } from 'node:fs';
 import { retroDpr, RETRO_WIDTH } from '../../src/lib/retro';
 
 const projects = [{ slug: 'a', title: 'A', shortDesc: 'x' }, { slug: 'b', title: 'B', shortDesc: 'y' }];
@@ -158,32 +159,105 @@ describe('taiko', () => {
   });
 });
 
-describe('bichinhos', () => {
-  it('todo desenho tem a grade inteira, só cores da paleta e dois olhos', () => {
-    expect(PETS.length).toBeGreaterThanOrEqual(6);
-    PETS.forEach((pet) => {
-      expect(pet.rows).toHaveLength(PET_SIZE);
-      pet.rows.forEach((row) => {
-        expect(row).toHaveLength(PET_SIZE);
-        [...row].forEach((c) => expect(c === '.' || c in pet.palette).toBe(true));
+describe('companheiro Pokémon', () => {
+  it('inclui as nove linhas evolutivas completas das gerações 1, 3 e 6, com sprites locais', () => {
+    expect(PETS).toHaveLength(27);
+    expect(PET_STARTERS).toHaveLength(9);
+    expect(new Set(PETS.map((pet) => pet.id)).size).toBe(27);
+    for (const generation of [1, 3, 6]) {
+      expect(PET_STARTERS.filter((pet) => pet.generation === generation)).toHaveLength(3);
+    }
+    PET_STARTERS.forEach((starter) => {
+      const family = petFamily(starter.id);
+      expect(family.map((pet) => pet.stage)).toEqual([0, 1, 2]);
+      family.forEach((pet) => {
+        const bytes = readFileSync(new URL(`../../public${pet.sprite}`, import.meta.url));
+        expect(bytes.subarray(0, 8).toString('hex')).toBe('89504e470d0a1a0a');
+        const shiny = readFileSync(new URL(`../../public${pet.shinySprite}`, import.meta.url));
+        expect(shiny.subarray(0, 8).toString('hex')).toBe('89504e470d0a1a0a');
+        expect(shiny.equals(bytes)).toBe(false);
+        expect([bytes.readUInt32BE(16), bytes.readUInt32BE(20)]).toEqual(pet.size);
+        expect([shiny.readUInt32BE(16), shiny.readUInt32BE(20)]).toEqual(pet.shinySize);
       });
-      expect(pet.rows.join('').split('e').length - 1).toBe(2);
     });
   });
 
-  it('dormindo, os olhos viram um traço de meia altura', () => {
-    const awake = petPixels(PETS[0]);
-    const asleep = petPixels(PETS[0], { asleep: true });
-    expect(awake.some((p) => p[3])).toBe(false);
-    expect(asleep.filter((p) => p[3])).toHaveLength(2);
+  it('evolui em Projetos e no Contato ou ao terminar a trilha, sem regredir', () => {
+    PET_STARTERS.forEach((starter) => {
+      const family = petFamily(starter.id);
+      expect(evolvedPet(starter.id, { section: 'stack', progress: 0.3 })).toBe(family[0]);
+      expect(evolvedPet(starter.id, { section: 'projects', progress: 0.5 })).toBe(family[1]);
+      expect(evolvedPet(starter.id, { section: 'contato', progress: 0.9 })).toBe(family[2]);
+      expect(evolvedPet(starter.id, { section: 'hero', progress: 0.99 })).toBe(family[2]);
+      expect(evolvedPet(family[2].id, { section: 'hero', progress: 0 })).toBe(family[2]);
+    });
+    expect(evolvedPet('sumiu', { section: 'projects' })).toBeUndefined();
   });
 
-  it('guarda mais de um bicho e ignora o que não conhece', () => {
-    expect(togglePet(togglePet([], 'shiba'), 'kappa')).toEqual(['shiba', 'kappa']);
-    expect(togglePet(['shiba', 'kappa'], 'shiba')).toEqual(['kappa']);
-    const storage = { getItem: (k) => (k === PETS_KEY ? '["kappa","dragão","kappa","neko"]' : null) };
-    expect(readPets(storage)).toEqual(['kappa', 'neko']);
-    expect(readPets({ getItem: () => 'isto não é json' })).toEqual([]);
+  it('não evolui por câmera do festival, modo foto ou páginas fora da trilha', () => {
+    for (const mode of [{ route: 'frozen' }, { festival: true }, { photo: true }]) {
+      expect(evolvedPet('froakie', { section: 'contato', progress: 1, ...mode }).id).toBe('froakie');
+    }
+    expect(evolvedPet('froakie', { route: 'frozen', projectsOpen: true, section: 'contato', progress: 1 }).id).toBe('frogadier');
+  });
+
+  it('escolhe um inicial por vez, retira pela família e não permite selecionar evolução diretamente', () => {
+    expect(togglePet([], 'charmander')).toEqual(['charmander']);
+    expect(togglePet(['charmander'], 'mudkip')).toEqual(['mudkip']);
+    expect(togglePet(['charizard'], 'charmander')).toEqual([]);
+    expect(togglePet(['charmander'], 'charizard')).toEqual(['charmander']);
+    expect(togglePet(['charmander'], 'shiba')).toEqual(['charmander']);
+  });
+
+  it('salva a forma evoluída e tolera dados antigos, corrompidos ou armazenamento bloqueado', () => {
+    const data = {};
+    const storage = { getItem: (key) => data[key] ?? null, setItem: (key, value) => { data[key] = value; } };
+    savePets(storage, ['greninja']);
+    expect(readPets(storage)).toEqual(['greninja']);
+    data[PETS_KEY] = '["shiba","kappa","froakie","mudkip"]';
+    expect(readPets(storage)).toEqual(['froakie']);
+    for (const raw of ['isto não é json', '{}', 'null', '["neko"]']) {
+      expect(readPets({ getItem: () => raw })).toEqual([]);
+    }
+    const blocked = { getItem: () => { throw new Error('bloqueado'); }, setItem: () => { throw new Error('bloqueado'); } };
+    expect(readPets(blocked)).toEqual([]);
+    expect(() => savePets(blocked, ['treecko'])).not.toThrow();
+  });
+
+  it('o shiny sai no sorteio: 1 em 20 por inicial escolhido, com a conta da chance acumulada', () => {
+    expect(SHINY_ODDS).toBe(20);
+    expect(SHINY_RATE).toBeCloseTo(0.05, 10);
+    expect(rollShiny(() => 0)).toBe(true);
+    expect(rollShiny(() => 0.0499)).toBe(true);
+    expect(rollShiny(() => 0.05)).toBe(false);
+    expect(rollShiny(() => 0.99)).toBe(false);
+    // 1 - 0,95^n: uma escolha 5%, dez 40,1%, catorze passa da metade
+    expect(shinyChanceIn(1)).toBeCloseTo(0.05, 10);
+    expect(shinyChanceIn(10)).toBeCloseTo(0.4013, 4);
+    expect(shinyChanceIn(13)).toBeLessThan(0.5);
+    expect(shinyChanceIn(14)).toBeGreaterThan(0.5);
+    expect(triesFor(0.5)).toBe(14);
+    // Num sorteio de verdade, perto de 5% dá shiny
+    let seed = 7;
+    const rand = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+    const hits = Array.from({ length: 20000 }, () => rollShiny(rand)).filter(Boolean).length;
+    expect(hits / 20000).toBeGreaterThan(0.045);
+    expect(hits / 20000).toBeLessThan(0.055);
+  });
+
+  it('salva se o companheiro saiu shiny sem alterar o companheiro ou a forma evoluída', () => {
+    const data = { [PETS_KEY]: '["charizard"]' };
+    const storage = { getItem: (key) => data[key] ?? null, setItem: (key, value) => { data[key] = value; } };
+    expect(readPetShiny(storage)).toBe(false);
+    savePetShiny(storage, true);
+    expect(data[PET_SHINY_KEY]).toBe('on');
+    expect(readPetShiny(storage)).toBe(true);
+    expect(readPets(storage)).toEqual(['charizard']);
+    savePetShiny(storage, false);
+    expect(readPetShiny(storage)).toBe(false);
+    const blocked = { getItem: () => { throw new Error('bloqueado'); }, setItem: () => { throw new Error('bloqueado'); } };
+    expect(readPetShiny(blocked)).toBe(false);
+    expect(() => savePetShiny(blocked, true)).not.toThrow();
   });
 });
 

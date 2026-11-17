@@ -43,6 +43,7 @@ export function createJourneyStore() {
     // 花火: o festival está aberto com a cena 3D (a câmera vai para a beira do rio, ver lib/festival)
     festival: false,
     pets: [],
+    petShiny: false,
     loaderDone: false,
     // Faixa [início, fim] de cada seção em fração do progresso (medida pelo ScrollTrigger)
     sectionRanges: {},

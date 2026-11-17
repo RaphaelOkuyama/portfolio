@@ -139,7 +139,8 @@ export default function Navbar() {
                 key={link.path}
                 href={link.path}
                 onClick={toggleMenu}
-                style={{ fontSize: '1.5rem', fontWeight: 'bold', color: pathname === link.path ? 'var(--accent)' : 'var(--text-primary)' }}
+                className="mobile-menu-link"
+                style={{ color: pathname === link.path ? 'var(--accent)' : 'var(--text-primary)' }}
               >
                 {link.name}
               </Link>
@@ -147,23 +148,25 @@ export default function Navbar() {
             </div>
 
             <div className="mobile-menu-extras">
-            {/* Ícones Sociais no Mobile (NOVO) */}
-            <div style={{ display: 'flex', gap: '25px', marginTop: '10px' }}>
+            {/* Redes e ajustes numa linha só (o leque cabe na tela sem rolar) */}
+            <div className="mobile-menu-quick">
+            <div className="mobile-menu-socials">
               <a href={SOCIAL.github} target="_blank" rel="noopener noreferrer" aria-label="GitHub" className="mobile-menu-social" style={{ color: 'var(--text-secondary)' }}>
-                <Github size={28} aria-hidden="true" />
+                <Github size={24} aria-hidden="true" />
               </a>
               <a href={SOCIAL.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="mobile-menu-social" style={{ color: 'var(--text-secondary)' }}>
-                <Linkedin size={28} aria-hidden="true" />
+                <Linkedin size={24} aria-hidden="true" />
               </a>
               <a href={`mailto:${SOCIAL.email}`} aria-label="Email" className="mobile-menu-social" style={{ color: 'var(--text-secondary)' }}>
-                <Mail size={28} aria-hidden="true" />
+                <Mail size={24} aria-hidden="true" />
               </a>
             </div>
 
-            <div style={{ display: 'flex', gap: '20px', marginTop: '10px' }}>
-              <button onClick={toggleLanguage} style={{...btnStyle, transform: 'scale(1.2)'}} aria-label={languageLabel}><Globe size={24} /> {language.toUpperCase()}</button>
-              <button onClick={toggleTheme} style={{...btnStyle, transform: 'scale(1.2)'}} aria-label={themeLabel}><span className="theme-icon" style={{ display: 'inline-flex' }}>{theme === 'night' ? <Sun size={24} /> : <Moon size={24} />}</span></button>
+            <div className="mobile-menu-settings">
+              <button onClick={toggleLanguage} style={btnStyle} aria-label={languageLabel}><Globe size={22} /> {language.toUpperCase()}</button>
+              <button onClick={toggleTheme} style={btnStyle} aria-label={themeLabel}><span className="theme-icon" style={{ display: 'inline-flex' }}>{theme === 'night' ? <Sun size={22} /> : <Moon size={22} />}</span></button>
               <SoundToggle inline />
+            </div>
             </div>
             <QualityPicker inline />
             <PlayMenu inline onAction={toggleMenu} />

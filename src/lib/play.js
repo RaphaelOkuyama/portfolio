@@ -1,7 +1,8 @@
 // 遊: os extras do menu de brincadeiras (modo Famicom, modo foto, bichinhos). Aqui fica o estado
 // que não é do React: a música, a câmera livre do modo foto e a escolha salva dos bichinhos
 import { journeyStore } from '../store/journey';
-import { readPets, savePets, togglePet } from './pets';
+import { petById, readPets, rollShiny, savePets, togglePet, readPetShiny, savePetShiny } from './pets';
+import { unlockEvolutionSound } from './sound/pokemon';
 
 let tune = null;
 
@@ -79,11 +80,26 @@ export function setPhoto(on) {
 
 // 育: bichinhos escolhidos (um ou vários), guardados para a próxima visita
 export function loadPets() {
-  journeyStore.setState({ pets: readPets(window.localStorage) });
+  try {
+    journeyStore.setState({ pets: readPets(window.localStorage), petShiny: readPetShiny(window.localStorage) });
+  } catch {
+    // O próprio acesso a localStorage pode ser bloqueado pelo navegador.
+  }
 }
 
-export function switchPet(id) {
-  const next = togglePet(journeyStore.getState().pets, id);
-  journeyStore.setState({ pets: next });
-  savePets(window.localStorage, next);
+// Um inicial novo sorteia se vem shiny (as evoluções herdam); retirar o companheiro apaga. Quando o
+// sorteio dá shiny, avisa o bichinho para comemorar ('oku:pet-shiny')
+export function switchPet(id, rand = Math.random) {
+  unlockEvolutionSound();
+  const state = journeyStore.getState();
+  const next = togglePet(state.pets, id);
+  const fresh = next.length > 0 && petById(next[0])?.starter !== petById(state.pets[0])?.starter;
+  const shiny = next.length === 0 ? false : fresh ? rollShiny(rand) : state.petShiny;
+  journeyStore.setState({ pets: next, petShiny: shiny });
+  try {
+    savePets(window.localStorage, next);
+    savePetShiny(window.localStorage, shiny);
+  } catch { /* Vale nesta visita. */ }
+  if (fresh && shiny) window.dispatchEvent(new CustomEvent('oku:pet-shiny'));
+  return shiny;
 }

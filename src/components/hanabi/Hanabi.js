@@ -236,8 +236,10 @@ export default function Hanabi({ onDone }) {
     const three = setFestival(true);
     setScene(three);
     const sound = createSound();
+    window.dispatchEvent(new CustomEvent('oku:pet-festival', { detail: { mode: 'hanabi' } }));
     const onBurst = (kind) => {
       sound?.boom(kind);
+      window.dispatchEvent(new CustomEvent('oku:pet-festival', { detail: { mode: 'hanabi', pulse: true } }));
       if (kind === 'otori') setFlash((n) => n + 1);
     };
     const painter = three ? null : createPainter(canvasRef.current, onBurst);
@@ -306,6 +308,7 @@ export default function Hanabi({ onDone }) {
       festival.onBurst = null;
       festival.speed = 1;
       setFestival(false);
+      window.dispatchEvent(new CustomEvent('oku:pet-festival', { detail: { mode: null } }));
       sound?.dispose();
     };
   }, [onDone, round]);
