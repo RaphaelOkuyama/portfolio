@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { AdditiveBlending, BufferAttribute, BufferGeometry, Color, DynamicDrawUsage, ShaderMaterial } from 'three';
+import { AdditiveBlending, BufferAttribute, BufferGeometry, Color, DynamicDrawUsage, ShaderMaterial, Vector3 } from 'three';
 import { journeyStore } from '../../store/journey';
 import { FESTIVAL, festival } from '../../lib/festival';
 import { getCameraCurve } from './useCameraMap';
@@ -11,9 +11,10 @@ import { RIVER, TAIKOBASHI } from './config';
 // faísca guarda de onde saiu, a velocidade e a hora em que nasceu, e a placa de vídeo calcula a
 // trajetória (arrasto do ar e gravidade). A CPU só escreve na hora do estouro. Os rastros são
 // cópias da mesma faísca atrasadas no tempo. Tipos: 菊 kiku (com rastro), 牡丹 botan (pontos),
-// 柳 yanagi (chorão dourado), 輪 anel, 芯入 miolo de outra cor e 千輪 senrin (vários pequenos)
+// 柳 yanagi (chorão dourado), 輪 anel, 芯入 miolo de outra cor, 千輪 senrin (vários pequenos) e
+// 大トリ otori, o último: uma casca só que abre do tamanho da tela e vira dezenas de flores
 
-const CAPACITY = 26000;
+const CAPACITY = 42000;
 
 const vertexShader = /* glsl */ `
   uniform float uTime;
@@ -108,6 +109,7 @@ export default function Fireworks() {
       clock: 0, cursor: 0, dirty: 0, lastEmit: -100, pending: [], niagara: null,
       water: end.y - RIVER.drop,
       c1: new Color(), c2: new Color(),
+      fwd: new Vector3(), right: new Vector3(), up: new Vector3(),
     };
   }, []);
 
@@ -115,7 +117,8 @@ export default function Fireworks() {
     const mesh = meshRef.current;
     if (!mesh) return;
     const journey = journeyStore.getState();
-    const dt = Math.min(delta, 1 / 20);
+    // Câmera lenta quando o show pede (festival.speed < 1): o relógio das faíscas anda menos
+    const dt = Math.min(delta, 1 / 20) * festival.speed;
     sim.clock += dt;
     festival.clock = sim.clock;
     const now = sim.clock;
@@ -157,6 +160,15 @@ export default function Fireworks() {
         onSphere();
         const v = speed * (1 - jitter + Math.random() * jitter * 2);
         spark(b.x, b.y, b.z, dir[0] * v, dir[1] * v, dir[2] * v, life * rand(0.85, 1.1), colors, o);
+      }
+    };
+    // Esfera achatada na profundidade (vira um disco de frente para quem assiste)
+    const ball2 = (b, count, speed, life, colors, o, jitter, flat) => {
+      const n = Math.round(count * detail);
+      for (let i = 0; i < n; i += 1) {
+        onSphere();
+        const v = speed * (1 - jitter + Math.random() * jitter * 2);
+        spark(b.x, b.y, b.z, dir[0] * v, dir[1] * v, dir[2] * v * flat, life * rand(0.9, 1.08), colors, o);
       }
     };
     // Clarão do estouro: acende o ar em volta e vai para o reflexo do rio
@@ -227,14 +239,41 @@ export default function Fireworks() {
           const hy = 13 * Math.cos(a) - 5 * Math.cos(2 * a) - 2 * Math.cos(3 * a) - Math.cos(4 * a);
           spark(b.x, b.y, b.z, hx * 0.82 * s, hy * 0.82 * s, 0, 2.0, ['#ffb0c4', '#ff2e63'], { drag: 1.8, grav: 0.9, size: 0.6, ghosts: 3, twinkle: true });
         }
+      } else if (b.kind === 'hana') {
+        // As flores do otori: menores que ele, mas grandes o bastante para emendar uma na outra
+        ball(b, 72, 12, 1.9, c, { drag: 2, grav: 1.5, size: 0.62, ghosts: 3, lag: 0.04, twinkle: true });
+      } else if (b.kind === 'otori') {
+        // 大トリ: a esfera cobre a tela inteira (achatada de frente para a câmera, vira um disco do
+        // tamanho do céu visível); depois cada pedaço vira uma flor, numa onda do centro para as
+        // bordas, até as flores cobrirem a tela de novo
+        const { R, halfW, halfH, right, up } = b.frame;
+        ball2(b, 1000, R * 1.55, 3.4, ['#ffffff', '#ffc86a'], { drag: 1.55, grav: 0.9, size: 1.05, ghosts: 7, lag: 0.035, gain: 2.4, twinkle: true }, 0.07, 0.3);
+        ball2(b, 380, R * 0.85, 2.8, ['#ffd0e0', '#ff3e7a'], { drag: 1.6, grav: 0.8, size: 0.9, ghosts: 4, gain: 2 }, 0.1, 0.3);
+        const total = 84 * detail;
+        const cols = Math.max(5, Math.round(Math.sqrt(total * (halfW / halfH))));
+        const rows = Math.max(4, Math.round(total / cols));
+        for (let i = 0; i < cols; i += 1) {
+          for (let j = 0; j < rows; j += 1) {
+            const px = (((i + 0.5 + rand(-0.35, 0.35)) / cols) * 2 - 1) * halfW;
+            const py = (((j + 0.5 + rand(-0.35, 0.35)) / rows) * 2 - 1) * halfH;
+            const d = Math.min(1, Math.hypot(px, py) / R);
+            sim.pending.push({
+              at: now + 1.05 + d * 1.3 + rand(0, 0.25),
+              x: b.x + right.x * px + up.x * py,
+              y: b.y + right.y * px + up.y * py,
+              z: b.z + right.z * px + up.z * py + rand(-3, 3),
+              kind: 'hana', colors: pick(PALETTE), quiet: (i + j) % 5 !== 0,
+            });
+          }
+        }
       } else {
         // 菊 kiku: a esfera com rastros, a ponta mudando de cor
         ball(b, 165 * s, 15.5 * s, 2.2, c, { drag: 1.85, grav: 2.2, size: 0.5, ghosts: 7 });
         if (b.big) ball(b, 70, 21, 2.5, GOLD, { drag: 1.9, grav: 2.6, size: 0.4, ghosts: 5, twinkle: true });
       }
-      const small = b.kind === 'mini' || b.kind === 'child';
-      flash(b, c, small ? 0.35 : b.kind === 'giant' ? 2 : b.big ? 1.25 : 0.9);
-      if (!b.quiet) festival.onBurst?.(small ? 'crackle' : b.kind === 'giant' ? 'giant' : b.big ? 'big' : 'small');
+      const small = b.kind === 'mini' || b.kind === 'child' || b.kind === 'hana';
+      flash(b, c, small ? 0.45 : b.kind === 'otori' ? 4 : b.kind === 'giant' ? 2 : b.big ? 1.25 : 0.9);
+      if (!b.quiet) festival.onBurst?.(small ? 'crackle' : b.kind === 'otori' ? 'otori' : b.kind === 'giant' ? 'giant' : b.big ? 'big' : 'small');
     };
 
     // Pedidos do jogo: a casca sobe da água atrás da ponte até o ponto do estouro
@@ -243,7 +282,27 @@ export default function Fireworks() {
     while (festival.queue.length) {
       const req = festival.queue.shift();
       if (req.kind === 'niagara') {
-        sim.niagara = { until: now + req.seconds, carry: 0 };
+        sim.niagara = { until: now + req.seconds * festival.speed, carry: 0 };
+        continue;
+      }
+      if (req.kind === 'otori') {
+        // Bem no meio do que a câmera vê, na distância dos fogos; guarda o tamanho da tela lá
+        camera.getWorldDirection(sim.fwd);
+        sim.right.crossVectors(sim.fwd, camera.up).normalize();
+        sim.up.crossVectors(sim.right, sim.fwd).normalize();
+        const D = Math.abs((zone.z[0] + zone.z[1]) / 2 - camera.position.z) / Math.max(0.3, -sim.fwd.z);
+        const halfH = Math.tan((camera.fov * Math.PI) / 360) * D;
+        const halfW = halfH * camera.aspect;
+        const x = camera.position.x + sim.fwd.x * D;
+        const y = camera.position.y + sim.fwd.y * D;
+        const z = camera.position.z + sim.fwd.z * D;
+        const T = req.rise ?? 4;
+        const oy = sim.water + 0.2;
+        const k = 0.7;
+        const e = (1 - Math.exp(-k * T)) / k;
+        // A bolinha: uma cabeça grande e brilhante com um rastro longo
+        spark(x, oy, z, 0, (y - oy) / e, 0, T, ['#fff4d8', '#ffb45a'], { drag: k, grav: 0, size: 1.5, ghosts: 34, lag: 0.03, gain: 2.6 });
+        sim.pending.push({ at: now + T, x, y, z, kind: 'otori', colors: ['#ffffff', '#ffc86a'], frame: { R: Math.hypot(halfW, halfH) * 1.05, halfW, halfH, right: sim.right.clone(), up: sim.up.clone() } });
         continue;
       }
       const z = rand(zone.z[0], zone.z[1]);

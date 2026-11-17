@@ -5,6 +5,10 @@
 export const HANABI = {
   // Palavra secreta (digitada fora de campos de texto)
   words: ['hanabi'],
+  // Câmera lenta: o relógio das faíscas anda a esta fração do tempo real (subida, abertura e queda)
+  slow: 0.7,
+  // O programa estica junto, para cada fogo ter tempo de abrir e cair antes do próximo
+  pace: 1.4,
 };
 
 // Os atos do programa, na ordem dos festivais japoneses: cada um mostra um tipo de fogo
@@ -36,6 +40,10 @@ export const HANABI_ACTS = [
   {
     id: 'kamuro', jp: '冠菊', name: { pt: 'Kamuro · o final dourado', en: 'Kamuro · the golden finale' },
     text: { pt: 'A coroa de ouro que desce devagar até quase tocar a água.', en: 'The golden crown that falls slowly until it almost touches the water.' },
+  },
+  {
+    id: 'otori', jp: '大トリ', name: { pt: 'Ōtori · o último', en: 'Ōtori · the last one' },
+    text: { pt: 'Uma bolinha só sobe no escuro. Ela abre do tamanho do céu inteiro e cada faísca vira outra flor.', en: 'A single shell climbs in the dark. It opens as wide as the whole sky and every spark becomes another flower.' },
   },
 ];
 
@@ -94,6 +102,16 @@ export function hanabiProgram(rand = Math.random) {
   fire(52.0, { kind: 'giant', x: 0.45, y: 0.6, rise: 1.6 });
   [-0.85, -0.42, 0, 0.42, 0.85].forEach((x, i) => fire(53.6 + i * 0.1, { kind: 'kamuro', big: true, x, y: 0.85, rise: 1.1 }));
 
-  steps.push({ t: 60, end: true });
+  // 大トリ: o céu apaga, uma bolinha só sobe devagar e abre cobrindo a tela inteira; depois cada
+  // pedaço vira uma flor menor, também de ponta a ponta (ver o tipo `otori` em scene/Fireworks)
+  act(58.2, 'otori');
+  fire(59.0, { kind: 'otori', x: 0, rise: 4 });
+
+  steps.push({ t: 71, end: true });
+  // Tudo mais devagar (tempo real): ver HANABI.pace
+  steps.forEach((step) => {
+    step.t *= HANABI.pace;
+    if (step.niagara) step.niagara *= HANABI.pace;
+  });
   return steps.sort((a, b) => a.t - b.t);
 }

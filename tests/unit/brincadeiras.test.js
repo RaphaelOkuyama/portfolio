@@ -71,6 +71,19 @@ describe('hanabi', () => {
     });
   });
 
+  it('antes de acabar sobe uma bolinha só, o ōtori, e o show anda em câmera lenta', () => {
+    const program = hanabiProgram(() => 0.5);
+    const fires = program.filter((s) => s.fire);
+    const last = fires.at(-1);
+    expect(last.fire.kind).toBe('otori');
+    expect(fires.filter((s) => s.fire.kind === 'otori')).toHaveLength(1);
+    // Céu limpo antes dela, e tempo para as flores abrirem antes do fim
+    expect(last.t - fires.at(-2).t).toBeGreaterThan(5);
+    expect(program.at(-1).t - last.t).toBeGreaterThan(12);
+    expect(HANABI.slow).toBeLessThan(1);
+    expect(program.at(-1).t).toBeGreaterThan(90);
+  });
+
   it('a palavra do festival não é a do jogo de taiko', () => {
     expect(HANABI.words).toEqual(['hanabi']);
     expect(TAIKO.words).toContain('taiko');

@@ -6296,6 +6296,9 @@ html.festival-mode { overflow: hidden; }
 .hanabi-close:hover, .hanabi-close:focus-visible { border-color: #f3eee3; }
 .hanabi-close kbd { margin: 0 0 0 6px; }
 .hanabi-result { position: absolute; left: 50%; bottom: 9vh; translate: -50% 0; display: grid; justify-items: center; gap: 6px; width: min(440px, calc(100% - 32px)); padding: 22px 28px; border: 1px solid rgba(243, 238, 227, 0.3); border-radius: 14px; background: rgba(6, 8, 18, 0.8); text-align: center; cursor: default; animation: gacha-prize 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }
+/* O clarão do ōtori: a tela inteira acende e apaga devagar */
+.hanabi-flash { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at 50% 45%, rgba(255, 250, 235, 0.95), rgba(255, 214, 150, 0.55) 45%, rgba(255, 170, 90, 0.15) 80%); opacity: 0; animation: hanabi-flash 2.4s ease-out; }
+@keyframes hanabi-flash { 0% { opacity: 0; } 6% { opacity: 0.85; } 100% { opacity: 0; } }
 .hanabi-rank { margin: 0; font-size: 3.4rem; line-height: 1; color: #ffd27a; }
 .hanabi-score { margin: 0; font-size: 1.3rem; font-weight: 700; }
 .hanabi-detail { margin: 0 0 10px; font-size: 0.9rem; line-height: 1.5; color: rgba(243, 238, 227, 0.8); }
@@ -6560,6 +6563,6 @@ html.photo-mode { overflow: hidden; }
 @media (pointer: coarse) { .photo-hint { display: none; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .gacha-veil, .gacha-prize, .hanabi, .hanabi-result, .hanabi-act, .taiko, .taiko-card, .photo-flash, .retro-hud-blink, .pet[data-mood='sleep'] .pet-bubble::after { animation: none; }
+  .gacha-veil, .gacha-prize, .hanabi, .hanabi-result, .hanabi-act, .hanabi-flash, .taiko, .taiko-card, .photo-flash, .retro-hud-blink, .pet[data-mood='sleep'] .pet-bubble::after { animation: none; }
   .photo-flash { opacity: 0; }
 }

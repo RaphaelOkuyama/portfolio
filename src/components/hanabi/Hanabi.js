@@ -1,12 +1,14 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { festival, launchFirework, launchNiagara, setFestival } from '../../lib/festival';
-import { HANABI_ACTS, hanabiProgram } from '../../lib/hanabi';
+import { HANABI, HANABI_ACTS, hanabiProgram } from '../../lib/hanabi';
 
 // 花火大会: o festival de fogos (palavra secreta "hanabi"; carregado só então, ver EasterEggs).
 // Com a cena 3D na tela, a página some, a câmera voa até o rio e os fogos sobem no céu atrás da
 // taikobashi (ver scene/Fireworks), num programa em atos como o dos festivais do Japão: abertura,
-// formas, starmine, senrin, a Niágara na ponte, a casca gigante que vira várias e o final dourado.
+// formas, starmine, senrin, a Niágara na ponte, a casca gigante que vira várias, o final dourado
+// e o ōtori: uma bolinha só que abre do tamanho da tela e vira dezenas de flores. Tudo em câmera
+// lenta (HANABI.slow), para dar tempo de ver cada fogo abrir e cair.
 // Sem a cena 3D (sem placa de vídeo), o mesmo programa é desenhado aqui, por cima da página
 
 const COLORS = [
@@ -49,11 +51,13 @@ function createSound() {
         burst(0.18, 5200, 0.1, 'highpass');
         return;
       }
-      const size = kind === 'giant' ? 2 : kind === 'big' ? 1.3 : 1;
+      const size = kind === 'otori' ? 2.6 : kind === 'giant' ? 2 : kind === 'big' ? 1.3 : 1;
       burst(0.5 * size, 420 / size, 0.55 * Math.min(1.5, size), 'lowpass');
       burst(0.12, 1800, 0.22, 'bandpass', 0.8);
       burst(0.7 * size, 4200, 0.07 * size, 'highpass', 0.7, 0.1);
-      if (kind === 'giant') burst(1.6, 120, 0.8, 'lowpass', 0.7, 0.02);
+      if (kind === 'giant' || kind === 'otori') burst(kind === 'otori' ? 2.6 : 1.6, kind === 'otori' ? 90 : 120, 0.8, 'lowpass', 0.7, 0.02);
+      // O chiado longo das faíscas do ōtori se abrindo pelo céu
+      if (kind === 'otori') burst(2.4, 6000, 0.12, 'highpass', 0.7, 0.9);
     },
     niagara(seconds) {
       const at = ctx.currentTime;
@@ -107,7 +111,20 @@ function createPainter(canvas, onBurst) {
   const explode = (s) => {
     const k = s.big ? 1.3 : 1;
     const c = s.colors;
-    if (s.kind === 'giant') {
+    if (s.kind === 'otori') {
+      // Do meio da tela até os cantos, e depois flores menores espalhadas pela tela toda
+      const R = Math.hypot(w, h) / 2 / unit();
+      ball(s.x, s.y, 320, R * 1.6, 3, ['#ffffff', '#ffc86a'], { even: true, drag: 1.6, grav: 2, width: 2.2 });
+      for (let i = 0; i < 9; i += 1) {
+        for (let j = 0; j < 6; j += 1) {
+          const x = w * ((i + 0.5 + rand(-0.3, 0.3)) / 9);
+          const y = h * ((j + 0.5 + rand(-0.3, 0.3)) / 6);
+          const d = Math.hypot(x - s.x, y - s.y) / (R * unit());
+          later.push({ at: clock + 1 + d * 1.3 + rand(0, 0.25), x, y, kind: 'hana', colors: pick(COLORS), quiet: (i + j) % 5 !== 0 });
+        }
+      }
+    } else if (s.kind === 'hana') ball(s.x, s.y, 40, 22, 1.6, c);
+    else if (s.kind === 'giant') {
       ball(s.x, s.y, 150, 62, 2.4, c, { even: true });
       ball(s.x, s.y, 80, 30, 2, pick(COLORS));
       for (let i = 0; i < 22; i += 1) {
@@ -135,14 +152,15 @@ function createPainter(canvas, onBurst) {
       ball(s.x, s.y, 70 * k, 34 * k, 2, c);
       if (s.kind === 'double') ball(s.x, s.y, 40, 17, 1.5, pick(COLORS));
     }
-    if (!s.quiet) onBurst(s.kind === 'mini' || s.kind === 'child' ? 'crackle' : s.kind === 'giant' ? 'giant' : s.big ? 'big' : 'small');
+    if (!s.quiet) onBurst(s.kind === 'mini' || s.kind === 'child' || s.kind === 'hana' ? 'crackle' : s.kind === 'otori' ? 'otori' : s.kind === 'giant' ? 'giant' : s.big ? 'big' : 'small');
   };
   return {
     resize,
     launch(req) {
       const big = Boolean(req.big || req.finale);
       const kind = req.kind ?? (req.finale ? pick(['yanagi', 'senrin', 'kiku', 'double']) : big ? pick(['kiku', 'ring', 'double']) : 'kiku');
-      shells.push({ x: w * (0.5 + 0.42 * (req.x ?? rand(-1, 1))), to: h * (0.52 - 0.36 * (req.y ?? Math.random())), t: 0, rise: req.rise ?? 0.75, big, kind, colors: COLORS[req.color] ?? pick(COLORS) });
+      const top = kind === 'otori' ? h * 0.42 : h * (0.52 - 0.36 * (req.y ?? Math.random()));
+      shells.push({ x: w * (0.5 + 0.42 * (req.x ?? rand(-1, 1))), to: top, t: 0, rise: req.rise ?? 0.75, big, kind, colors: COLORS[req.color] ?? pick(COLORS) });
     },
     niagara(seconds) { niagaraUntil = clock + seconds; },
     frame(dt) {
@@ -156,9 +174,9 @@ function createPainter(canvas, onBurst) {
         const k = Math.min(1, s.t / s.rise);
         const y = h + (s.to - h) * (1 - (1 - k) ** 2);
         ctx.strokeStyle = 'rgba(255, 226, 170, 0.8)';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = s.kind === 'otori' ? 5 : 2;
         ctx.beginPath();
-        ctx.moveTo(s.x, y + 18);
+        ctx.moveTo(s.x, y + (s.kind === 'otori' ? 60 : 18));
         ctx.lineTo(s.x, y);
         ctx.stroke();
         if (k >= 1) {
@@ -207,6 +225,8 @@ export default function Hanabi({ onDone }) {
   const [ended, setEnded] = useState(false);
   const [round, setRound] = useState(0);
   const [scene, setScene] = useState(false);
+  // Clarão branco na tela inteira quando o ōtori abre
+  const [flash, setFlash] = useState(0);
   const lang = typeof document !== 'undefined' && document.documentElement.getAttribute('data-language') === 'en' ? 'en' : 'pt';
   const en = lang === 'en';
 
@@ -216,13 +236,19 @@ export default function Hanabi({ onDone }) {
     const three = setFestival(true);
     setScene(three);
     const sound = createSound();
-    const onBurst = (kind) => sound?.boom(kind);
+    const onBurst = (kind) => {
+      sound?.boom(kind);
+      if (kind === 'otori') setFlash((n) => n + 1);
+    };
     const painter = three ? null : createPainter(canvasRef.current, onBurst);
-    if (three) festival.onBurst = onBurst;
+    if (three) {
+      festival.onBurst = onBurst;
+      festival.speed = HANABI.slow;
+    }
     const launch = (req) => (three ? launchFirework(req) : painter.launch(req));
     const niagara = (seconds) => {
       if (three) launchNiagara(seconds);
-      else painter.niagara(seconds);
+      else painter.niagara(seconds * HANABI.slow);
       sound?.niagara(seconds);
     };
 
@@ -245,7 +271,7 @@ export default function Hanabi({ onDone }) {
         else if (step.end) setEnded(true);
         else launch(step.fire);
       }
-      painter?.frame(dt);
+      painter?.frame(dt * HANABI.slow);
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -278,6 +304,7 @@ export default function Hanabi({ onDone }) {
       root.removeEventListener('wheel', block);
       root.removeEventListener('touchmove', block);
       festival.onBurst = null;
+      festival.speed = 1;
       setFestival(false);
       sound?.dispose();
     };
@@ -287,6 +314,7 @@ export default function Hanabi({ onDone }) {
   return (
     <div ref={rootRef} className="hanabi" data-hanabi="" data-mode={scene ? 'scene' : 'page'} role="dialog" aria-modal="true" aria-label={en ? 'Fireworks festival' : 'Festival de fogos'}>
       <canvas ref={canvasRef} className="hanabi-canvas" aria-hidden="true" />
+      {flash ? <div key={flash} className="hanabi-flash" aria-hidden="true" /> : null}
       <p className="hanabi-title font-jp" lang="ja" aria-hidden="true">花火大会</p>
       {info && !ended ? (
         <p key={act} className="hanabi-act" data-hanabi-act={info.id}>

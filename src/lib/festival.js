@@ -19,7 +19,8 @@ export const FESTIVAL = {
 
 // Estado que a cena lê a cada quadro (fora do React): pedidos de fogos, clarões acesos (para o
 // reflexo no rio) e o aviso de estouro (o som)
-export const festival = { queue: [], glows: [], clock: 0, onBurst: null };
+// `speed`: a que fração do tempo real as faíscas andam (o show de hanabi usa câmera lenta)
+export const festival = { queue: [], glows: [], clock: 0, onBurst: null, speed: 1 };
 
 // Pede um fogo. { big, finale, kind, x } (x de -1 a 1, da esquerda à direita do céu visível)
 export function launchFirework(request = {}) {
