@@ -3,6 +3,14 @@ export const LOADER_MIN_MS = 1200;
 // O ensō espera a cena 3D ficar pronta (shaders compilados): abrir antes travava a íris no meio,
 // com a tela vazia, enquanto a GPU compilava. O máximo segura aparelhos lentos
 export const LOADER_MAX_MS = 8000;
+// Rede lenta: passado este tempo desde a navegação sem o código da cena ter chegado, o ensō não
+// espera mais. A íris abre sobre o pôster (o mesmo quadro da cena) e a cena entra depois. Com a
+// cena já montando (compilando shaders) vale esperar: falta pouco, e abrir no meio travava
+export const LOADER_EARLY_MS = 4500;
+// Quando o próprio JavaScript chegou tarde, a pessoa já olhou o fundo de tinta por segundos: o
+// traço corre mais rápido
+export const LOADER_LATE_START_MS = 3000;
+export const LOADER_LATE_MIN_MS = 700;
 // Primeira visita na home: a página só rola com a cena pronta (o ensō pode sair antes, num clique
 // para pular); passado este tempo, rola de qualquer jeito
 export const SCENE_WAIT_MAX_MS = 15000;
@@ -22,8 +30,9 @@ export const VISITED_KEY = 'oku-visited';
 // começo do traço (a animação precisa desse tempo); o máximo conta da navegação (`waited`), que é
 // a espera real de quem abriu a página: o overlay já está na tela desde o HTML do servidor, e
 // no 4G o JS só chega ~3s depois. Contando do traço, a espera passava de 7s
-export function loaderProgress({ elapsed, waited = elapsed, sceneReady, minMs = LOADER_MIN_MS, maxMs = LOADER_MAX_MS }) {
+export function loaderProgress({ elapsed, waited = elapsed, sceneReady, sceneMounted = true, minMs = LOADER_MIN_MS, maxMs = LOADER_MAX_MS, earlyMs = LOADER_EARLY_MS }) {
   if (waited >= maxMs) return 1;
+  if (!sceneMounted && waited >= earlyMs && elapsed >= minMs) return 1;
   if (sceneReady && elapsed >= minMs) return 1;
   if (minMs === 0) return 0.9;
   return Math.min(0.9, (elapsed / minMs) * 0.9);

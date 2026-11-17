@@ -31,6 +31,8 @@ export function createJourneyStore() {
     sceneStarted: false,
     // A home segura a rolagem até a cena ficar pronta (o ensō foi pulado com ela compilando)
     holdScroll: false,
+    sceneMounted: false,
+    sceneHold: false,
     loaderDone: false,
     // Faixa [início, fim] de cada seção em fração do progresso (medida pelo ScrollTrigger)
     sectionRanges: {},

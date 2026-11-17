@@ -47,6 +47,8 @@ export default function Canvas3D() {
   }, []);
 
   useEffect(() => trackPointer(), []);
+  // O código da cena chegou e ela começou a montar (o ensō decide por isto se ainda espera)
+  useEffect(() => { journeyStore.setState({ sceneMounted: true }); }, []);
 
   const settings = lite ? { dpr: liteDpr, antialias: false, postprocessing: false } : QUALITY_SETTINGS[quality];
   // O aquecimento dos shaders compila também a variação usada pelo pós-processamento (ver warmup)

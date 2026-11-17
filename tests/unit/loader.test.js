@@ -22,6 +22,11 @@ describe('loaderProgress', () => {
     // O máximo vale para a espera desde a navegação, mesmo com o traço recém-começado
     [{ elapsed: 300, waited: 8000, sceneReady: false }, 1],
     [{ elapsed: 300, waited: 3000, sceneReady: false }, 0.225],
+    // Rede lenta: sem o código da cena aos 4,5 s, abre sem esperar; com a cena já montando, espera
+    [{ elapsed: 1300, waited: 4600, sceneReady: false, sceneMounted: false }, 1],
+    [{ elapsed: 1300, waited: 4600, sceneReady: false, sceneMounted: true }, 0.9],
+    [{ elapsed: 1300, waited: 4000, sceneReady: false, sceneMounted: false }, 0.9],
+    [{ elapsed: 400, waited: 4600, sceneReady: false, sceneMounted: false, minMs: 700 }, 0.9 * 400 / 700],
   ])('%o → %s', (input, expected) => {
     expect(loaderProgress(input)).toBeCloseTo(expected, 6);
   });

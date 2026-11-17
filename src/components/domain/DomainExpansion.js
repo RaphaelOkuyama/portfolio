@@ -8,18 +8,24 @@ import { takeVoid } from './voidShader';
 import { buildSpritesGradually } from './sprites';
 import { createDomainSound, savedVolume } from './sound';
 import HandSeal from './HandSeal';
+import { CinemaOver, CinemaUnder } from './Cinema';
 
 // 領域展開 · 無量空処: o Vazio Infinito (carregado só quando alguém abre; ver EasterEggs).
-//  1. Ativação (0–0,8 s): a página escurece, o selo de mão do Gojo (indicador e médio cruzados)
-//     acende e 領域展開 surge em pinceladas; o som grave marca a abertura
-//  2. Expansão (0,8–2,0 s): o vazio rasga a cena a partir do gatilho, com a página real sendo puxada
-//     para ele (lente); o buraco negro nasce no centro, com o disco em espiral e o anel azul-gelo
+//  1. Ativação (0–0,8 s): close no selo de mão do Gojo (indicador e médio cruzados), que
+//     acende; no golpe, a esfera negra do domínio fecha em volta da tela e 領域展開 surge em pinceladas; o som grave marca a abertura
+//  2. Expansão (0,8–2,0 s): luz branca rasga a cartela a partir do gatilho até tomar a tela (um
+//     instante de branco sem fim e nada); o branco apaga para o breu do espaço, com galáxias ao longe
+//     e manchas brancas, e o astro negro enorme nasce no centro, com o anel de luz
 //  3. Informação infinita (2,0–5,3 s): primeiro, legível, a história (os projetos com a stack, os
 //     números reais); depois a enxurrada (as tiras do Stack, 奥山, as quatro estações), que se
 //     multiplica, se sobrepõe e vira partícula. O contador acompanha até perder o sentido
 //     No pico, tudo congela por meio segundo (o cursor trava, o som some): quem
 //     está no domínio não consegue agir
 //  4. Saturação (5,3–6,0 s): a informação dispara, a tela treme e estoura para o branco
+//  Por cima de tudo isso, a direção de cinema (Cinema.js): barras de scope, a cartela em corte
+//  seco (preto, o nome em pé em tinta), quadros de impacto com linhas de velocidade nos três golpes (o nome
+//  do domínio, a abertura do vazio e a quebra), 無量空処 em cartela no meio da tela antes de ir
+//  para o canto, reflexo de lente, grão e vinheta
 //  5. Reconstrução (6,0–7,6 s): o branco racha; cada caco é a região de um elemento real visível e
 //     carrega o conteúdo dele (os glifos do texto se juntam na fonte do site, a imagem em pedaços,
 //     botões e cartões contornados pela borda). Ao encaixar, o elemento volta; quando tudo encaixa,
@@ -38,7 +44,7 @@ const SATURATE = { natural: 0.7, early: 0.5 };
 // A informação: começa pela história legível e vira enxurrada a partir desta fração do vazio
 const FLOOD_AT = 0.42;
 // O congelamento acaba um pouco antes da saturação e dura isto (s)
-const FREEZE = { lead: 0.08, length: 0.55 };
+const FREEZE = { lead: 0.08, length: 0.85 };
 const POINTS = 28;
 const MAX_GLYPHS = 320;
 const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
@@ -162,6 +168,8 @@ export default function DomainExpansion({ origin, onDone }) {
     // Celular: menos peças, menos partículas e menos tremor
     const small = unit < 700;
     const density = small ? 0.55 : 1;
+    // Raio do astro em fração da altura (a mesma conta do shader)
+    const orbK = Math.min(0.26, (0.4 * w) / h);
 
     // O shader roda numa resolução menor que a tela (é um vazio difuso: não precisa de nitidez)
     const glScale = Math.min(1, (small ? 0.9 : 1.15) / dpr) * dpr;
@@ -185,12 +193,15 @@ export default function DomainExpansion({ origin, onDone }) {
     const tl = gsap.timeline();
     tl.to(q('.dx-dim'), { opacity: 1, duration: 0.4, ease: 'power2.out' }, 0)
       // 印: o selo de mão acende, segura um instante e se desfaz quando o nome do domínio entra
-      .fromTo(q('.dx-seal'), { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.32, ease: 'power3.out' }, 0)
-      .to(q('.dx-seal'), { opacity: 0, scale: 1.08, duration: 0.35, ease: 'power2.in' }, 0.62)
+      .fromTo(q('.dx-seal'), { opacity: 0, scale: 0.92 }, { opacity: 1, scale: 1, duration: 0.2, ease: 'power3.out' }, 0)
+      // Close: a câmera continua chegando devagar no selo até o golpe
+      .to(q('.dx-seal-svg'), { scale: 1.1, duration: 0.62, ease: 'none' }, 0)
+      // Corte seco com o golpe (com movimento reduzido não há golpe: o selo se desfaz devagar)
+      .to(q('.dx-seal'), { opacity: 0, scale: 1.08, duration: reduced ? 0.35 : 0.02, ease: 'power2.in' }, 0.62)
       .fromTo(q('.dx-intro-char'), { clipPath: 'inset(0% 0% 100% 0%)', opacity: 0, y: -14, scale: 1.12 }, {
         clipPath: 'inset(0% 0% 0% 0%)', opacity: 1, y: 0, scale: 1, duration: 0.5, stagger: 0.1, ease: 'power3.out',
       }, 0.62)
-      .fromTo(q('.dx-brush'), { scaleX: 0, opacity: 0 }, { scaleX: 1, opacity: 1, duration: 0.7, ease: 'expo.inOut' }, 0.74)
+      .fromTo(q('.dx-brush'), { scaleY: 0, opacity: 0 }, { scaleY: 1, opacity: 1, duration: 0.55, ease: 'expo.inOut' }, 0.74)
       .fromTo(q('.dx-intro-sub'), { opacity: 0, letterSpacing: '1.2em' }, { opacity: 0.8, letterSpacing: '0.6em', duration: 0.6, ease: 'expo.out' }, 0.95)
       // Legendas, como no cinema: a fala aparece letra por letra embaixo da tela
       .fromTo(q('.dx-caption-1 .dx-caption-char'), { opacity: 0 }, { opacity: 1, duration: 0.01, stagger: 0.04 }, 0.35)
@@ -203,14 +214,64 @@ export default function DomainExpansion({ origin, onDone }) {
         textShadow: '-9px 0px 10px rgba(255,70,120,0.9), 9px 0px 10px rgba(70,200,255,0.9)',
       }, {
         opacity: 1, scale: 1, skewX: 0,
-        textShadow: '0px 0px 24px rgba(140,190,255,0.55), 0px 0px 24px rgba(140,190,255,0)',
+        // Sombra escura: o vazio agora é claro e o nome precisa se destacar dele
+        textShadow: '0px 3px 18px rgba(4,14,50,0.85), 0px 0px 5px rgba(4,14,50,0.75)',
         duration: 0.95, stagger: 0.08, ease: 'expo.out',
       }, close + 0.15)
-      .fromTo(q('.dx-name-jp'), { letterSpacing: '0.4em' }, { letterSpacing: '0.04em', duration: 1.1, ease: 'expo.out' }, close + 0.15)
-      .fromTo(q('.dx-line'), { scaleX: 0 }, { scaleX: 1, duration: 0.9, ease: 'expo.inOut' }, close + 0.35)
-      .fromTo(q('.dx-label, .dx-count'), { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.7, stagger: 0.08, ease: 'power3.out' }, close + 0.45)
+      .fromTo(q('.dx-name-jp'), { letterSpacing: '0.16em' }, { letterSpacing: '0.04em', duration: 1.1, ease: 'expo.out' }, close + 0.15)
+      // A linha, a leitura e o contador esperam a cartela recolher para o canto
+      .fromTo(q('.dx-line'), { scaleX: 0 }, { scaleX: 1, duration: 0.9, ease: 'expo.inOut' }, close + (reduced ? 0.35 : 1.45))
+      .fromTo(q('.dx-label, .dx-count'), { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.7, stagger: 0.08, ease: 'power3.out' }, close + (reduced ? 0.45 : 1.55))
       // O volume só aparece com o vazio cobrindo a tela: antes ele ficava em cima do logo do menu
       .call(() => root.querySelector('.dx-sound')?.classList.add('is-on'), null, close);
+
+    // 演出: a direção de cinema. As barras fecham a tela em scope; vinheta e grão ficam enquanto o
+    // domínio dura
+    tl.to(q('.dx-bar'), { scaleY: 1, duration: 0.3, ease: 'power4.out' }, 0)
+      .to(q('.dx-vignette'), { opacity: 1, duration: 0.5 }, 0)
+      .to(q('.dx-grain'), { opacity: 0.1, duration: 0.5 }, 0);
+    // Quadro de impacto: o negativo por dois quadros e as linhas de velocidade abrindo. Com
+    // movimento reduzido não há clarão nem tremor (a camada nem é desenhada: ver o CSS)
+    const impactEl = root.querySelector('.dx-impact');
+    const burstEl = root.querySelector('.dx-burst');
+    const linesEl = root.querySelector('.dx-lines');
+    const hit = (timeline, at, { hold = 0.07, lines = 0.9, spread = 0.5 } = {}) => {
+      if (reduced) return;
+      // Dois desenhos seguidos, como nos golpes dos animes: o negativo e o clarão em estrela
+      timeline.set(impactEl, { opacity: 1 }, at)
+        .set(impactEl, { opacity: 0 }, at + hold)
+        // Gira só o desenho: o fundo preto do quadro continua cobrindo a tela inteira
+        .set(burstEl.firstElementChild, { rotate: Math.random() * 360, scale: 1.6 }, at + hold)
+        .set(burstEl, { opacity: 1 }, at + hold)
+        .set(burstEl, { opacity: 0 }, at + hold + 0.06)
+        .fromTo(linesEl, { opacity: lines, scale: 1, rotate: Math.random() * 40 }, { opacity: 0, scale: 1.22, duration: spread, ease: 'power2.out', immediateRender: false }, at);
+    };
+    if (!reduced) {
+      // 領域展開 bate: impacto e o tranco do texto
+      hit(tl, 0.62);
+      // A esfera do domínio fecha em volta da tela: o preto vem das bordas até o ponto de quem
+      // abriu e engole a página; fechada, fica a cartela preta com o nome
+      const sphere = root.querySelector('.dx-sphere');
+      sphere.style.setProperty('--ox', `${origin.x}px`);
+      sphere.style.setProperty('--oy', `${origin.y}px`);
+      const far = Math.hypot(Math.max(origin.x, w - origin.x), Math.max(origin.y, h - origin.y)) + 60;
+      tl.set(sphere, { opacity: 1, '--r': `${far}px` }, 0.66)
+        .to(sphere, { '--r': '0px', duration: 0.42, ease: 'power2.in' }, 0.66)
+        .set(q('.dx-dim'), { opacity: 1, background: '#020208' }, 1.08)
+        .set(sphere, { opacity: 0 }, 1.1);
+      tl.fromTo(q('.dx-intro'), { x: -16, y: 7 }, { keyframes: [{ x: 12, y: -6 }, { x: -7, y: 4 }, { x: 4, y: -2 }, { x: 0, y: 0 }], duration: 0.3, ease: 'none' }, 0.62);
+      // O vazio abre: dois negativos seguidos, as linhas e o reflexo de lente riscando a tela
+      hit(tl, close - 0.03, { hold: 0.05, lines: 1, spread: 0.7 });
+      tl.fromTo(q('.dx-flare'), { opacity: 0, scaleX: 0.05 }, { opacity: 0.9, scaleX: 1, duration: 0.45, ease: 'expo.out', immediateRender: false }, close)
+        .to(q('.dx-flare'), { opacity: 0.32, duration: 1.2, ease: 'power2.out' }, close + 0.45);
+      // 無量空処 em cartela: o nome nasce enorme no meio da tela, em cima do buraco negro, segura
+      // um instante e só então recolhe para o canto, onde ficam a leitura e o contador
+      const title = root.querySelector('.dx-name-jp');
+      const tr = title.getBoundingClientRect();
+      const grow = Math.min(2.4, (w * 0.8) / Math.max(1, tr.width));
+      tl.set(title, { transformOrigin: '50% 50%', x: w / 2 - (tr.left + tr.width / 2), y: h / 2 - (tr.top + tr.height / 2), scale: grow }, 0)
+        .to(title, { x: 0, y: 0, scale: 1, duration: 0.75, ease: 'expo.inOut' }, close + 1.05);
+    }
     const counter = root.querySelector('.dx-count');
     const layers = [glCanvas, itemsCanvas];
 
@@ -291,7 +352,7 @@ export default function DomainExpansion({ origin, onDone }) {
       const persp = 1 / Math.max(0.05, 1 - z);
       // Nascem já na borda do buraco (0,2 da tela) e saem dali: antes nasciam escondidas dentro
       // dele e muitas apagavam antes de aparecer
-      const r = (unit * 0.19 + d * unit * 0.08) * persp;
+      const r = (h * orbK * 0.95 + d * unit * 0.08) * persp;
       return [w / 2 + Math.cos(a) * r, h / 2 + Math.sin(a) * r, persp];
     };
     const launch = (s, legible) => flying.push({
@@ -473,7 +534,11 @@ export default function DomainExpansion({ origin, onDone }) {
       fctx.drawImage(glCanvas, 0, 0, frozen.width, frozen.height);
       fctx.drawImage(itemsCanvas, 0, 0);
       layers.forEach((c) => { c.style.visibility = 'hidden'; });
-      gsap.to(q('.dx-type, .dx-dim'), { opacity: 0, duration: 0.15 });
+      gsap.to(q('.dx-type, .dx-dim, .dx-flare, .dx-vignette, .dx-grain'), { opacity: 0, duration: 0.15 });
+      // A quebra é o terceiro golpe: negativo, linhas, e as barras de cinema recolhem (a página
+      // volta em tela cheia)
+      hit(gsap.timeline(), 0, { hold: 0.06, lines: 0.8, spread: 0.45 });
+      gsap.to(q('.dx-bar'), { scaleY: 0, duration: 0.55, ease: 'power3.inOut', delay: 0.2 });
       journeyStore.getState().setCovered(false);
       collectTargets();
       const diag = Math.hypot(w, h);
@@ -692,7 +757,11 @@ export default function DomainExpansion({ origin, onDone }) {
         // Expansão a partir de 0,8 s (depois da pincelada), clarão no fim dela e o orbe crescendo
         const rk = reduced ? 1 : clamp01((age - 0.8) / (close - 0.8));
         const opening = ease(rk);
-        const flash = Math.max(0, 1 - Math.abs(age - close) / 0.25) * 0.35 + sat ** 2.2 * 1.4;
+        // Dentro do domínio, primeiro um instante de luz branca sem fim e nada: o que abre a partir
+        // do gatilho é branco puro, segura um instante com a tela toda tomada e só então apaga
+        // para o breu do espaço, onde o astro aparece
+        const white = reduced ? 0 : age < close + 0.16 ? clamp01((age - 0.8) / 0.25) : Math.exp(-(age - close - 0.16) / 0.13);
+        const flash = white * 3 + sat ** 2.2 * 1.4;
         const ok = clamp01((age - close + 0.2) / 0.9);
         const orb = reduced ? 1 : Math.max(0, 1 - (1 - ok) ** 3 * Math.cos(ok * 4));
         const warp = reduced ? 0 : 0.4 + 2.6 * Math.exp(-((age - close - 0.9) ** 2) / 0.6) + info * 1.2 + sat * 5;
@@ -712,7 +781,7 @@ export default function DomainExpansion({ origin, onDone }) {
           releaseLens();
           journeyStore.getState().setCovered(true);
         }
-        drawItems(dt, age, info, sat, 0.2 * orb * h);
+        drawItems(dt, age, info, sat, orbK * orb * h);
         // Tremor da saturação: a tela inteira não aguenta tanta informação
         const shake = sat * sat * (small ? 3 : 7);
         const tx = (Math.random() - 0.5) * shake;
@@ -768,6 +837,7 @@ export default function DomainExpansion({ origin, onDone }) {
       <canvas ref={glRef} className="dx-layer" aria-hidden="true" />
       <canvas ref={itemsRef} className="dx-layer" aria-hidden="true" />
       <canvas ref={shardRef} className="dx-layer" aria-hidden="true" />
+      <CinemaUnder />
       <HandSeal />
       <div className="dx-type" aria-hidden="true">
         <div className="dx-intro">
@@ -796,6 +866,7 @@ export default function DomainExpansion({ origin, onDone }) {
           <p className="dx-caption dx-caption-2">{[...'“Muryōkūsho.”'].map((c, i) => <span key={i} className="dx-caption-char">{c}</span>)}</p>
         </div>
       </div>
+      <CinemaOver />
       {/* O cursor preso no lugar enquanto o domínio congela tudo */}
       <span className="dx-frozen-cursor" aria-hidden="true" />
       {/* Som: liga/desliga e volume (guardado para a próxima vez) */}

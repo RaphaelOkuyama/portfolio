@@ -91,7 +91,10 @@ test('bastidores: a página do making-of, ligada no rodapé, com os créditos', 
   const errors = collectConsoleErrors(page);
   await page.goto('/bastidores');
   await expect(page.getByRole('heading', { level: 1, name: 'Bastidores' })).toBeVisible();
-  await expect(page.locator('.making-section')).toHaveCount(5);
+  await expect(page.locator('.making-section')).toHaveCount(8);
+  // O índice leva a cada parte, e o trecho de código do shader aparece
+  await expect(page.locator('.making-toc a')).toHaveCount(7);
+  await expect(page.locator('.making-code')).toContainText('smoothstep');
   await expect(page.locator('.making-credits')).toContainText('Poly Haven');
   await expect(page.locator('footer').getByRole('link', { name: 'Bastidores' })).toHaveAttribute('href', '/bastidores');
   await expect(page.locator('footer .sf-credit').getByRole('link', { name: 'Poly Haven' })).toBeAttached();

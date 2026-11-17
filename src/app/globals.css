@@ -4815,23 +4815,26 @@ html:not(:lang(en)) [data-lang="en"] { display: none !important; }
   background: radial-gradient(ellipse at 50% 50%, rgba(4, 6, 20, 0.55), rgba(1, 1, 6, 0.85));
 }
 .dx-type { pointer-events: none; }
+/* Cartela do golpe, como nos animes: corte seco para o preto e o nome em pé, em tinta branca */
 .dx-intro {
   position: absolute;
   inset: 0;
   display: flex;
-  flex-direction: column;
+  flex-direction: row-reverse;
   align-items: center;
   justify-content: center;
-  gap: 1.2rem;
+  gap: clamp(14px, 2.2vw, 34px);
 }
 .dx-intro-jp {
   margin: 0;
-  font-size: clamp(64px, 12vw, 190px);
+  writing-mode: vertical-rl;
+  font-size: min(18.5vh, 30vw);
   font-weight: 800;
   line-height: 1;
-  letter-spacing: 0.06em;
-  /* Brilho curto: uma sombra de 60px nesses ideogramas enormes pesava na rasterização */
-  text-shadow: 0 0 14px rgba(255, 255, 255, 0.5), 0 0 30px rgba(120, 170, 255, 0.45);
+  letter-spacing: 0.02em;
+  color: #fff;
+  /* Borda irregular de pincel (Cinema.js): só no texto parado da cartela */
+  filter: url(#dx-ink);
 }
 .dx-intro-char,
 .dx-name-char {
@@ -4841,13 +4844,11 @@ html:not(:lang(en)) [data-lang="en"] { display: none !important; }
 /* Traço de tinta sob 領域展開: afina nas pontas, como o pincel entrando e saindo do papel */
 .dx-brush {
   display: block;
-  width: min(72vw, 900px);
-  height: 7px;
-  margin-top: -0.4rem;
+  width: 9px;
+  height: min(70vh, 112vw);
   border-radius: 50%;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.9) 18%, rgba(170, 205, 255, 0.85) 80%, rgba(170, 205, 255, 0));
-  box-shadow: 0 0 18px rgba(130, 180, 255, 0.6);
-  transform-origin: 0 50%;
+  background: linear-gradient(180deg, rgba(190, 40, 34, 0), #c8322a 14%, #b3261f 82%, rgba(179, 38, 31, 0));
+  transform-origin: 50% 0;
   opacity: 0;
 }
 /* 印: o selo de mão que abre o domínio, no centro da tela */
@@ -4858,17 +4859,17 @@ html:not(:lang(en)) [data-lang="en"] { display: none !important; }
   place-items: center;
   opacity: 0;
   pointer-events: none;
-  /* Vinheta escura atrás da mão: o resto da página some e o selo é o foco */
-  background: radial-gradient(circle at 50% 50%, rgba(2, 4, 12, 0.85) 0, rgba(2, 4, 12, 0.55) 30%, rgba(2, 4, 12, 0) 62%);
+  /* Close no selo: a página quase some atrás da mão */
+  background: radial-gradient(circle at 50% 50%, rgba(2, 4, 12, 0.96) 0, rgba(2, 4, 12, 0.9) 36%, rgba(2, 4, 12, 0.62) 100%);
 }
 .dx-seal-svg {
   width: auto;
-  height: min(56vh, 460px);
+  height: min(80vh, 700px);
 }
 /* Som do domínio: liga/desliga e volume, no canto */
 .dx-sound {
   position: absolute;
-  top: 4vh;
+  top: calc(var(--dx-bar) / 2 - 16px);
   left: 6vw;
   z-index: 2;
   display: flex;
@@ -4912,7 +4913,8 @@ html:not(:lang(en)) [data-lang="en"] { display: none !important; }
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 18vh;
+  bottom: 0;
+  height: var(--dx-bar);
   display: grid;
   place-items: center;
   pointer-events: none;
@@ -4928,9 +4930,6 @@ html:not(:lang(en)) [data-lang="en"] { display: none !important; }
   text-shadow: 0 0 2px #000, 0 1px 3px rgba(0, 0, 0, 0.9), 0 0 18px rgba(0, 0, 0, 0.6);
 }
 .dx-caption-char { opacity: 0; }
-@media (max-width: 767px) {
-  .dx-captions { bottom: 30vh; }
-}
 /* Congelamento: o cursor de verdade some e fica um preso no lugar; a imagem perde a cor */
 .dx-frozen-cursor {
   position: absolute;
@@ -4945,7 +4944,6 @@ html:not(:lang(en)) [data-lang="en"] { display: none !important; }
   pointer-events: none;
 }
 .dx.is-frozen .dx-frozen-cursor { opacity: 1; }
-.dx.is-frozen .dx-layer { filter: grayscale(0.55) contrast(1.15) brightness(0.92); }
 html.dx-frozen :is([data-cursor], [data-cursor-trail], .water-gl, .water-shadow) { visibility: hidden !important; }
 /* 判子: carimbo vermelho que assina o fim da reconstrução */
 .dx-hanko {
@@ -4973,6 +4971,7 @@ html.dx-frozen :is([data-cursor], [data-cursor-trail], .water-gl, .water-shadow)
 }
 .dx-intro-sub {
   margin: 0;
+  writing-mode: vertical-rl;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.6em;
@@ -4982,7 +4981,7 @@ html.dx-frozen :is([data-cursor], [data-cursor-trail], .water-gl, .water-shadow)
 .dx-name {
   position: absolute;
   left: 6vw;
-  bottom: 9vh;
+  bottom: calc(var(--dx-bar) + 4.5vh);
 }
 .dx-name-jp {
   margin: 0 0 0.9rem;
@@ -4990,7 +4989,7 @@ html.dx-frozen :is([data-cursor], [data-cursor-trail], .water-gl, .water-shadow)
   font-weight: 700;
   line-height: 1;
   letter-spacing: 0.04em;
-  text-shadow: 0 0 24px rgba(140, 190, 255, 0.55);
+  text-shadow: 0 3px 18px rgba(4, 14, 50, 0.85), 0 0 5px rgba(4, 14, 50, 0.75);
 }
 .dx-line {
   display: block;
@@ -5007,12 +5006,14 @@ html.dx-frozen :is([data-cursor], [data-cursor-trail], .water-gl, .water-shadow)
   font-weight: 600;
   letter-spacing: 0.38em;
   text-transform: uppercase;
+  /* Legível sobre o vazio claro */
+  text-shadow: 0 0 6px rgba(4, 14, 50, 0.95), 0 1px 2px rgba(4, 14, 50, 0.9);
 }
 .dx-label-dim { opacity: 0.55; }
 .dx-meta {
   position: absolute;
   right: 6vw;
-  bottom: 9vh;
+  bottom: calc(var(--dx-bar) + 4.5vh);
   text-align: right;
 }
 .dx-count {
@@ -5021,17 +5022,118 @@ html.dx-frozen :is([data-cursor], [data-cursor-trail], .water-gl, .water-shadow)
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: clamp(22px, 2.6vw, 40px);
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 16px rgba(140, 200, 255, 0.6);
+  text-shadow: 0 0 8px rgba(4, 14, 50, 0.95), 0 1px 2px rgba(4, 14, 50, 0.9);
 }
 .dx-hint {
   position: absolute;
-  top: 4vh;
+  top: calc(var(--dx-bar) / 2 - 7px);
   right: 6vw;
 }
 @media (max-width: 767px) {
   .dx-name { left: 20px; bottom: 120px; }
   .dx-meta { right: 20px; bottom: 40px; }
   .dx-hint { right: 20px; }
+}
+/* 演出: camada de cinema do domínio (components/domain/Cinema): barras, close nos olhos, linhas de
+   velocidade, quadro de impacto, reflexo de lente, grão e vinheta */
+.dx { --dx-bar: 7.5vh; }
+.dx-cine {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.dx-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: var(--dx-bar);
+  background: #000;
+  transform: scaleY(0);
+}
+.dx-bar-top { top: 0; transform-origin: 50% 0; }
+.dx-bar-bottom { bottom: 0; transform-origin: 50% 100%; }
+/* A esfera do domínio: o preto fecha de fora para dentro até o ponto de ativação, com a borda
+   acesa (a linha do tempo anima --r) */
+.dx-sphere {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  --r: 200vmax;
+  --ox: 50%;
+  --oy: 50%;
+  background: radial-gradient(circle at var(--ox) var(--oy), rgba(2, 2, 8, 0) calc(var(--r) - 26px), rgba(150, 200, 255, 0.5) calc(var(--r) - 5px), rgba(240, 248, 255, 0.98) calc(var(--r) - 2px), #020208 var(--r));
+}
+/* 集中線: dois leques de riscas com passos diferentes, para as linhas não saírem regulares; o
+   centro fica limpo (a máscara) e elas só existem na borda, apontando para o golpe */
+.dx-lines {
+  position: absolute;
+  inset: -25%;
+  opacity: 0;
+  background:
+    repeating-conic-gradient(from 3deg, rgba(255, 255, 255, 0.95) 0deg 0.35deg, rgba(255, 255, 255, 0) 0.35deg 2.3deg),
+    repeating-conic-gradient(from 0deg, rgba(235, 244, 255, 0.85) 0deg 0.9deg, rgba(255, 255, 255, 0) 0.9deg 5.1deg),
+    repeating-conic-gradient(from 1deg, rgba(255, 255, 255, 0.7) 0deg 0.2deg, rgba(255, 255, 255, 0) 0.2deg 1.3deg);
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0) 0 24%, rgba(0, 0, 0, 0.5) 38%, #000 60%);
+  mask-image: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0) 0 24%, rgba(0, 0, 0, 0.5) 38%, #000 60%);
+}
+/* Reflexo de lente em risca (anamórfico) atravessando o buraco negro */
+.dx-flare {
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  top: 50%;
+  height: 3px;
+  margin-top: -1.5px;
+  opacity: 0;
+  background: linear-gradient(90deg, rgba(120, 180, 255, 0), rgba(160, 205, 255, 0.55) 30%, rgba(255, 255, 255, 0.95) 50%, rgba(160, 205, 255, 0.55) 70%, rgba(120, 180, 255, 0));
+  box-shadow: 0 0 22px 6px rgba(110, 170, 255, 0.35), 0 0 70px 18px rgba(90, 150, 255, 0.16);
+}
+/* 閃光: o clarão desenhado do quadro de impacto, estrela branca sobre o preto */
+.dx-burst {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background: #000;
+}
+.dx-burst svg { width: 100%; height: 100%; display: block; }
+.dx-vignette {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background: radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0) 52%, rgba(0, 0, 4, 0.5) 100%);
+}
+/* Grão de película: ruído em mosaico que pula de lugar a cada passo */
+.dx-grain {
+  position: absolute;
+  inset: -120px;
+  opacity: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: dx-grain 0.5s steps(1) infinite;
+}
+@keyframes dx-grain {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(-60px, 40px); }
+  50% { transform: translate(50px, -70px); }
+  75% { transform: translate(-30px, -40px); }
+}
+/* Quadro de impacto: o branco em "difference" vira o negativo de tudo o que está embaixo */
+.dx-impact {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background: #fff;
+  mix-blend-mode: difference;
+}
+/* Congelamento: o quadro vira página de mangá, em preto e branco, com as linhas de velocidade paradas */
+.dx.is-frozen .dx-layer { filter: grayscale(1) contrast(1.4) brightness(0.95); }
+.dx.is-frozen .dx-lines { opacity: 0.5 !important; }
+@media (max-width: 767px) {
+  .dx { --dx-bar: 6vh; }
+  .dx-grain { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dx-sphere, .dx-lines, .dx-impact, .dx-burst, .dx-grain, .dx-flare { display: none; }
 }
 /* A gota 3D (canvas WebGL do tamanho de dois diâmetros), por cima da lente */
 .water-gl {
@@ -5370,6 +5472,28 @@ html.dx-frozen :is([data-cursor], [data-cursor-trail], .water-gl, .water-shadow)
 .making-section-title { display: flex; align-items: baseline; gap: 12px; margin: 0 0 14px; font-size: 1.6rem; }
 .making-section-kanji { color: var(--season, var(--accent)); font-size: 0.9em; }
 .making-body p { margin: 0 0 14px; line-height: 1.75; color: var(--text-primary); }
+/* 目次: lista corrida, com o kanji de cada parte na cor da estação */
+.making-toc { margin-top: 26px; }
+.making-toc ol { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 0; padding: 0; list-style: none; }
+.making-toc a { display: inline-flex; align-items: baseline; gap: 7px; min-height: 32px; color: var(--text-secondary); text-decoration: none; border-bottom: 1px solid transparent; }
+.making-toc a:hover, .making-toc a:focus-visible { color: var(--text-primary); border-bottom-color: currentColor; }
+.making-toc a > span:first-child { color: var(--season, var(--accent)); }
+.making-section { scroll-margin-top: 96px; }
+/* Trecho de código: tinta sobre papel mais escuro, rola de lado no celular */
+.making-code {
+  margin: 4px 0 0;
+  padding: 16px 18px;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--bg-color) 70%, #000 30%);
+  font-family: ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace;
+  font-size: 0.86rem;
+  line-height: 1.7;
+  color: var(--text-primary);
+  tab-size: 2;
+}
+[data-theme='day'] .making-code { background: color-mix(in srgb, var(--bg-color) 88%, #000 12%); }
 .making-credits { margin: 0; padding-left: 1.1em; display: grid; gap: 8px; color: var(--text-secondary); line-height: 1.6; }
 
 /* Palavra dentro do cursor de tinta (data-cursor-label: Abrir, Open) */

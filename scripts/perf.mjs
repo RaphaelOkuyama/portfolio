@@ -36,7 +36,7 @@ const load = await page.evaluate(() => {
   return {
     fcp: Math.round(performance.getEntriesByName('first-contentful-paint')[0]?.startTime ?? 0),
     lcp: Math.round(window.__lcp),
-    marks: Object.fromEntries(performance.getEntriesByType('mark').filter((m) => m.name.startsWith('scene')).map((m) => [m.name, Math.round(m.startTime)])),
+    marks: Object.fromEntries(performance.getEntriesByType('mark').filter((m) => /^(scene|loader)/.test(m.name)).map((m) => [m.name, Math.round(m.startTime)])),
     threeChunk: (() => { const r = performance.getEntriesByType('resource').filter((x) => x.name.endsWith('.js')).sort((a, b) => b.transferSize - a.transferSize)[0]; return r && `${Math.round(r.startTime)}→${Math.round(r.responseEnd)} (${Math.round(r.transferSize / 1024)}KB)`; })(),
     hydrated: Math.round(performance.getEntriesByType('navigation')[0].domContentLoadedEventEnd),
     loaderDone: Math.round(window.__loaderDone ?? -1), load: Math.round(nav.loadEventEnd), tbt, cls: +(window.__cls ?? 0).toFixed(3),

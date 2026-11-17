@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { gsap, prepareStroke, strokeOffset, useGSAP } from '../lib/gsapCore';
 import { journeyStore, useJourney } from '../store/journey';
-import { loaderProgress, isReturningVisit, markVisited, waitsScene, SCENE_WAIT_MAX_MS, CINEMATIC_QUERY } from '../lib/loader';
+import { loaderProgress, isReturningVisit, markVisited, waitsScene, SCENE_WAIT_MAX_MS, CINEMATIC_QUERY, LOADER_LATE_START_MS, LOADER_LATE_MIN_MS } from '../lib/loader';
 import { ensoShapes } from '../lib/enso';
 import { SHODO_STROKES } from '../lib/shodo';
 import Lang from './Lang';
@@ -147,10 +147,12 @@ export default function EnsoLoader() {
       if (!now.loaderDone && cinematic && window.location.pathname === '/') {
         journeyStore.setState({ holdScroll: waitsScene(now) && !now.sceneReady });
       }
+      if (!now.loaderDone) performance.mark('loader-done');
       store.setLoaderDone();
     };
 
     const finish = () => {
+      journeyStore.setState({ sceneHold: false });
       markVisited();
       stopListening();
       release();
@@ -166,7 +168,11 @@ export default function EnsoLoader() {
         painter.draw(0);
         rootRef.current.setAttribute('data-iris', '');
       }, '+=0.12')
-        .to(iris, { r: painter.reach, duration: 1.35, ease: 'power3.inOut', onUpdate: () => painter.draw(iris.r) }, '<')
+        .to(iris, {
+          r: painter.reach, duration: 1.35, ease: 'power3.inOut', onUpdate: () => painter.draw(iris.r),
+          // Íris aberta: a cena que ficou esperando (rede lenta) pode montar
+          onComplete: () => journeyStore.setState({ sceneHold: false }),
+        }, '<')
         .to(markRef.current, { scale: 2.6, opacity: 0, duration: 0.9, ease: 'power2.in' }, '<')
         .to(rootRef.current.querySelector('.enso-skip'), { opacity: 0, duration: 0.3 }, '<')
         // A página volta a rolar e a hero começa a se mexer com a íris pela metade
@@ -187,7 +193,9 @@ export default function EnsoLoader() {
         // Só espera a cena que já começou: sem placa de vídeo boa ela é adiada de propósito (ver
         // SceneCanvas) e o pôster segura a abertura
         sceneReady: !cinematic || !waitsScene(journeyStore.getState()) || journeyStore.getState().sceneReady,
-        ...(reduced ? { minMs: 0 } : {}),
+        // Rede lenta: sem o código da cena na hora marcada, abre sobre o pôster (ver lib/loader)
+        sceneMounted: !cinematic || journeyStore.getState().sceneMounted,
+        ...(reduced ? { minMs: 0 } : start > LOADER_LATE_START_MS ? { minMs: LOADER_LATE_MIN_MS } : {}),
       });
 
       if (progress < 1) {
@@ -205,6 +213,11 @@ export default function EnsoLoader() {
       // Fecha o círculo; depois a íris (desktop) ou só o fade do overlay
       finished = true;
       gsap.ticker.remove(tick);
+      // Abrindo sem a cena: ela espera a íris terminar para montar (ver SceneCanvas)
+      if (cinematic && !skipped) {
+        const now = journeyStore.getState();
+        if (!now.sceneReady && !now.sceneMounted) journeyStore.setState({ sceneHold: true });
+      }
       breathing?.kill();
       if (breathing) gsap.set(markRef.current, { scale: 1, opacity: 1 });
       timeline = gsap

@@ -1,5 +1,5 @@
 'use client';
-import { Component, useEffect, useState } from 'react';
+import { Component, useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { journeyStore, useJourney } from '../../store/journey';
 import { usePathname } from 'next/navigation';
@@ -116,6 +116,11 @@ export default function SceneCanvas() {
   const [backdropGone, setBackdropGone] = useState(false);
   // Sem GPU: a cena pintada assume quando a primeira camada fica pronta, e o SVG sai
   const [paintedReady, setPaintedReady] = useState(false);
+  // Rede lenta: o ensō abriu sobre o pôster sem esperar a cena (ver EnsoLoader). Ela só monta
+  // depois da íris, para a compilação dos shaders não travar a abertura no meio. Uma vez
+  // montada, fica
+  const hold = useJourney((s) => s.sceneHold);
+  const mounted = useRef(false);
 
   // O teste de WebGL cria um contexto de GPU: feito no carregamento, segurava a primeira pintura
   // (o quadro esperava o processo da GPU acordar). Agora só acontece quando a cena vai começar;
@@ -160,7 +165,7 @@ export default function SceneCanvas() {
     <div aria-hidden="true" data-scene="webgl" data-route={pathname === '/' ? 'journey' : 'frozen'} data-lite={lite ? '' : undefined} style={wrapperStyle}>
       {/* Até a cena 3D chegar: o pôster (o mesmo quadro da cena) ou o cenário pintado; some depois do fade */}
       {backdropGone ? null : poster ? <PosterBackdrop variant={poster} /> : <StaticBackdrop theme={theme} mix={mix} />}
-      {webgl && quality && start ? (
+      {(mounted.current = mounted.current || Boolean(webgl && quality && start && !hold)) ? (
         <SceneErrorBoundary onError={() => setFailed(true)}>
           {/* A cena entra num fade por cima do fundo estático, sem estalo */}
           <div style={{ position: 'absolute', inset: 0, opacity: sceneReady && introDone ? 1 : 0, transition: 'opacity 1.2s ease' }}>
