@@ -90,6 +90,9 @@ export default function Navbar() {
           {/* Home no tablet/celular: a seção atual ao lado do nome (o trilho lateral só no desktop) */}
           {pathname === '/' && <SectionChip />}
 
+          {/* Onde os bichinhos andam no computador (ver play/Pets), no vão entre o nome e o menu */}
+          <div className="nav-pets" data-pets-slot="" />
+
           {/* DESKTOP MENU */}
           <div className="desktop-menu" style={{ alignItems: 'center', gap: '30px' }}>
             <div style={{ display: 'flex', gap: '20px' }}>

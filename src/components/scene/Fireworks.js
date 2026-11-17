@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { AdditiveBlending, BufferAttribute, BufferGeometry, Color, DynamicDrawUsage, ShaderMaterial, Vector3 } from 'three';
+import { AdditiveBlending, BufferAttribute, BufferGeometry, Color, DynamicDrawUsage, ShaderMaterial, Vector2, Vector3 } from 'three';
 import { journeyStore } from '../../store/journey';
 import { FESTIVAL, festival } from '../../lib/festival';
 import { getCameraCurve } from './useCameraMap';
@@ -16,45 +16,90 @@ import { RIVER, TAIKOBASHI } from './config';
 
 const CAPACITY = 42000;
 
+// Cada faísca é desenhada como um risco fino (o borrão de movimento de uma estrela de verdade):
+// a cabeça onde ela está agora e a cauda onde estava `aTrail` segundos antes. Os rastros longos
+// (kiku, yanagi, kamuro) são cópias atrasadas cujo risco emenda no da seguinte, então viram uma
+// linha contínua que acompanha a curva da queda. O risco tem núcleo branco-quente de ~1 px e um
+// halo curto da cor da estrela
 const vertexShader = /* glsl */ `
   uniform float uTime;
   uniform float uScale;
+  uniform vec2 uViewport;
   attribute vec3 aVelocity;
   attribute vec2 aBirth;   // nascimento (s), vida (s)
   attribute vec3 aColor;
   attribute vec3 aColor2;
-  attribute vec4 aParams;  // arrasto, gravidade, tamanho, atraso do rastro
+  attribute vec4 aParams;  // arrasto, gravidade, espessura, atraso do rastro
   attribute vec2 aExtra;   // força da luz, cintilar (0 = não; senão a semente)
+  attribute float aTrail;  // comprimento do risco (s)
   varying vec3 vColor;
+  varying vec2 vHead;
+  varying vec2 vTail;
+  varying float vWidth;
+  varying float vSize;
+  vec3 at(float age) {
+    float k = aParams.x;
+    float e = (1.0 - exp(-k * age)) / k;
+    return position + aVelocity * e + vec3(0.0, -aParams.y, 0.0) * (age - e) / k;
+  }
+  void hide() {
+    gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+    gl_PointSize = 0.0;
+    vColor = vec3(0.0);
+  }
   void main() {
     float age = uTime - aBirth.x - aParams.w;
     float life = aBirth.y;
-    if (age < 0.0 || age > life) {
-      gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
-      gl_PointSize = 0.0;
-      vColor = vec3(0.0);
-      return;
-    }
-    float k = aParams.x;
-    float e = (1.0 - exp(-k * age)) / k;
-    vec3 p = position + aVelocity * e + vec3(0.0, -aParams.y, 0.0) * (age - e) / k;
+    if (age < 0.0 || age > life) { hide(); return; }
     float t = age / life;
-    float fade = 1.0 - smoothstep(0.5, 1.0, t);
+    float fade = 1.0 - smoothstep(0.45, 1.0, t);
     // Cintilar no fim da vida (as pontas piscando antes de apagar)
     float tw = aExtra.y > 0.0 ? mix(1.0, step(0.45, fract(sin(aExtra.y * 91.7 + floor(uTime * 22.0) * 7.31) * 43758.5)) * 1.7, smoothstep(0.35, 0.6, t)) : 1.0;
     vColor = mix(aColor, aColor2, smoothstep(0.1, 0.65, t)) * fade * aExtra.x * tw;
-    vec4 mv = modelViewMatrix * vec4(p, 1.0);
-    gl_PointSize = min(aParams.z * uScale / max(-mv.z, 1.0), 900.0);
-    gl_Position = projectionMatrix * mv;
+
+    mat4 mvp = projectionMatrix * modelViewMatrix;
+    vec4 h = mvp * vec4(at(age), 1.0);
+    if (h.w <= 0.1) { hide(); return; }
+    vec4 c = mvp * vec4(at(max(age - aTrail, 0.0)), 1.0);
+    vec2 hv = 0.5 * uViewport;
+    vec2 hs = h.xy / h.w * hv;
+    vec2 ts = c.w > 0.1 ? c.xy / c.w * hv : hs;
+    vec2 d = ts - hs;
+    float len = length(d);
+    if (len > 260.0) ts = hs + d * (260.0 / len);
+    // Espessura em pixels: fina como uma estrela, só o clarão é largo
+    vWidth = clamp(aParams.z * uScale / h.w * 0.22, 0.65, 60.0);
+    vec2 mid = 0.5 * (hs + ts);
+    vSize = min(length(ts - hs) + vWidth * 7.0 + 2.0, 600.0);
+    vHead = hs - mid;
+    vTail = ts - mid;
+    gl_PointSize = vSize;
+    gl_Position = vec4(mid / hv * h.w, h.z, h.w);
   }
 `;
 
 const fragmentShader = /* glsl */ `
   varying vec3 vColor;
+  varying vec2 vHead;
+  varying vec2 vTail;
+  varying float vWidth;
+  varying float vSize;
   void main() {
-    float d = length(gl_PointCoord - 0.5) * 2.0;
-    float glow = exp(-d * d * 4.5) * (1.0 - smoothstep(0.75, 1.0, d));
-    gl_FragColor = vec4(vColor * glow, 1.0);
+    vec2 p = (gl_PointCoord - 0.5) * vSize;
+    p.y = -p.y;
+    vec2 ab = vTail - vHead;
+    float k = clamp(dot(p - vHead, ab) / max(dot(ab, ab), 0.0001), 0.0, 1.0);
+    float dist = length(p - vHead - ab * k);
+    float w = vWidth;
+    // Núcleo fino, halo curto e a cauda apagando para trás
+    float core = exp(-dist * dist / (w * w * 0.6));
+    float halo = exp(-dist / (w * 1.6)) * 0.22;
+    float along = 1.0 - k * 0.8;
+    float body = (core + halo) * along;
+    if (body < 0.004) discard;
+    float hot = core * (1.0 - k) * 0.55;
+    vec3 col = vColor * body + vec3(1.0, 0.96, 0.88) * hot * dot(vColor, vec3(0.3333));
+    gl_FragColor = vec4(col, 1.0);
     #include <colorspace_fragment>
   }
 `;
@@ -86,6 +131,7 @@ export default function Fireworks() {
     add('aColor2', 3);
     add('aParams', 4);
     add('aExtra', 2);
+    add('aTrail', 1);
     return g;
   }, []);
   const material = useMemo(() => new ShaderMaterial({
@@ -95,7 +141,7 @@ export default function Fireworks() {
     depthWrite: false,
     fog: false,
     blending: AdditiveBlending,
-    uniforms: { uTime: { value: 0 }, uScale: { value: 1000 } },
+    uniforms: { uTime: { value: 0 }, uScale: { value: 1000 }, uViewport: { value: new Vector2(1, 1) } },
   }), []);
   useEffect(() => () => {
     geometry.dispose();
@@ -127,7 +173,7 @@ export default function Fireworks() {
 
     // Uma faísca (e os rastros dela) no próximo lugar livre da nuvem; as mais antigas são sobrescritas
     const spark = (x, y, z, vx, vy, vz, life, colors, o) => {
-      const { drag = 1.8, grav = 2.2, size = 0.5, ghosts = 1, lag = 0.035, gain = 2.2, twinkle = false, delay = 0 } = o;
+      const { drag = 1.8, grav = 2.2, size = 0.5, ghosts = 1, lag = 0.035, gain = 2.2, twinkle = false, delay = 0, streak = 0.07 } = o;
       sim.c1.set(colors[0]);
       sim.c2.set(colors[1]);
       for (let j = 0; j < ghosts; j += 1) {
@@ -141,6 +187,8 @@ export default function Fireworks() {
         attrs.aColor2.setXYZ(i, sim.c2.r, sim.c2.g, sim.c2.b);
         attrs.aParams.setXYZW(i, drag, grav, size * (0.55 + 0.45 * f), j * lag);
         attrs.aExtra.setXY(i, gain * f * f, twinkle ? 1 + Math.random() * 50 : 0);
+        // Com cópias atrasadas, o risco de cada uma emenda no da próxima (linha contínua)
+        attrs.aTrail.setX(i, ghosts > 1 ? lag * 1.15 : streak);
       }
       sim.dirty += ghosts;
     };
@@ -173,7 +221,7 @@ export default function Fireworks() {
     };
     // Clarão do estouro: acende o ar em volta e vai para o reflexo do rio
     const flash = (b, colors, power) => {
-      spark(b.x, b.y, b.z, 0, 0, 0, 0.5, [colors[0], colors[1]], { drag: 1, grav: 0, size: 26 * power, gain: 0.5 });
+      spark(b.x, b.y, b.z, 0, 0, 0, 0.1 + power * 0.03, ['#fff8ea', colors[0]], { drag: 1, grav: 0, size: 2.4 * power, gain: 0.32, streak: 0 });
       sim.c1.set(colors[0]);
       festival.glows.push({ x: b.x, y: b.y - sim.water, z: b.z, color: [sim.c1.r, sim.c1.g, sim.c1.b], born: now, life: 1.5 + power * 0.5, power });
       if (festival.glows.length > 12) festival.glows.shift();
@@ -338,7 +386,7 @@ export default function Fireworks() {
           sim.niagara.carry -= 1;
           const x = rand(-half, half);
           const y = sim.water - 0.1 + TAIKOBASHI.rise * (1 - (x / (TAIKOBASHI.span / 2)) ** 2) - 0.25;
-          spark(x, y, TAIKOBASHI.z + TAIKOBASHI.width / 2 + 0.15, rand(-0.5, 0.5), rand(-1.2, 0.4), rand(0, 0.6), rand(1.2, 1.9), ['#fff4d8', '#ffb45a'], { drag: 0.9, grav: 7.5, size: 0.3, ghosts: 3, lag: 0.05, gain: 1.7, twinkle: true });
+          spark(x, y, TAIKOBASHI.z + TAIKOBASHI.width / 2 + 0.15, rand(-0.5, 0.5), rand(-1.2, 0.4), rand(0, 0.6), rand(1.2, 1.9), ['#fff4d8', '#ffb45a'], { drag: 0.9, grav: 7.5, size: 0.16, ghosts: 3, lag: 0.05, gain: 1.5, twinkle: true });
         }
       }
     }
@@ -366,6 +414,7 @@ export default function Fireworks() {
     if (!alive) return;
     material.uniforms.uTime.value = now;
     material.uniforms.uScale.value = state.gl.domElement.height / (2 * Math.tan((camera.fov * Math.PI) / 360));
+    state.gl.getDrawingBufferSize(material.uniforms.uViewport.value);
     state.invalidate();
   });
 

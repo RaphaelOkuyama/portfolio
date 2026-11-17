@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useJourney } from '../../store/journey';
 import { useSettings } from '../../context/SettingsContext';
 import { PETS } from '../../lib/pets';
@@ -13,8 +14,13 @@ const AWAKE_MS = 3500;
 const WALK_MS = 320;
 const STEP = 5;
 
-// 育: os bichinhos escolhidos no menu de extras, no canto de baixo da tela. Andam quando a página
-// rola (para o lado da rolagem), piscam parados e dormem no tema da noite
+// Largura de cada bicho na barra do topo (px), com a folga entre eles
+const SLOT_EACH = 32;
+
+// 育: os bichinhos escolhidos no menu de extras. Moram na barra do topo, no vão entre o nome e o
+// menu, para não cobrir nada da página; quando a barra não tem esse vão (celular, tablet, janela
+// estreita), ficam sentados na borda de baixo dela, do lado direito. Andam quando a página rola
+// (para o lado da rolagem), piscam parados e dormem no tema da noite
 export default function Pets() {
   const ids = useJourney((s) => s.pets);
   const theme = useJourney((s) => s.theme);
@@ -23,11 +29,36 @@ export default function Pets() {
   const [asleep, setAsleep] = useState(false);
   const [blink, setBlink] = useState(false);
   const live = useRef({ scrollAt: 0, activeAt: 0, dir: 1, lastY: 0, frame: 0, poked: {} });
+  // Na barra: o vão do topo (se couberem todos); senão null e eles sentam na borda da barra
+  const [slot, setSlot] = useState(null);
+  const [perchTop, setPerchTop] = useState(64);
 
   useEffect(() => { loadPets(); }, []);
 
   const pets = PETS.filter((p) => ids.includes(p.id));
   const count = pets.length;
+
+  useEffect(() => {
+    if (!count) return undefined;
+    const place = () => {
+      const el = document.querySelector('[data-pets-slot]');
+      const menu = document.querySelector('.desktop-menu');
+      const before = el?.previousElementSibling;
+      // A folga de verdade entre o que vem antes (nome ou selo) e o menu, com uma margem de cada lado
+      const room = el && menu && before && menu.offsetParent !== null
+        ? menu.getBoundingClientRect().left - before.getBoundingClientRect().right - 32
+        : 0;
+      const fits = room >= count * SLOT_EACH + 8;
+      setSlot(fits ? el : null);
+      const nav = document.querySelector('.site-nav');
+      if (nav) setPerchTop(Math.round(nav.getBoundingClientRect().bottom));
+    };
+    place();
+    window.addEventListener('resize', place);
+    // As fontes mudam a largura do nome (e do vão) depois de carregar
+    document.fonts?.ready.then(place).catch(() => {});
+    return () => window.removeEventListener('resize', place);
+  }, [count]);
 
   useEffect(() => {
     if (!count) return undefined;
@@ -53,7 +84,10 @@ export default function Pets() {
       setBlink(!sleeping && state.frame % 23 === 0);
       const walking = !reduced && now - state.scrollAt < WALK_MS;
       const els = rootRef.current?.querySelectorAll('.pet') ?? [];
-      const range = Math.max(0, Math.min(150, window.innerWidth * 0.3));
+      const box = rootRef.current;
+      const inBar = box?.dataset.place === 'bar';
+      // Na barra andam pelo vão todo; sentados na borda, só um pouco (para a esquerda)
+      const range = inBar ? Math.max(0, (box.parentElement?.clientWidth ?? 0) - box.scrollWidth) : 40;
       els.forEach((el, i) => {
         const x = Number(el.dataset.x ?? 0);
         const next = walking ? Math.min(range, Math.max(0, x + state.dir * STEP)) : x;
@@ -61,7 +95,7 @@ export default function Pets() {
         const poked = now - (state.poked[el.dataset.pet] ?? -9999) < 500;
         // Andando: um pulinho a cada passo, cada bicho num compasso; parado: respira de leve
         const hop = poked ? -10 : walking ? ((state.frame + i) % 2 ? -4 : 0) : (!sleeping && !reduced && (state.frame + i * 3) % 8 < 2 ? -1 : 0);
-        el.style.transform = `translate(${next}px, ${hop}px) scaleX(${state.dir < 0 && walking ? -1 : 1})`;
+        el.style.transform = `translate(${inBar ? next : -next}px, ${hop}px) scaleX(${state.dir < 0 && walking ? -1 : 1})`;
         el.dataset.mood = sleeping ? 'sleep' : poked ? 'love' : '';
       });
     }, TICK_MS);
@@ -79,8 +113,8 @@ export default function Pets() {
     setAsleep(false);
   };
 
-  return (
-    <div ref={rootRef} className="pets" data-pets="">
+  const box = (
+    <div ref={rootRef} className="pets" data-pets="" data-place={slot ? 'bar' : 'perch'} style={slot ? undefined : { top: perchTop }}>
       {pets.map((pet) => (
         <button
           key={pet.id}
@@ -96,4 +130,5 @@ export default function Pets() {
       ))}
     </div>
   );
+  return slot ? createPortal(box, slot) : box;
 }

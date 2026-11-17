@@ -6447,25 +6447,35 @@ html.festival-mode { overflow: hidden; }
 .play-pet[aria-pressed='true'] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
 .pet-sprite { display: block; image-rendering: pixelated; }
 
-/* --- 育: os bichinhos no canto de baixo --- */
+/* --- 育: os bichinhos, na barra do topo (no vão entre o nome e o menu) ou sentados na borda dela --- */
+.nav-pets { flex: 1 1 0; min-width: 0; align-self: stretch; display: flex; align-items: center; margin: 0 16px; }
+/* Sem bichinhos (ou sem caber), o vão não ocupa nada: o selo da seção fica com o espaço */
+.nav-pets:empty { flex: 0 0 0; margin: 0; }
 .pets {
-  position: fixed;
-  left: max(12px, env(safe-area-inset-left));
-  bottom: max(10px, env(safe-area-inset-bottom));
-  z-index: 40;
   display: flex;
   align-items: flex-end;
-  gap: 2px;
+  gap: 4px;
   pointer-events: none;
 }
+.pets[data-place='perch'] {
+  position: fixed;
+  right: max(14px, env(safe-area-inset-right));
+  /* Na frente da barra (senão a cabeça some atrás do vidro dela) */
+  z-index: 51;
+  /* Os pés na linha de baixo da barra */
+  translate: 0 -62%;
+}
+/* Com o menu do celular aberto, eles saem da frente */
+body:has(.mobile-menu-btn[aria-expanded='true']) .pets[data-place='perch'] { visibility: hidden; }
+.pets .pet-sprite { width: 28px !important; height: 28px !important; }
 .pet { position: relative; padding: 0; border: 0; background: transparent; pointer-events: auto; filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.35)); }
 .pet:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .pet-bubble {
   position: absolute;
-  left: 60%;
-  bottom: 100%;
+  left: 70%;
+  bottom: 82%;
   font-family: ui-monospace, Menlo, Consolas, monospace;
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 700;
   line-height: 1;
   color: var(--text-primary);
@@ -6474,7 +6484,6 @@ html.festival-mode { overflow: hidden; }
 .pet[data-mood='sleep'] .pet-bubble::after { content: 'z'; animation: pet-z 1.8s steps(3) infinite; }
 .pet[data-mood='love'] .pet-bubble::after { content: '\2665'; color: #e8665a; }
 @keyframes pet-z { 0% { content: 'z'; } 33% { content: 'zZ'; } 66% { content: 'zZz'; } }
-@media (max-width: 600px) { .pet-sprite { width: 36px !important; height: 36px !important; } }
 html.dx-frozen .pets { visibility: hidden; }
 
 /* --- ファミコン: a cena em poucos pixels, linhas de varredura e placar --- */
@@ -6566,3 +6575,5 @@ html.photo-mode { overflow: hidden; }
   .gacha-veil, .gacha-prize, .hanabi, .hanabi-result, .hanabi-act, .hanabi-flash, .taiko, .taiko-card, .photo-flash, .retro-hud-blink, .pet[data-mood='sleep'] .pet-bubble::after { animation: none; }
   .photo-flash { opacity: 0; }
 }
+/* Sem o menu completo na barra não há vão: os bichinhos sentam na borda dela */
+@media (max-width: 879px) { .nav-pets { display: none; } }
