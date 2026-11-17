@@ -31,7 +31,7 @@ export default function HomeSections({ icons }) {
     <>
       <AboutSection about={currentData.about} />
       <ZenStack techData={currentData.techSection} icons={icons} />
-      <EmakiProjects projects={currentData.projects} labels={currentData.projectsPage} />
+      <EmakiProjects projects={currentData.projects} certificates={currentData.certificates} labels={currentData.projectsPage} />
       <ExperienceSection
         experience={currentData.experience}
         education={currentData.education}

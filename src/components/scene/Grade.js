@@ -15,6 +15,7 @@ const fragmentShader = /* glsl */ `
   uniform float uSaturation;
   uniform float uVignette;
   uniform float uGrain;
+  uniform float uPosterize;
 
   float grainHash(vec2 p) {
     vec3 p3 = fract(vec3(p.xyx) * 0.1031);
@@ -44,6 +45,13 @@ const fragmentShader = /* glsl */ `
     // Grão relativo ao tom (no espaço linear um grão somado vira chuvisco nas sombras escuras)
     float g = grainHash(uv * resolution + fract(time * 7.13) * 917.0) - 0.5;
     c *= 1.0 + g * uGrain;
+    // ファミコン: poucos tons por canal, como a paleta curta de um console antigo
+    // (em espaço de tela, não linear: no linear os tons escuros caíam todos no preto)
+    if (uPosterize > 0.5) {
+      vec3 s = pow(max(c, 0.0), vec3(1.0 / 2.2));
+      s = floor(s * uPosterize + 0.5) / uPosterize;
+      c = pow(s, vec3(2.2));
+    }
     outputColor = vec4(c, inputColor.a);
   }
 `;
@@ -58,6 +66,7 @@ class GradeEffect extends Effect {
         ['uSaturation', new Uniform(1)],
         ['uVignette', new Uniform(0)],
         ['uGrain', new Uniform(0)],
+        ['uPosterize', new Uniform(0)],
       ]),
     });
   }
@@ -92,9 +101,10 @@ export default function Grade() {
   }, [effect]);
 
   useFrame((_, delta) => {
-    const { theme, seasonMix } = journeyStore.getState();
+    const { theme, seasonMix, retro } = journeyStore.getState();
     const look = LOOK[theme] ?? LOOK.night;
     const u = effect.uniforms;
+    u.get('uPosterize').value = retro ? 9 : 0;
     const k = scratch.init ? 1 - Math.exp(-delta * 3) : 1;
     scratch.init = true;
     u.get('uShadowTint').value.lerp(scratch.target.set(...look.shadow), k);

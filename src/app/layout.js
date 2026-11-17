@@ -14,6 +14,7 @@ import { SITE_URL, personJsonLd, jsonLdScript } from '../lib/site';
 import { Analytics } from "@vercel/analytics/react";
 import { LazyToaster } from '../lib/toast';
 import Footer from '../components/Footer';
+import PlayExtras from '../components/play/PlayExtras';
 import SocialSidebar from '../components/SocialSidebar';
 import SmoothScroll from '../components/journey/SmoothScroll';
 import Suminagashi from '../components/Suminagashi';
@@ -131,6 +132,7 @@ export default function RootLayout({ children }) {
           <Suspense fallback={null}><Senbazuru /></Suspense>
           <Suspense fallback={null}><InkCursor /></Suspense>
           <Suspense fallback={null}><EasterEggs /></Suspense>
+          <Suspense fallback={null}><PlayExtras /></Suspense>
           <Navbar />
 
           <Suspense fallback={null}><SocialSidebar /></Suspense>

@@ -33,6 +33,10 @@ export function createJourneyStore() {
     holdScroll: false,
     sceneMounted: false,
     sceneHold: false,
+    // 遊: extras do menu (ver lib/play). Modo Famicom, modo foto e os bichinhos escolhidos
+    retro: false,
+    photo: false,
+    pets: [],
     loaderDone: false,
     // Faixa [início, fim] de cada seção em fração do progresso (medida pelo ScrollTrigger)
     sectionRanges: {},

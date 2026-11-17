@@ -13,6 +13,8 @@ import LiteTuner, { LiteLoop, LITE_DPR } from './LiteTuner';
 // Pós-processamento só é baixado quando a qualidade pede (médio: gradação; alto: + bloom e raios)
 const Effects = lazy(() => import('./Effects'));
 import { trackPointer } from '../../lib/pointer';
+import { retroDpr } from '../../lib/retro';
+import PhotoShot from './PhotoShot';
 
 // FPS abaixo de 45 durante a amostra (~2,5s) rebaixa a qualidade
 const FPS_BOUNDS = () => [45, 1000];
@@ -30,6 +32,10 @@ export default function Canvas3D() {
   // câmera anda, com shaders mais baratos e a resolução medida (ver LiteTuner)
   const lite = useJourney((s) => s.lite);
   setLiteNoise(lite);
+  // ファミコン: a cena desenhada com poucos pixels (o CSS amplia sem suavizar). 写真: no modo
+  // foto a cena desenha sempre, para a câmera livre responder na hora
+  const retro = useJourney((s) => s.retro);
+  const photo = useJourney((s) => s.photo);
   const [liteDpr, setLiteDpr] = useState(LITE_DPR.start);
   const [hidden, setHidden] = useState(false);
   const [warmedUp, setWarmedUp] = useState(false);
@@ -68,7 +74,7 @@ export default function Canvas3D() {
   const idle = useSceneIdle();
   const halfRate = idle && route !== 'frozen';
   // Cena leve: frameloop "never", quem desenha é o LiteLoop
-  const frameloop = lite || hidden || covered || compiledKey !== contextKey ? 'never' : route === 'frozen' || halfRate ? 'demand' : 'always';
+  const frameloop = lite || hidden || covered || compiledKey !== contextKey ? 'never' : photo ? 'always' : route === 'frozen' || halfRate ? 'demand' : 'always';
 
   return (
     <Canvas
@@ -81,7 +87,7 @@ export default function Canvas3D() {
         // ?perf na URL: expõe o renderer para medir programas, draw calls e triângulos
         if (new URLSearchParams(window.location.search).has('perf')) window.__r3f = state;
       }}
-      dpr={settings.dpr}
+      dpr={retro ? retroDpr(window.innerWidth) : settings.dpr}
       // Mede o tamanho pelo layout (offsetWidth/Height), não pelo retângulo visual: uma
       // transformação no contêiner (a lente do domínio puxando a cena) não redimensiona o
       // renderizador e o bloom a cada quadro
@@ -95,6 +101,7 @@ export default function Canvas3D() {
         <PerformanceMonitor bounds={FPS_BOUNDS} onDecline={() => journeyStore.getState().downgradeQuality()} />
       ) : null}
       <World onReady={onCompiled} />
+      <PhotoShot />
       {halfRate && frameloop === 'demand' && !lite ? <HalfRateFrames /> : null}
       {lite && compiledKey === contextKey ? <LiteTuner onDpr={setLiteDpr} /> : null}
       {lite && compiledKey === contextKey && !hidden && !covered ? <LiteLoop onDpr={setLiteDpr} /> : null}

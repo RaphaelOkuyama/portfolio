@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { DOMAIN, typedSecret } from '../lib/domain';
+import { HANABI } from '../lib/hanabi';
 
 // Segredos pesados carregados só quando alguém os chama: aqui ficam apenas os gatilhos (alguns
 // ouvintes de evento). O código da bola d'água e do Vazio Infinito baixa no primeiro uso
@@ -11,6 +12,7 @@ const BlackFlash = dynamic(() => import('./BlackFlash'), { ssr: false });
 const KoiNotice = dynamic(() => import('./KoiNotice'), { ssr: false });
 const KodamaNotice = dynamic(() => import('./KodamaNotice'), { ssr: false });
 const CrowHint = dynamic(() => import('./CrowHint'), { ssr: false });
+const Hanabi = dynamic(() => import('./hanabi/Hanabi'), { ssr: false });
 
 const HOLD_SELECTOR = '[data-station="stack"] .section-kanji';
 const editable = (el) => Boolean(el?.closest?.('input, textarea, select, [contenteditable="true"]'));
@@ -30,10 +32,14 @@ export default function EasterEggs() {
   // 黒閃: o clarão do golpe certeiro na katana (no ponto do clique)
   const [flash, setFlash] = useState(null);
   const endFlash = useCallback(() => setFlash(null), []);
+  // 花火: o festival de taiko e fogos (outra palavra secreta)
+  const [hanabi, setHanabi] = useState(false);
+  const endHanabi = useCallback(() => setHanabi(false), []);
 
   useEffect(() => {
     const last = { x: -200, y: -200 };
     let buffer = '';
+    let festival = '';
     let holdTimer = 0;
     let holding = null;
     let heldSince = 0;
@@ -52,6 +58,9 @@ export default function EasterEggs() {
     // 領域展開: palavra secreta (fora de campos) ou segurar o kanji 技
     const onKey = (e) => {
       if (editable(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
+      const f = typedSecret(festival, e.key, HANABI.words);
+      festival = f.hit ? '' : f.buffer;
+      if (f.hit) setHanabi(true);
       const r = typedSecret(buffer, e.key);
       buffer = r.buffer;
       if (!r.hit && startsSecret(buffer)) warmDomain();
@@ -112,6 +121,7 @@ export default function EasterEggs() {
       {water ? <WaterCursor initial={water} /> : null}
       {domain ? <DomainExpansion origin={domain} onDone={close} /> : null}
       {flash ? <BlackFlash key={flash.key} x={flash.x} y={flash.y} onDone={endFlash} /> : null}
+      {hanabi ? <Hanabi onDone={endHanabi} /> : null}
       <KoiNotice />
       <KodamaNotice />
       <CrowHint />

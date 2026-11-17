@@ -13,6 +13,7 @@ import StationSign from '../journey/StationSign';
 import Image from 'next/image';
 import { EcgMark } from './Ecg';
 import { useEdgeGuard } from '../../lib/edgeGuard';
+import Gachapon from './Gachapon';
 
 
 // Modos do rolo: pin horizontal no desktop, arrastar no celular, grade estática com movimento reduzido
@@ -47,7 +48,7 @@ function PanelMedia({ project }) {
 }
 
 // 作 Projetos: emakimono (絵巻物) — o scroll vertical desenrola o rolo na horizontal
-export default function EmakiProjects({ projects, labels }) {
+export default function EmakiProjects({ projects, certificates = [], labels }) {
   const rootRef = useRef(null);
   const pinRef = useRef(null);
   const viewportRef = useRef(null);
@@ -261,6 +262,7 @@ export default function EmakiProjects({ projects, labels }) {
             <span className="emaki-hint-scroll">{labels.hint}</span>
             <span className="emaki-hint-drag">{labels.hintDrag}</span>
           </p>
+          <Gachapon projects={projects} certificates={certificates} />
         </header>
 
         <div className="emaki-stage">

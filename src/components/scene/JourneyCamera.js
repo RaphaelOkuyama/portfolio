@@ -10,6 +10,7 @@ import { cameraShot } from '../../lib/journey/shots';
 import { CAMERA_FLIGHT } from './config';
 import { power2InOut, responsiveFov } from '../../lib/journey/math';
 import { pointer } from '../../lib/pointer';
+import { photoRig } from '../../lib/play';
 
 // Parallax do mouse: a câmera inclina alguns graus na direção do cursor (radianos)
 const SWAY = { yaw: 0.035, pitch: 0.02, speed: 2.5 };
@@ -77,12 +78,22 @@ export default function JourneyCamera() {
     if (shot.roll) state.camera.rotateZ(shot.roll);
 
     // Cursor fora da janela (ou movimento reduzido): volta ao centro devagar
-    const follow = sway.fine && pointer.active && !journey.reducedMotion && !journey.lite;
+    const follow = sway.fine && pointer.active && !journey.reducedMotion && !journey.lite && !journey.photo;
     const ks = 1 - Math.exp(-delta * SWAY.speed);
     sway.x += ((follow ? pointer.x : 0) - sway.x) * ks;
     sway.y += ((follow ? pointer.y : 0) - sway.y) * ks;
     state.camera.rotateY(-sway.x * SWAY.yaw);
     state.camera.rotateX(sway.y * SWAY.pitch);
+
+    // 写真: no modo foto a câmera livre soma giro e deslocamento a este ponto da trilha
+    if (journey.photo) {
+      state.camera.rotateY(-photoRig.yaw);
+      state.camera.rotateX(-photoRig.pitch);
+      state.camera.translateZ(-photoRig.dolly);
+      state.camera.translateX(photoRig.truck);
+      state.camera.translateY(photoRig.lift);
+      state.invalidate();
+    }
 
     if (Math.abs(target - current.current) > 1e-4) state.invalidate();
   });

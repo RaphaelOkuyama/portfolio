@@ -9,6 +9,7 @@ import Kamon from './Kamon';
 import Sensu, { sensuStep } from './Sensu';
 import QualityPicker from './QualityPicker';
 import SoundToggle from './SoundToggle';
+import PlayMenu from './play/PlayMenu';
 import SectionChip from './journey/SectionChip';
 import { SOCIAL } from '../lib/site';
 
@@ -105,6 +106,7 @@ export default function Navbar() {
               <button onClick={toggleLanguage} style={btnStyle} aria-label={languageLabel} title={languageLabel}><Globe size={20} /><span style={{fontSize: '0.8rem', fontWeight: 'bold'}}>{language.toUpperCase()}</span></button>
               <SoundToggle />
               <QualityPicker />
+              <PlayMenu />
               <button onClick={toggleTheme} style={btnStyle} aria-label={themeLabel} title={themeLabel}><span className="theme-icon" style={{ display: 'inline-flex' }}>{theme === 'night' ? <Sun size={20} /> : <Moon size={20} />}</span></button>
             </div>
           </div>
@@ -161,6 +163,7 @@ export default function Navbar() {
               <SoundToggle inline />
             </div>
             <QualityPicker inline />
+            <PlayMenu inline onAction={toggleMenu} />
             </div>
             </div>
           </div>
